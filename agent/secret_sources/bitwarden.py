@@ -153,7 +153,7 @@ def find_bws(*, install_if_missing: bool = False) -> Optional[Path]:
 
 
 def _platform_binary_name() -> str:
-    return "bws.exe" if platform.system() == "Windows" else "bws"
+    return "bws"
 
 
 def _platform_asset_name() -> str:

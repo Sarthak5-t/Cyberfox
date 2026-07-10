@@ -631,7 +631,7 @@ class DockerEnvironment(BaseEnvironment):
             resource_args.extend(["--memory", f"{memory}m"])
         if _cgroup_limits_available(image):
             resource_args.extend(["--pids-limit", _DEFAULT_PIDS_LIMIT])
-        if disk > 0 and sys.platform != "darwin":
+        if disk > 0:
             if self._storage_opt_supported():
                 resource_args.extend(["--storage-opt", f"size={disk}m"])
             else:

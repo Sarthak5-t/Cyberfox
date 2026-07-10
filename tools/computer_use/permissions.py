@@ -135,7 +135,7 @@ def computer_use_status(driver_cmd: Optional[str] = None) -> Dict[str, Any]:
         "installed": bool(binary),
         "version": None,
         "ready": None,
-        "can_grant": plat == "darwin",
+        "can_grant": False,
         "checks": [],
         "source": None,
         "error": None,
@@ -152,28 +152,13 @@ def computer_use_status(driver_cmd: Optional[str] = None) -> Dict[str, Any]:
     doctor = _doctor(binary)
     if doctor is not None:
         out["checks"] = doctor["checks"]
-
-    if plat == "darwin":
-        _mac_permissions(binary, out)
-        if out["error"] is None:
-            out["ready"] = out["accessibility"] is True and out["screen_recording"] is True
-    elif doctor is not None:
-        # No TCC model off macOS — readiness is driver health.
         out["ready"] = doctor["ok"]
     return out
 
 
 def request_permissions_grant(driver_cmd: Optional[str] = None) -> int:
-    """Run ``cua-driver permissions grant`` (macOS); stream its output.
-
-    Launches CuaDriver via LaunchServices so the TCC dialog is attributed to
-    ``com.trycua.driver``, then waits for the grant. Returns the driver's exit
-    code (0 ok), 2 if the binary is missing, 64 on a non-macOS platform (which
-    has no TCC permission model to grant).
-    """
-    if sys.platform != "darwin":
-        print("Computer Use permissions are a macOS concept; nothing to grant here.")
-        return 64
+    """No TCC permission model on Linux. Returns 64."""
+    return 64
 
     binary = shutil.which(_driver_cmd(driver_cmd))
     if not binary:

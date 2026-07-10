@@ -15,7 +15,7 @@ from pathlib import Path
 from tools.environments.base import BaseEnvironment, _pipe_stdin
 from cyberfox_cli._subprocess_compat import windows_hide_flags
 
-_IS_WINDOWS = platform.system() == "Windows"
+_IS_WINDOWS = False
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def _resolve_safe_cwd(cwd: str) -> str:
     raises ``FileNotFoundError`` before bash starts, wedging every subsequent
     terminal call until the gateway restarts.
     """
-    cwd = _msys_to_windows_path(cwd) if _IS_WINDOWS else cwd
+    cwd = cwd
     if cwd and os.path.isdir(cwd):
         return cwd
     parent = os.path.dirname(cwd) if cwd else ""
@@ -674,7 +674,7 @@ def _resolve_cyberfox_bin_dir() -> str | None:
     if candidate is None:
         exe_dir = os.path.dirname(sys.executable) if sys.executable else ""
         if exe_dir:
-            shim = "cyberfox.exe" if _IS_WINDOWS else "cyberfox"
+            shim = "cyberfox"
             if os.path.isfile(os.path.join(exe_dir, shim)):
                 candidate = exe_dir
 
@@ -1030,7 +1030,7 @@ class LocalEnvironment(BaseEnvironment):
 
         _popen_cwd = self.cwd
 
-        _popen_kwargs = {"creationflags": windows_hide_flags()} if _IS_WINDOWS else {}
+        _popen_kwargs = {}
 
         proc = subprocess.Popen(
             args,

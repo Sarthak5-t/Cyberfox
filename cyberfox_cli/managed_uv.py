@@ -35,8 +35,6 @@ def managed_uv_path() -> Path:
     ``ensure_uv()`` to bootstrap it.
     """
     home = get_cyberfox_home()
-    if platform.system() == "Windows":
-        return home / "bin" / "uv.exe"
     return home / "bin" / "uv"
 
 
@@ -148,10 +146,6 @@ def ensure_uv():
     pip gracefully.
     """
     result = _ensure_uv_path()
-    if platform.system() == "Windows":
-        # See docstring: a str subclass with an overridden __iter__ is unsafe as
-        # a Windows subprocess argument. Hand back the plain path (or None).
-        return result
     return _UvResult(result)
 
 

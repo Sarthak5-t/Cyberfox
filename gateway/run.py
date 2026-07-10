@@ -167,8 +167,7 @@ def _ensure_windows_gateway_venv_imports() -> None:
     Patch the live process before MCP discovery so tool injection does not
     depend on every launcher preserving PYTHONPATH perfectly.
     """
-    if sys.platform != "win32":
-        return
+    return
 
     project_root = Path(__file__).resolve().parent.parent
     candidates: list[Path] = []
@@ -6065,100 +6064,6 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
 
         current_pid = os.getpid()
         restart_after_s = max(float(getattr(self, "_restart_drain_timeout", 0.0) or 0.0) + 5.0, 5.0)
-
-        # On Windows there's no bash/setsid chain — spawn a tiny Python
-        # watcher directly via sys.executable instead.  The watcher polls
-        # current_pid, waits for our exit, then runs `cyberfox gateway
-        # restart` with detach flags so the respawn survives the CLI
-        # that triggered the /restart command closing its console.
-        if sys.platform == "win32":
-            import textwrap
-            from cyberfox_cli._subprocess_compat import windows_detach_popen_kwargs
-
-            cmd_argv = [*cyberfox_cmd, "gateway", "restart"]
-            watcher = textwrap.dedent(
-                """
-                import os, subprocess, sys, time
-                from cyberfox_cli._subprocess_compat import windows_detach_flags_without_breakaway
-                pid = int(sys.argv[1])
-                restart_after_s = float(sys.argv[2])
-                cmd = sys.argv[3:]
-                deadline = time.monotonic() + restart_after_s
-
-                def _alive(p):
-                    # On Windows, os.kill(pid, 0) is NOT a no-op — it maps to
-                    # GenerateConsoleCtrlEvent(0, pid) (bpo-14484). Use the
-                    # Win32 handle-based existence check instead.
-                    if os.name == 'nt':
-                        import ctypes
-                        k32 = ctypes.windll.kernel32
-                        k32.OpenProcess.restype = ctypes.c_void_p
-                        k32.WaitForSingleObject.restype = ctypes.c_uint
-                        k32.GetLastError.restype = ctypes.c_uint
-                        h = k32.OpenProcess(0x1000 | 0x100000, False, int(p))
-                        if not h:
-                            return k32.GetLastError() != 87
-                        try:
-                            return k32.WaitForSingleObject(h, 0) == 0x102
-                        finally:
-                            k32.CloseHandle(h)
-                    try:
-                        os.kill(int(p), 0)
-                        return True
-                    except ProcessLookupError:
-                        return False
-                    except PermissionError:
-                        return True
-                    except OSError:
-                        return False
-
-                while time.monotonic() < deadline:
-                    if not _alive(pid):
-                        break
-                    time.sleep(0.2)
-                subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    creationflags=windows_detach_flags_without_breakaway(),
-                )
-                """
-            ).strip()
-            watcher_env = os.environ.copy()
-            # This watcher is intentionally outside the running gateway. If it
-            # inherits the gateway marker, `cyberfox gateway restart` refuses to
-            # run as a self-restart loop guard and the gateway stays stopped.
-            watcher_env.pop("_CYBERFOX_GATEWAY", None)
-            project_root = Path(__file__).resolve().parent.parent
-            watcher_python = sys.executable
-            try:
-                # Prefer a real GUI-subsystem interpreter for the watcher
-                # itself.  With uv venvs, ``python.exe`` can re-exec the base
-                # console interpreter and flash even when the Popen carries
-                # CREATE_NO_WINDOW; pythonw.exe avoids console allocation.
-                from cyberfox_cli.gateway_windows import _resolve_detached_python
-
-                watcher_python, _watcher_venv_dir, _watcher_site_packages = (
-                    _resolve_detached_python(sys.executable)
-                )
-            except Exception:
-                watcher_python = sys.executable
-            venv_dir = Path(watcher_env.get("VIRTUAL_ENV") or project_root / "venv")
-            site_packages = venv_dir / "Lib" / "site-packages"
-            if site_packages.exists():
-                watcher_env["VIRTUAL_ENV"] = str(venv_dir)
-                pythonpath = [str(project_root), str(site_packages)]
-                if watcher_env.get("PYTHONPATH"):
-                    pythonpath.append(watcher_env["PYTHONPATH"])
-                watcher_env["PYTHONPATH"] = os.pathsep.join(dict.fromkeys(pythonpath))
-            subprocess.Popen(
-                [watcher_python, "-c", watcher, str(current_pid), str(restart_after_s), *cmd_argv],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                env=watcher_env,
-                **windows_detach_popen_kwargs(),
-            )
-            return
 
         cmd = " ".join(shlex.quote(part) for part in cyberfox_cmd)
         shell_cmd = (

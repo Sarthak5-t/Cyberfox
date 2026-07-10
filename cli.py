@@ -1274,31 +1274,7 @@ _active_worktree: Optional[Dict[str, str]] = None
 
 
 def _normalize_git_bash_path(p: Optional[str]) -> Optional[str]:
-    """Translate a Git Bash-style path (``/c/Users/...``) to the native
-    Windows form (``C:\\Users\\...``) that Python's ``subprocess.Popen``
-    and ``pathlib.Path`` accept.
-
-    No-op on non-Windows and for paths that already look native.  Git on
-    native Windows normally emits forward-slash Windows paths
-    (``C:/Users/...``) which both bash and Python handle, but certain
-    configurations (Git Bash shells, MSYS2, WSL-mounted repos) surface
-    ``/c/...`` or ``/cygdrive/c/...`` variants.
-    """
-    if not p:
-        return p
-    if sys.platform != "win32":
-        return p
-    import re as _re
-    # /c/Users/... or /C/Users/...
-    m = _re.match(r"^/([a-zA-Z])/(.*)$", p)
-    if m:
-        drive, rest = m.group(1), m.group(2)
-        return f"{drive.upper()}:\\{rest.replace('/', chr(92))}"
-    # /cygdrive/c/... or /mnt/c/...
-    m = _re.match(r"^/(?:cygdrive|mnt)/([a-zA-Z])/(.*)$", p)
-    if m:
-        drive, rest = m.group(1), m.group(2)
-        return f"{drive.upper()}:\\{rest.replace('/', chr(92))}"
+    """No-op on Linux. Returns path unchanged."""
     return p
 
 
@@ -1514,39 +1490,10 @@ def _setup_worktree(repo_root: str = None, sync_base: bool = True) -> Optional[D
                     dst.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(str(src), str(dst))
                 elif src.is_dir():
-                    # Symlink directories (faster, saves disk).  On Windows,
-                    # symlink creation requires Developer Mode or elevation,
-                    # and fails with OSError otherwise — fall back to a
-                    # recursive copy so the worktree is still usable.  The
-                    # copy is slower and uses disk, but it doesn't require
-                    # admin and matches the Linux/macOS symlink outcome
-                    # functionally.
+                    # Symlink directories (faster, saves disk).
                     if not dst.exists():
                         dst.parent.mkdir(parents=True, exist_ok=True)
-                        try:
-                            os.symlink(str(src_resolved), str(dst))
-                        except (OSError, NotImplementedError) as _sym_err:
-                            if sys.platform == "win32":
-                                logger.info(
-                                    ".worktreeinclude: symlink failed (%s) — "
-                                    "falling back to copytree on Windows.",
-                                    _sym_err,
-                                )
-                                try:
-                                    shutil.copytree(
-                                        str(src_resolved),
-                                        str(dst),
-                                        symlinks=True,
-                                        dirs_exist_ok=False,
-                                    )
-                                except Exception as _copy_err:
-                                    logger.warning(
-                                        ".worktreeinclude: copy fallback "
-                                        "also failed for %s -> %s: %s",
-                                        src, dst, _copy_err,
-                                    )
-                            else:
-                                raise
+                        os.symlink(str(src_resolved), str(dst))
         except Exception as e:
             logger.debug("Error copying .worktreeinclude entries: %s", e)
 
@@ -2828,15 +2775,9 @@ def _resolve_attachment_path(raw_path: str) -> Path | None:
             parsed = urlparse(token)
             if parsed.scheme == "file":
                 expanded = unquote(parsed.path or "")
-                if parsed.netloc and os.name == "nt":
-                    expanded = f"//{parsed.netloc}{expanded}"
         except Exception:
             expanded = token
     expanded = os.path.expandvars(os.path.expanduser(expanded))
-    if os.name != "nt":
-        normalized = expanded.replace("\\", "/")
-        if len(normalized) >= 3 and normalized[1] == ":" and normalized[2] == "/" and normalized[0].isalpha():
-            expanded = f"/mnt/{normalized[0].lower()}/{normalized[3:]}"
     path = Path(expanded)
     if not path.is_absolute():
         base_dir = Path(os.getenv("TERMINAL_CWD", os.getcwd()))
@@ -3131,8 +3072,6 @@ def _preserve_ctrl_enter_newline() -> bool:
 
     See issue #22379.
     """
-    if sys.platform == "win32":
-        return True
     if any(os.environ.get(v) for v in ("SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY")):
         return True
     if os.environ.get("WT_SESSION"):
@@ -3159,19 +3098,12 @@ def _preserve_ctrl_enter_newline() -> bool:
 def _bind_prompt_submit_keys(kb, handler) -> None:
     """Bind terminal Enter forms to the submit handler.
 
-    Enter is always submit. On POSIX we also bind c-j (LF) to submit because
+    Enter is always submit. We also bind c-j (LF) to submit because
     some thin PTYs (docker exec, certain SSH flavors) deliver Enter as LF
     instead of CR — without this, Enter appears dead on those terminals.
-
-    Exception: on Windows, WSL, SSH sessions, Windows Terminal, and Ghostty,
-    c-j is the wire encoding of Ctrl+Enter (a distinct keystroke from
-    plain Enter / c-m). We leave c-j unbound there so the c-j newline
-    handler registered separately can fire — giving the user an
-    Enter-involving newline keystroke without terminal settings changes.
-    See _preserve_ctrl_enter_newline() and issue #22379.
     """
     kb.add("enter")(handler)
-    if sys.platform != "win32" and not _preserve_ctrl_enter_newline():
+    if not _preserve_ctrl_enter_newline():
         kb.add("c-j")(handler)
 
 
@@ -7435,7 +7367,7 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
         Native Windows now uses the same path as Linux/macOS: the modal is set up
         on ``self._app.loop`` via ``call_soon_threadsafe`` and answered by the
         normal prompt_toolkit key bindings (the same input channel that already
-        handles ordinary typing on Windows).  The raw ``input()`` fallback is kept
+        The raw ``input()`` fallback is kept
         only for the genuinely safe cases: no running app (unit tests /
         non-interactive), no resolvable event loop, or a scheduling failure.
         """
@@ -7458,13 +7390,6 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
         in_main_thread = threading.current_thread() is threading.main_thread()
 
         def _stdin_fallback() -> str | None:
-            # On native Windows a raw input() from a non-main thread deadlocks
-            # against prompt_toolkit's stdin ownership (#33961).  With an app
-            # running we cannot safely prompt off the main thread, so cancel
-            # cleanly (None) rather than hang the terminal.
-            if sys.platform == "win32" and not in_main_thread:
-                self._invalidate()
-                return None
             return self._prompt_text_input("Choice [1/2/3]: ")
 
         if not in_main_thread and app_loop is None:
@@ -12703,7 +12628,7 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
         # Fallback: shell clear command (rarely needed — escapes work on every
         # VT-capable terminal, but this covers exotic stdout wrappers).
         try:
-            os.system("cls" if os.name == "nt" else "clear")
+            os.system("clear")
         except Exception:
             pass
 
@@ -13901,11 +13826,7 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
 
         @kb.add('c-z')
         def handle_ctrl_z(event):
-            """Handle Ctrl+Z - suspend process to background (Unix only)."""
-            if sys.platform == 'win32':
-                _cprint(f"\n{_DIM}Suspend (Ctrl+Z) is not supported on Windows.{_RST}")
-                event.app.invalidate()
-                return
+            """Handle Ctrl+Z - suspend process to background."""
             import signal as _sig
             from prompt_toolkit.application import run_in_terminal
             from cyberfox_cli.skin_engine import get_active_skin
@@ -14089,9 +14010,6 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
             On Linux terminals (GNOME Terminal, Konsole, etc.), Ctrl+V
             sends raw byte 0x16 instead of triggering a paste.  This
             binding catches that and checks the clipboard for images.
-            On terminals that DO intercept Ctrl+V for paste (macOS
-            Terminal, iTerm2, VSCode, Windows Terminal), the bracketed
-            paste handler fires instead and this binding never triggers.
             """
             if self._try_attach_clipboard_image():
                 event.app.invalidate()
@@ -15362,11 +15280,9 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
         
         # Install a custom asyncio exception handler that suppresses the
         # "Event loop is closed" RuntimeError from httpx transport cleanup
-        # and the "0 is not registered" KeyError from broken stdin (#6393).
+        # and the "0 is not registered" KeyError from broken stdin.
         # The RuntimeError fix is defense-in-depth — the primary fix is
-        # neuter_async_httpx_del which disables __del__ entirely.  The
-        # KeyError fix handles macOS + uv-managed Python environments where
-        # fd 0 is not reliably available to the asyncio selector.
+        # neuter_async_httpx_del which disables __del__ entirely.
         def _suppress_closed_loop_errors(loop, context):
             exc = context.get("exception")
             if isinstance(exc, RuntimeError) and "Event loop is closed" in str(exc):
@@ -15378,44 +15294,17 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
             # Fall back to default handler for everything else
             loop.default_exception_handler(context)
 
-        # Validate stdin before launching prompt_toolkit — on macOS with
-        # uv-managed Python, fd 0 can be invalid or unregisterable with the
-        # asyncio selector, causing "KeyError: '0 is not registered'" (#6393).
+        # Validate stdin before launching prompt_toolkit
         try:
             os.fstat(0)
         except OSError:
             print(
                 "Error: stdin (fd 0) is not available.\n"
-                "This can happen with certain Python installations (e.g. uv-managed cPython on macOS).\n"
-                "Try reinstalling Python via pyenv or Homebrew, then re-run: cyberfox setup"
+                "Try reinstalling Python, then re-run: cyberfox setup"
             )
             _run_cleanup()
             self._print_exit_summary()
             return
-
-        # On macOS with uv-managed Python, kqueue's selector cannot register
-        # fd 0, raising OSError(EINVAL) from kqueue.control() when prompt_toolkit
-        # calls loop.add_reader (#6393). Probe kqueue and, if it can't watch
-        # stdin, switch to a SelectSelector-backed event loop policy.
-        if sys.platform == "darwin":
-            try:
-                import selectors as _selectors
-                if hasattr(_selectors, "KqueueSelector"):
-                    _kq = _selectors.KqueueSelector()
-                    try:
-                        _kq.register(0, _selectors.EVENT_READ)
-                        _kq.unregister(0)
-                    finally:
-                        _kq.close()
-            except (OSError, ValueError, KeyError):
-                import asyncio as _aio_probe
-                import selectors as _selectors
-
-                class _SelectEventLoopPolicy(_aio_probe.DefaultEventLoopPolicy):
-                    def new_event_loop(self):
-                        return _aio_probe.SelectorEventLoop(_selectors.SelectSelector())
-
-                _aio_probe.set_event_loop_policy(_SelectEventLoopPolicy())
 
         # Run the application with patch_stdout for proper output handling
         try:

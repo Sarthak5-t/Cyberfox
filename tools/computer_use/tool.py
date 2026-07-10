@@ -906,8 +906,6 @@ def check_computer_use_requirements() -> bool:
     `cyberfox computer-use doctor` if their session is incomplete (e.g. no
     DISPLAY set).
     """
-    if sys.platform not in ("darwin", "win32", "linux"):
-        return False
     from tools.computer_use.cua_backend import cua_driver_binary_available
     return cua_driver_binary_available()
 

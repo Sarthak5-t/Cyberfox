@@ -230,7 +230,7 @@ _ELEMENT_LINE_RE = re.compile(
 # ---------------------------------------------------------------------------
 
 def _is_macos() -> bool:
-    return sys.platform == "darwin"
+    return False
 
 
 def cua_driver_binary_available() -> bool:
@@ -318,17 +318,11 @@ def _maybe_nudge_update() -> None:
 
 
 def cua_driver_install_hint() -> str:
-    if sys.platform == "win32":
-        installer = (
-            '  irm https://raw.githubusercontent.com/trycua/cua/main/'
-            'libs/cua-driver/scripts/install.ps1 | iex'
-        )
-    else:
-        installer = (
-            '  /bin/bash -c "$(curl -fsSL '
-            'https://raw.githubusercontent.com/trycua/cua/main/'
-            'libs/cua-driver/scripts/install.sh)"'
-        )
+    installer = (
+        '  /bin/bash -c "$(curl -fsSL '
+        'https://raw.githubusercontent.com/trycua/cua/main/'
+        'libs/cua-driver/scripts/install.sh)"'
+    )
     return (
         "cua-driver is not installed. Install with one of:\n"
         "  cyberfox computer-use install\n"

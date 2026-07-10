@@ -1087,21 +1087,6 @@ def _run_chrome_fallback_command(
             # * close_fds=True → block inheritance of every other handle.
             #   (Default on POSIX; must be explicit on Windows for stdio.)
             _popen_extra: dict = {}
-            if os.name == "nt":
-                # CREATE_NO_WINDOW → don't attach a console (cmd.exe would
-                # otherwise briefly allocate one for the .cmd shim).
-                # Do NOT add CREATE_NEW_PROCESS_GROUP: on Python 3.11 Windows
-                # it interacts with asyncio's ProactorEventLoop such that the
-                # subprocess creation cancels the running loop task, which
-                # surfaces as KeyboardInterrupt in app.run() and tears down
-                # the CLI mid-turn. The agent thread's subprocess spawn
-                # unwound MainThread's prompt_toolkit loop that way — see
-                # diag log: "asyncio.CancelledError → KeyboardInterrupt".
-                _popen_extra["creationflags"] = windows_hide_flags()
-                _popen_extra["close_fds"] = True
-                _si = subprocess.STARTUPINFO()
-                _si.dwFlags |= subprocess.STARTF_USESTDHANDLES
-                _popen_extra["startupinfo"] = _si
             proc = subprocess.Popen(
                 full, stdout=stdout_fd, stderr=stderr_fd,
                 stdin=subprocess.DEVNULL, env=browser_env,
@@ -1377,8 +1362,6 @@ def _socket_safe_tmpdir() -> str:
     no-op there.  On macOS we bypass ``TMPDIR`` and use ``/tmp`` directly
     (symlink to ``/private/tmp``, sticky-bit protected, always available).
     """
-    if sys.platform == "darwin":
-        return "/tmp"
     return tempfile.gettempdir()
 
 
@@ -4422,13 +4405,6 @@ def _chromium_search_roots() -> List[str]:
         roots.append(env_path)
     home = os.path.expanduser("~")
     roots.append(os.path.join(home, ".cache", "ms-playwright"))
-    if sys.platform == "darwin":
-        roots.append(os.path.join(home, "Library", "Caches", "ms-playwright"))
-    if sys.platform == "win32":
-        local = os.environ.get("LOCALAPPDATA") or os.path.join(
-            home, "AppData", "Local"
-        )
-        roots.append(os.path.join(local, "ms-playwright"))
     return roots
 
 
