@@ -208,5 +208,5 @@ MIT License — see [LICENSE](LICENSE)
 ---
 
 <p align="center">
-  <b>Created by <a href="https://github.com/Sarthak5-t">Sarthak Khatal</a></b>
+  <b>Created by <a href="https://linkedin.com/in/khatalsarthak">Sarthak Khatal</a></b>
 </p>
