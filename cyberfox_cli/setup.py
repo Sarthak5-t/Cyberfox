@@ -800,21 +800,11 @@ def _install_neutts_deps() -> bool:
     if not _check_espeak_ng():
         print()
         print_warning("NeuTTS requires espeak-ng for phonemization.")
-        if sys.platform == "darwin":
-            print_info("Install with: brew install espeak-ng")
-        elif sys.platform == "win32":
-            print_info("Install with: choco install espeak-ng")
-        else:
-            print_info("Install with: sudo apt install espeak-ng")
+        print_info("Install with: sudo apt install espeak-ng")
         print()
         if prompt_yes_no("Install espeak-ng now?", True):
             try:
-                if sys.platform == "darwin":
-                    subprocess.run(["brew", "install", "espeak-ng"], check=True)
-                elif sys.platform == "win32":
-                    subprocess.run(["choco", "install", "espeak-ng", "-y"], check=True)
-                else:
-                    subprocess.run(["sudo", "apt", "install", "-y", "espeak-ng"], check=True)
+                subprocess.run(["sudo", "apt", "install", "-y", "espeak-ng"], check=True)
                 print_success("espeak-ng installed")
             except (subprocess.CalledProcessError, FileNotFoundError) as e:
                 print_warning(f"Could not install espeak-ng automatically: {e}")
@@ -2025,9 +2015,7 @@ def setup_gateway(config: dict):
         # Offer to install the gateway as a system service
         import platform as _platform
 
-        _is_linux = _platform.system() == "Linux"
-        _is_macos = _platform.system() == "Darwin"
-        _is_windows = _platform.system() == "Windows"
+        _is_linux = True  # Cyberfox is Linux-only
 
         from cyberfox_cli.gateway import (
             _is_service_installed,
@@ -2040,9 +2028,6 @@ def setup_gateway(config: dict):
             print_legacy_unit_warning,
             systemd_start,
             systemd_restart,
-            launchd_install,
-            launchd_start,
-            launchd_restart,
             UserSystemdUnavailableError,
             SystemScopeRequiresRootError,
             _system_scope_wizard_would_need_root,
@@ -2052,7 +2037,7 @@ def setup_gateway(config: dict):
         service_installed = _is_service_installed()
         service_running = _is_service_running()
         supports_systemd = supports_systemd_services()
-        supports_service_manager = supports_systemd or _is_macos or _is_windows
+        supports_service_manager = supports_systemd
 
         print()
         if supports_systemd and has_conflicting_systemd_units():
@@ -2070,20 +2055,11 @@ def setup_gateway(config: dict):
                 try:
                     if supports_systemd:
                         systemd_restart()
-                    elif _is_macos:
-                        launchd_restart()
-                    elif _is_windows:
-                        from cyberfox_cli import gateway_windows
-                        gateway_windows.restart()
                 except UserSystemdUnavailableError as e:
                     print_error("  Restart failed — user systemd not reachable:")
                     for line in str(e).splitlines():
                         print(f"  {line}")
                 except SystemScopeRequiresRootError as e:
-                    # Defense in depth: the pre-check above should have
-                    # caught this, but a race (unit file appearing mid-run)
-                    # could still land here. Previously this exited the
-                    # whole wizard via sys.exit(1).
                     print_error(f"  Restart failed: {e}")
                     _print_system_scope_remediation("restart")
                 except Exception as e:
@@ -2095,11 +2071,6 @@ def setup_gateway(config: dict):
                 try:
                     if supports_systemd:
                         systemd_start()
-                    elif _is_macos:
-                        launchd_start()
-                    elif _is_windows:
-                        from cyberfox_cli import gateway_windows
-                        gateway_windows.start()
                 except UserSystemdUnavailableError as e:
                     print_error("  Start failed — user systemd not reachable:")
                     for line in str(e).splitlines():
@@ -2110,12 +2081,7 @@ def setup_gateway(config: dict):
                 except Exception as e:
                     print_error(f"  Start failed: {e}")
         elif supports_service_manager:
-            if supports_systemd:
-                svc_name = "systemd"
-            elif _is_macos:
-                svc_name = "launchd"
-            else:
-                svc_name = "Scheduled Task"
+            svc_name = "systemd"
             if prompt_yes_no(
                 f"  Install the gateway as a {svc_name} service? (runs in background, starts on boot)",
                 True,
@@ -2126,25 +2092,11 @@ def setup_gateway(config: dict):
                     started_inline = False
                     if supports_systemd:
                         installed_scope, did_install = install_linux_gateway_from_setup(force=False)
-                    elif _is_macos:
-                        launchd_install(force=False)
-                        did_install = True
-                    else:
-                        # gateway_windows.install() registers the Scheduled
-                        # Task AND starts it immediately (via schtasks /Run
-                        # or a direct spawn fallback), so no separate start
-                        # prompt is needed here.
-                        from cyberfox_cli import gateway_windows
-                        gateway_windows.install(force=False)
-                        did_install = True
-                        started_inline = True
                     print()
                     if did_install and not started_inline and prompt_yes_no("  Start the service now?", True):
                         try:
                             if supports_systemd:
                                 systemd_start(system=installed_scope == "system")
-                            elif _is_macos:
-                                launchd_start()
                         except UserSystemdUnavailableError as e:
                             print_error("  Start failed — user systemd not reachable:")
                             for line in str(e).splitlines():
@@ -2159,7 +2111,7 @@ def setup_gateway(config: dict):
                     print_info("  You can try manually: cyberfox gateway install")
             else:
                 print_info("  You can install later: cyberfox gateway install")
-                if supports_systemd and os.geteuid() == 0:  # windows-footgun: ok — guarded by supports_systemd (Linux only)
+                if supports_systemd and os.geteuid() == 0:
                     print_info("  Or as a boot-time service: cyberfox gateway install --system")
                 print_info("  Or run in foreground:  cyberfox gateway")
         else:

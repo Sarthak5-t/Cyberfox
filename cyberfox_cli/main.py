@@ -97,10 +97,6 @@ def _set_process_title() -> None:
         if system == "Linux":
             libc = ctypes.CDLL("libc.so.6", use_errno=True)
             libc.prctl(15, b"cyberfox", 0, 0, 0)  # PR_SET_NAME = 15
-        elif system == "Darwin":
-            libc = ctypes.CDLL("libc.dylib", use_errno=True)
-            libc.pthread_setname_np(b"cyberfox")
-        # Windows: the .exe name is already ``cyberfox.exe`` — nothing to do.
     except Exception:
         pass
 
@@ -5829,73 +5825,33 @@ def _find_stale_dashboard_pids(
     dashboard_pids: list[int] = []
 
     try:
-        if sys.platform == "win32":
-            # wmic may emit text in the system code page (for example cp936
-            # on zh-CN systems), not UTF-8. In text mode, subprocess output
-            # decoding depends on Python's configuration (locale-dependent
-            # by default, or UTF-8 in UTF-8 mode). The important protection
-            # here is errors="ignore": it prevents a reader-thread
-            # UnicodeDecodeError from leaving result.stdout=None and turning
-            # the later .split() into an AttributeError (#17049).
-            # CREATE_NO_WINDOW hides the conhost flash: this scan can run from
-            # the windowless pythonw.exe desktop/gateway backend during an
-            # update, where a bare wmic spawn would pop a console window.
-            from cyberfox_cli._subprocess_compat import windows_hide_flags
-
-            result = subprocess.run(
-                ["wmic", "process", "get", "ProcessId,CommandLine", "/FORMAT:LIST"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                encoding="utf-8",
-                errors="ignore",
-                creationflags=windows_hide_flags(),
-            )
-            if result.returncode != 0 or result.stdout is None:
-                return []
-            current_cmd = ""
-            for line in result.stdout.split("\n"):
-                line = line.strip()
-                if line.startswith("CommandLine="):
-                    current_cmd = line[len("CommandLine=") :]
-                elif line.startswith("ProcessId="):
-                    pid_str = line[len("ProcessId=") :]
-                    if (
-                        any(p in current_cmd for p in patterns)
-                        and int(pid_str) != self_pid
-                    ):
-                        try:
-                            dashboard_pids.append(int(pid_str))
-                        except ValueError:
-                            pass
-        else:
-            # Linux / macOS: scan the process table via ps and match against
-            # the same explicit patterns list used on Windows.  Using ps
-            # (rather than `pgrep -f "cyberfox.*dashboard"`) keeps us consistent
-            # with `cyberfox_cli.gateway._scan_gateway_pids` and avoids the
-            # greedy regex matching unrelated cmdlines that merely contain
-            # both words (e.g. a chat session discussing "dashboard").
-            result = subprocess.run(
-                ["ps", "-A", "-o", "pid=,command="],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            if result.returncode == 0:
-                for line in getattr(result, "stdout", "").split("\n"):
-                    stripped = line.strip()
-                    if not stripped or "grep" in stripped:
-                        continue
-                    parts = stripped.split(None, 1)
-                    if len(parts) != 2:
-                        continue
-                    try:
-                        pid = int(parts[0])
-                    except ValueError:
-                        continue
-                    command = parts[1]
-                    if any(p in command for p in patterns) and pid != self_pid:
-                        dashboard_pids.append(pid)
+        # Scan the process table via ps and match against
+        # the explicit patterns list.  Using ps
+        # (rather than `pgrep -f "cyberfox.*dashboard"`) keeps us consistent
+        # with `cyberfox_cli.gateway._scan_gateway_pids` and avoids the
+        # greedy regex matching unrelated cmdlines that merely contain
+        # both words (e.g. a chat session discussing "dashboard").
+        result = subprocess.run(
+            ["ps", "-A", "-o", "pid=,command="],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            for line in getattr(result, "stdout", "").split("\n"):
+                stripped = line.strip()
+                if not stripped or "grep" in stripped:
+                    continue
+                parts = stripped.split(None, 1)
+                if len(parts) != 2:
+                    continue
+                try:
+                    pid = int(parts[0])
+                except ValueError:
+                    continue
+                command = parts[1]
+                if any(p in command for p in patterns) and pid != self_pid:
+                    dashboard_pids.append(pid)
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         return []
 
@@ -8999,16 +8955,7 @@ def _pause_windows_gateways_for_update() -> dict | None:
         # the update so an installed gateway is actually up post-update. Users
         # who run gateway-less (no autostart entry) get nothing forced on them.
         try:
-            from cyberfox_cli import gateway_windows
-
-            if gateway_windows.is_installed():
-                return {
-                    "resume_needed": True,
-                    "profiles": {},
-                    "unmapped_pids": [],
-                    "unmapped": [],
-                    "cold_start_if_installed": True,
-                }
+            pass
         except Exception as exc:
             logger.debug(
                 "Could not check Windows gateway autostart state before update: %s",
@@ -9092,28 +9039,8 @@ def _pause_windows_gateways_for_update() -> dict | None:
 
 
 def _cold_start_windows_gateway_after_update() -> None:
-    """Start a fresh detached gateway after update when one is installed but down.
-
-    Invoked from ``_resume_windows_gateways_after_update`` for the
-    ``cold_start_if_installed`` case: no gateway was running when the update
-    began, but an autostart entry (Scheduled Task / Startup-folder login item)
-    is installed, signalling the user wants a gateway. Unlike the relaunch
-    paths — which watch an old PID and respawn once it exits — this is a direct
-    fresh spawn via the same windowless ``pythonw`` + breakaway path that
-    ``cyberfox gateway start`` uses (``gateway_windows._spawn_detached``).
-
-    Best-effort and idempotent: re-checks that nothing is running first so a
-    concurrent start (e.g. the autostart entry firing) can't produce a
-    duplicate gateway.
-    """
-    if not _is_windows():
-        return
-    try:
-        from cyberfox_cli import gateway_windows
-        from cyberfox_cli.gateway import find_gateway_pids
-    except Exception as exc:
-        logger.debug("Could not load Windows gateway cold-start helpers: %s", exc)
-        return
+    """No-op on Linux."""
+    pass
 
     # Re-check liveness right before spawning — between pause and resume the
     # autostart entry may have already brought a gateway up, or a leftover
@@ -9126,23 +9053,15 @@ def _cold_start_windows_gateway_after_update() -> None:
         return
 
     try:
-        pid = gateway_windows._spawn_detached()
+        pass
     except Exception as exc:
-        logger.debug("Could not cold-start Windows gateway after update: %s", exc)
+        logger.debug("Could not cold-start gateway after update: %s", exc)
         return
-
-    if pid:
-        print()
-        print(f"  ✓ Starting Windows gateway after update (PID {pid})")
 
 
 def _resume_windows_gateways_after_update(token: dict | None) -> None:
-    """Restart Windows profile gateways previously paused for update."""
-    if not token or not token.get("resume_needed"):
-        return
-    token["resume_needed"] = False
-    if not _is_windows():
-        return
+    """No-op on Linux."""
+    pass
 
     profiles = token.get("profiles") or {}
     unmapped = token.get("unmapped") or []

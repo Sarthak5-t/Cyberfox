@@ -96,22 +96,19 @@ def resolve_cyberfox_bin() -> Optional[str]:
     fallback.
     """
     argv0 = sys.argv[0]
-    _is_windows = sys.platform == "win32"
 
     def _is_python_script(p: str) -> bool:
         return p.lower().endswith((".py", ".pyc"))
 
     # Absolute path to an executable (covers nix store, venv wrappers, etc.)
     if os.path.isabs(argv0) and os.path.isfile(argv0) and os.access(argv0, os.X_OK):
-        if not (_is_windows and _is_python_script(argv0)):
-            return argv0
+        return argv0
 
     # Relative path — resolve against CWD
     if not argv0.startswith("-") and os.path.isfile(argv0):
         abs_path = os.path.abspath(argv0)
         if os.access(abs_path, os.X_OK):
-            if not (_is_windows and _is_python_script(abs_path)):
-                return abs_path
+            return abs_path
 
     # PATH lookup
     path_bin = shutil.which("cyberfox")
@@ -181,25 +178,4 @@ def relaunch(
     new_argv = build_relaunch_argv(
         extra_args, preserve_inherited=preserve_inherited, original_argv=original_argv
     )
-    if sys.platform == "win32":
-        # Windows: subprocess + exit, because execvp can't swap to .cmd/.exe shims.
-        import subprocess
-        try:
-            result = subprocess.run(new_argv)
-            sys.exit(result.returncode)
-        except KeyboardInterrupt:
-            sys.exit(130)
-        except OSError as exc:
-            # Surface a helpful error rather than the raw OSError — the
-            # caller used to see ``[Errno 8] Exec format error`` which is
-            # cryptic.  Common causes: ``cyberfox`` not on PATH yet (install
-            # hasn't propagated User PATH into this shell) or a stale shim.
-            print(
-                f"\nCyberfox relaunch failed: {exc}\n"
-                f"Command: {' '.join(new_argv)}\n"
-                f"Fix: open a new terminal so PATH picks up, then re-run cyberfox.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-    else:
-        os.execvp(new_argv[0], new_argv)
+    os.execvp(new_argv[0], new_argv)

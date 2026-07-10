@@ -2,8 +2,8 @@
 # ============================================================================
 # Cyberfox Agent Installer
 # ============================================================================
-# Installation script for Linux, macOS, and Android/Termux.
-# Uses uv for desktop/server installs and Python's stdlib venv + pip on Termux.
+# Installation script for Kali Linux and other Debian-based distributions.
+# Uses uv for desktop/server installs and Python's stdlib venv + pip.
 #
 # Usage:
 #   curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash
@@ -520,20 +520,17 @@ detect_os() {
             fi
             ;;
         Darwin*)
-            OS="macos"
-            DISTRO="macos"
+            log_error "macOS is not supported. Cyberfox is designed for Kali Linux and other Debian-based distributions."
+            exit 1
             ;;
         CYGWIN*|MINGW*|MSYS*)
-            OS="windows"
-            DISTRO="windows"
-            log_error "Windows detected. Please use the PowerShell installer:"
-            log_info "  iex (irm https://cyberfox-agent.nousresearch.com/install.ps1)"
+            log_error "Windows is not supported. Cyberfox is designed for Kali Linux and other Debian-based distributions."
             exit 1
             ;;
         *)
             OS="unknown"
             DISTRO="unknown"
-            log_warn "Unknown operating system"
+            log_warn "Unknown operating system - Cyberfox is designed for Debian-based Linux"
             ;;
     esac
 
