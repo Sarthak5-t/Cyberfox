@@ -1,0 +1,59 @@
+name: ares
+version: 3.0.0
+description: "Elite cybersecurity agent — VAPT, SOC, red teaming with 48+ security tools."
+author: Cyberfox
+kind: standalone
+provides_tools:
+  - nmap_scan
+  - dns_recon
+  - subdomain_enum
+  - masscan_scan
+  - amass_scan
+  - whois_scan
+  - theharvester_scan
+  - whatweb_scan
+  - nuclei_scan
+  - gobuster_scan
+  - feroxbuster_scan
+  - ffuf_scan
+  - wfuzz_scan
+  - nikto_scan
+  - wpscan_scan
+  - enum4linux_scan
+  - smbclient_tool
+  - wafw00f_scan
+  - snmpwalk_tool
+  - curl_tool
+  - burp_scan
+  - burp_spider
+  - burp_repeater
+  - nuclei_templates
+  - subjack
+  - exploit_search
+  - sqlmap_scan
+  - hydra_brute
+  - msf_exec
+  - msf_console
+  - msf_search
+  - msf_payload
+  - msf_post
+  - responder_listener
+  - impacket_exec
+  - exploit_chain
+  - payload_gen
+  - exploit_dev
+  - bloodhound_ingest
+  - certipy_tool
+  - crackmapexec
+  - kerbrute_enum
+  - report_save
+  - findings_save
+  - findings_query
+  - findings_update
+  - findings_stats
+  - ares_delegate
+hooks:
+  - pre_tool_call
+  - post_tool_call
+  - pre_llm_call
+  - on_session_end

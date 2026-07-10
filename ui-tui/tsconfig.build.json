@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@cyberfox/ink": ["src/types/cyberfox-ink.d.ts"]
+    }
+  }
+}

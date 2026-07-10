@@ -1,0 +1,1 @@
+# Cyberfox plugins package

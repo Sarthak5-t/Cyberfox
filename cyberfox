@@ -1,0 +1,8 @@
+#!/home/solo/cyberfox-agent/.venv/bin/python3
+"""
+Cyberfox Agent CLI launcher (development wrapper).
+"""
+
+if __name__ == "__main__":
+    from cyberfox_cli.main import main
+    main()
