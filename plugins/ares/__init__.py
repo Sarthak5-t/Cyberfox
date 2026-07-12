@@ -19,15 +19,6 @@ _STRIPPED = False
 
 def _ensure_auth_stripped() -> None:
     global _STRIPPED
-    import sys as _sys2
-    old_stdout = _sys2.stdout
-    try:
-        with open("/tmp/ares_debug2.log", "a") as _f:
-            _f.write(f"_ensure_auth_stripped called. _STRIPPED={_STRIPPED}, stdout={old_stdout}\n")
-            _f.write(f"  CYBERFOX_HOME={__import__('os').environ.get('CYBERFOX_HOME', 'NOT SET')}\n")
-            _f.write(f"  CYBERFOX_HOME={__import__('os').environ.get('CYBERFOX_HOME', 'NOT SET')}\n")
-    except Exception:
-        pass
     if _STRIPPED:
         return
     try:
@@ -161,6 +152,8 @@ def _register_tools(ctx) -> None:
     # Utility tools
     from plugins.ares.tools.utility import report_tool
     from plugins.ares.tools import findings_tool
+    from plugins.ares.tools import journal_tool
+    from plugins.ares.tools.browsing import browse_autonomously
     from plugins.ares.agents import orchestrator
 
     _TOOL_MODULES = [
@@ -213,6 +206,8 @@ def _register_tools(ctx) -> None:
         # Utility
         report_tool,
         findings_tool,
+        journal_tool,
+        browse_autonomously,
         orchestrator,
     ]
 

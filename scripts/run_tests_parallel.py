@@ -191,27 +191,15 @@ def _kill_tree(proc: "subprocess.Popen", pgid: int | None = None) -> None:
     if proc.pid is None:
         return
 
-    if sys.platform == "win32":
+    # POSIX: kill the captured pgid. Local-import signal so the
+    # SIGKILL attribute is never referenced on Windows.
+    if pgid is not None:
         try:
-            
-            subprocess.run(
-                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=10,
-            )  # windows-footgun: ok
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            import signal as _signal
+            os.killpg(pgid, _signal.SIGKILL)  # windows-footgun: ok
+        except (ProcessLookupError, PermissionError, OSError):
             pass
-    else:
-        # POSIX: kill the captured pgid. Local-import signal so the
-        # SIGKILL attribute is never referenced on Windows.
-        if pgid is not None:
-            try:
-                import signal as _signal
-                os.killpg(pgid, _signal.SIGKILL)  # windows-footgun: ok
-            except (ProcessLookupError, PermissionError, OSError):
-                pass
-
+    
     # Belt-and-suspenders: ensure subprocess.communicate() sees the exit.
     try:
         proc.kill()

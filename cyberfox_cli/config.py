@@ -701,8 +701,6 @@ def _resolve_cyberfox_uid_gid() -> tuple[Optional[int], Optional[int]]:
     when either is missing/invalid. Returns ``(None, None)`` on Windows
     too (where chown is a no-op anyway).
     """
-    if sys.platform == "win32":
-        return None, None
     uid_str = os.environ.get("CYBERFOX_UID", "").strip()
     gid_str = os.environ.get("CYBERFOX_GID", "").strip()
     try:

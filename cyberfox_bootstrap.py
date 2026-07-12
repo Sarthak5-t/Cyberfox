@@ -52,7 +52,7 @@ from __future__ import annotations
 import os
 import sys
 
-_IS_WINDOWS = sys.platform == "win32"
+_IS_WINDOWS = False
 _bootstrap_applied = False
 
 

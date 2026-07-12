@@ -2305,7 +2305,7 @@ class CLICommandsMixin:
 
         editor = os.environ.get("VISUAL") or os.environ.get("EDITOR")
         if not editor:
-            editor = "notepad" if os.name == "nt" else "nano"
+            editor = "notepad" if False else "nano"
 
         header = (
             "#! Compose your prompt below. Lines starting with '#!' are ignored.\n"

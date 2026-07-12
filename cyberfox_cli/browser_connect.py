@@ -97,25 +97,6 @@ def get_chrome_debug_candidates(system: str) -> list[str]:
                 for parts in group:
                     add(os.path.join(base, *parts))
 
-    if system == "Darwin":
-        for app in _DARWIN_APPS:
-            add(app)
-        return candidates
-
-    if system == "Windows":
-        install_bases = (
-            os.environ.get("ProgramFiles"),
-            os.environ.get("ProgramFiles(x86)"),
-            os.environ.get("LOCALAPPDATA"),
-        )
-        for names, install_parts in _WINDOWS_BROWSER_GROUPS:
-            for name in names:
-                add(shutil.which(name))
-            for base in filter(None, install_bases):
-                for parts in install_parts:
-                    add(os.path.join(base, *parts))
-        return candidates
-
     for names, paths in _LINUX_BROWSER_GROUPS:
         for name in names:
             add(shutil.which(name))
@@ -180,14 +161,7 @@ def manual_chrome_debug_command(port: int = DEFAULT_BROWSER_CDP_PORT, system: st
 
     if candidates:
         argv = [candidates[0], *_chrome_debug_args(port)]
-        return subprocess.list2cmdline(argv) if system == "Windows" else shlex.join(argv)
-
-    if system == "Darwin":
-        data_dir = chrome_debug_data_dir()
-        return (
-            f'open -a "Google Chrome" --args --remote-debugging-port={port} '
-            f'--user-data-dir="{data_dir}" --no-first-run --no-default-browser-check'
-        )
+        return shlex.join(argv)
 
     return None
 

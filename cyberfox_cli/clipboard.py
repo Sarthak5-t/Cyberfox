@@ -31,10 +31,6 @@ def save_clipboard_image(dest: Path) -> bool:
     Returns True if an image was found and saved, False otherwise.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if sys.platform == "darwin":
-        return _macos_save(dest)
-    if sys.platform == "win32":
-        return _windows_save(dest)
     return _linux_save(dest)
 
 
@@ -43,10 +39,6 @@ def has_clipboard_image() -> bool:
 
     Lighter than save_clipboard_image — doesn't extract or write anything.
     """
-    if sys.platform == "darwin":
-        return _macos_has_image()
-    if sys.platform == "win32":
-        return _windows_has_image()
     # Match _linux_save fallthrough order: WSL → Wayland → X11
     if _is_wsl() and _wsl_has_image():
         return True

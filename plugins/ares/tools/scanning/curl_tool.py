@@ -18,10 +18,15 @@ def _handle(args: dict, **kw) -> str:
     data = args.get("data", "")
     follow = args.get("follow_redirects", True)
     insecure = args.get("insecure", True)
+    return_body = args.get("return_body", True)
     if not url:
         return json_result(False, error="url is required")
     try:
-        cmd = f"curl -sS -D- -o /dev/null --max-time 30"
+        cmd = f"curl -sS --max-time 30"
+        if return_body:
+            cmd += " -D-"
+        else:
+            cmd += " -D- -o /dev/null"
         if follow:
             cmd += " -L"
         if insecure:
@@ -36,7 +41,7 @@ def _handle(args: dict, **kw) -> str:
             cmd += f" -d {shlex.quote(data)}"
         cmd += f" {shlex.quote(url)}"
         result = run_command(cmd, timeout=60)
-        output = result.stdout.strip()[:50000]
+        output = result.stdout.strip()[:80000]
         return json_result(True, data={
             "url": url,
             "method": method,
@@ -81,6 +86,11 @@ SCHEMA = {
                 "type": "boolean",
                 "default": True,
                 "description": "Skip SSL/TLS verification",
+            },
+            "return_body": {
+                "type": "boolean",
+                "default": True,
+                "description": "Include response body (default True). Set False for headers-only.",
             },
         },
         "required": ["url"],

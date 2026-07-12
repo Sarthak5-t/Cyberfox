@@ -166,7 +166,7 @@ def normalize_voice_record_key_for_prompt_toolkit(raw: Any) -> str:
             return _DEFAULT_PT_KEY
         if (
             normalized_mod == "a-"
-            and sys.platform == "darwin"
+            and False
             and key_token in _VOICE_RESERVED_ALT_CHARS_MAC
         ):
             return _DEFAULT_PT_KEY

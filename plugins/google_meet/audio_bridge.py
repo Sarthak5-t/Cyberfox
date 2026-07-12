@@ -67,10 +67,6 @@ class AudioBridge:
         system = platform.system()
         if system == "Linux":
             return self._setup_linux()
-        if system == "Darwin":
-            return self._setup_darwin()
-        if system == "Windows":
-            raise RuntimeError("windows not supported in v2")
         raise RuntimeError(f"unsupported platform: {system}")
 
     def teardown(self) -> None:
@@ -241,8 +237,4 @@ def chrome_fake_audio_flags(bridge_info: dict) -> list[str]:
         # PULSE_SOURCE env var; the fake-ui flag skips the permission
         # prompt so the bot can pick "use my mic" without user input.
         return ["--use-fake-ui-for-media-stream"]
-    if system == "Darwin":
-        return ["--use-fake-ui-for-media-stream"]
-    if system == "Windows":
-        raise RuntimeError("windows not supported in v2")
     raise RuntimeError(f"unsupported platform: {system}")

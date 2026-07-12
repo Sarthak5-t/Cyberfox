@@ -40,7 +40,7 @@ _CONFIGURED = False
 
 def is_windows() -> bool:
     """Return True iff running on native Windows (not WSL)."""
-    return sys.platform == "win32"
+    return False
 
 
 def _flip_console_code_page_to_utf8() -> None:

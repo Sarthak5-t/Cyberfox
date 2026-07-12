@@ -24,15 +24,12 @@ from cyberfox_constants import get_cyberfox_home, _get_platform_default_cyberfox
 from typing import Any, Optional
 from utils import atomic_json_write
 
-if sys.platform == "win32":
-    import msvcrt
-else:
-    import fcntl
+import fcntl
 
 _GATEWAY_KIND = "cyberfox-gateway"
 _RUNTIME_STATUS_FILE = "gateway_state.json"
 _LOCKS_DIRNAME = "gateway-locks"
-_IS_WINDOWS = sys.platform == "win32"
+_IS_WINDOWS = False
 _UNSET = object()
 _GATEWAY_LOCK_FILENAME = "gateway.lock"
 _gateway_lock_handle = None

@@ -37,25 +37,7 @@ def _resolve_git_executable() -> Optional[str]:
     found = shutil.which("git")
     if found:
         return found
-    if os.name == "nt":
-        prog = os.environ.get("ProgramFiles", r"C:\Program Files")
-        prog_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
-        local = os.environ.get("LOCALAPPDATA", "")
-        candidates = [
-            os.path.join(prog, "Git", "cmd", "git.exe"),
-            os.path.join(prog, "Git", "bin", "git.exe"),
-            os.path.join(prog_x86, "Git", "cmd", "git.exe"),
-            os.path.join(prog_x86, "Git", "bin", "git.exe"),
-        ]
-        if local:
-            candidates.extend(
-                (
-                    os.path.join(local, "Programs", "Git", "cmd", "git.exe"),
-                    os.path.join(local, "Programs", "Git", "bin", "git.exe"),
-                )
-            )
-    else:
-        candidates = ["/usr/bin/git", "/usr/local/bin/git", "/bin/git"]
+    candidates = ["/usr/bin/git", "/usr/local/bin/git", "/bin/git"]
     for c in candidates:
         if c and os.path.isfile(c):
             return c

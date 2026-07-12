@@ -220,8 +220,6 @@ def _can_open_browser() -> bool:
     if os.environ.get("SSH_CLIENT") or os.environ.get("SSH_TTY"):
         return False
     # macOS and Windows usually have a display
-    if os.name == "nt":
-        return True
     try:
         if os.uname().sysname == "Darwin":
             return True

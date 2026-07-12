@@ -1437,8 +1437,6 @@ def _fs_git_branch(cwd: str) -> str:
             "timeout": 2,
             "check": False,
         }
-        if sys.platform == "win32":
-            run_kwargs["creationflags"] = windows_hide_flags()
         result = subprocess.run(
             ["git", "-C", cwd, "branch", "--show-current"],
             **run_kwargs,
@@ -2489,17 +2487,6 @@ def _display_system_platform(
     platform_label: str,
 ) -> Dict[str, str]:
     """Return host OS fields for display while preserving stdlib detail."""
-    if system == "Windows" and release == "10":
-        build = _windows_build_number(version, platform_label)
-        if build is not None and build >= _WINDOWS_11_MIN_BUILD:
-            platform_label = re.sub(
-                r"^Windows-10(?=-)",
-                "Windows-11",
-                platform_label,
-                count=1,
-            )
-            release = "11"
-
     return {
         "os": system,
         "os_release": release,
@@ -2933,11 +2920,8 @@ def _spawn_cyberfox_action(subcommand: List[str], name: str) -> subprocess.Popen
         "stderr": subprocess.STDOUT,
         "env": {**os.environ, "CYBERFOX_NONINTERACTIVE": "1"},
     }
-    if sys.platform == "win32":
-        popen_kwargs["creationflags"] = windows_detach_flags()
-    else:
-        popen_kwargs["start_new_session"] = True
-
+    popen_kwargs["start_new_session"] = True
+    
     proc = subprocess.Popen(cmd, **popen_kwargs)
     # The child inherits its own duplicated fd for stdout/stderr, so the
     # parent's handle can be released immediately — otherwise we leak one
@@ -6744,8 +6728,6 @@ def _oauth_provider_disconnect_command(provider: Dict[str, Any]) -> Optional[str
         return None
     if provider.get("id") == "claude-code":
         rm_file = "rm -f ~/.claude/.credentials.json"
-        if sys.platform == "darwin":
-            return f'security delete-generic-password -s "Claude Code-credentials" 2>/dev/null; {rm_file}'
         return rm_file
     return None
 
@@ -11309,15 +11291,6 @@ async def open_profile_terminal_endpoint(name: str):
 
         if sys.platform.startswith("win"):
             subprocess.Popen(["cmd.exe", "/c", "start", "", command])
-        elif sys.platform == "darwin":
-            escaped = command.replace("\\", "\\\\").replace('"', '\\"')
-            applescript = (
-                'tell application "Terminal"\n'
-                "activate\n"
-                f'do script "{escaped}"\n'
-                "end tell"
-            )
-            subprocess.Popen(["osascript", "-e", applescript])
         else:
             terminal_commands = [
                 ("x-terminal-emulator", ["x-terminal-emulator", "-e", "sh", "-lc", command]),

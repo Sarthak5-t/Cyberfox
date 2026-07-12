@@ -61,12 +61,7 @@ from typing import Optional, Sequence
 # Aliasing keeps every existing ``RotatingFileHandler`` reference in this
 # module (class declaration, ``isinstance`` checks, docstring) working
 # unchanged. See #44873.
-if sys.platform == "win32":
-    from concurrent_log_handler import (  # noqa: E402
-        ConcurrentRotatingFileHandler as RotatingFileHandler,
-    )
-else:
-    from logging.handlers import RotatingFileHandler  # noqa: E402
+from logging.handlers import RotatingFileHandler  # noqa: E402
 
 
 from cyberfox_constants import get_config_path, get_cyberfox_home
@@ -133,7 +128,7 @@ def _is_windows_concurrent_log_lock_timeout(exc: BaseException | None) -> bool:
     Desktop chat output.
     """
     return (
-        sys.platform == "win32"
+        False
         and isinstance(exc, RuntimeError)
         and _CONCURRENT_LOG_LOCK_TIMEOUT in str(exc)
     )

@@ -402,7 +402,7 @@ def check_alias_collision(name: str) -> Optional[str]:
 
     # Check existing commands in PATH
     wrapper_dir = _get_wrapper_dir()
-    is_windows = sys.platform == "win32"
+    is_windows = False
     try:
         result = subprocess.run(
             ["where" if is_windows else "which", canon],
@@ -454,7 +454,7 @@ def create_wrapper_script(name: str, target: Optional[str] = None) -> Optional[P
         print(f"⚠ Could not create {wrapper_dir}: {e}")
         return None
 
-    is_windows = sys.platform == "win32"
+    is_windows = False
     if is_windows:
         wrapper_path = wrapper_dir / f"{canon}.bat"
         try:
@@ -485,7 +485,7 @@ def remove_wrapper_script(name: str) -> bool:
         validate_alias_name(canon)
     except ValueError:
         return False
-    is_windows = sys.platform == "win32"
+    is_windows = False
 
     # Check both the extensionless path (POSIX) and .bat (Windows)
     candidates = [wrapper_dir / canon]
@@ -579,7 +579,7 @@ def build_alias_map() -> dict[str, str]:
     result: dict[str, str] = {}
     if not wrapper_dir.is_dir():
         return result
-    is_windows = sys.platform == "win32"
+    is_windows = False
     prefix = "cyberfox -p "
 
     for entry in sorted(wrapper_dir.iterdir()):
@@ -919,7 +919,7 @@ def list_profiles() -> List[ProfileInfo]:
             model, provider = _read_config_model(entry)
             alias_name = alias_map.get(normalize_profile_name(name))
             if alias_name:
-                is_windows = sys.platform == "win32"
+                is_windows = False
                 alias_path = wrapper_dir / (f"{alias_name}.bat" if is_windows else alias_name)
             else:
                 alias_path = None

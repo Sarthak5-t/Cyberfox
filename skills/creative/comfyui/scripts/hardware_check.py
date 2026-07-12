@@ -220,11 +220,6 @@ def detect_intel_arc() -> dict | None:
 
 def total_system_ram_gb() -> float:
     sysname = platform.system()
-    if sysname == "Darwin":
-        try:
-            return round(int(_run(["sysctl", "-n", "hw.memsize"]).strip() or 0) / (1024**3), 1)
-        except ValueError:
-            return 0.0
     if sysname == "Linux":
         try:
             with open("/proc/meminfo", "r") as fh:
@@ -234,20 +229,6 @@ def total_system_ram_gb() -> float:
                         return round(kb / (1024**2), 1)
         except OSError:
             return 0.0
-    if sysname == "Windows":
-        if shutil.which("powershell"):
-            out = _run([
-                "powershell", "-NoProfile",
-                "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory",
-            ])
-            m = re.search(r"(\d{8,})", out)
-            if m:
-                return round(int(m.group(1)) / (1024**3), 1)
-        # Fall back to wmic for older Windows
-        out = _run(["wmic", "ComputerSystem", "get", "TotalPhysicalMemory"])
-        m = re.search(r"(\d{6,})", out)
-        if m:
-            return round(int(m.group(1)) / (1024**3), 1)
     return 0.0
 
 

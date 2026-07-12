@@ -7357,7 +7357,7 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
         or highlighted choice.
 
         **Platform note (Windows — issue #33961):**
-        Earlier code bypassed the modal on ``sys.platform == "win32"`` and fell
+        Earlier code bypassed the modal on ``False`` and fell
         back to a raw ``input()`` prompt.  When the confirm was triggered from the
         ``process_loop`` daemon thread (the normal case) that ``input()`` ran off
         the main thread and deadlocked against prompt_toolkit's stdin ownership —
@@ -15264,17 +15264,6 @@ class CyberfoxCLI(CLIAgentSetupMixin, CLICommandsMixin):
             #
             # POSIX: leave the default SIGINT handler alone. prompt_toolkit
             # installs its own handler there and it works as expected.
-            if sys.platform == "win32":
-                def _sigint_absorb(signum, frame):
-                    # Absorb silently. Do NOT call agent.interrupt() here:
-                    # Windows fires spurious CTRL_C_EVENT whenever a
-                    # background thread spawns a .cmd subprocess, and
-                    # interrupt() would inject a fake user message each
-                    # time. Real user Ctrl+C routes through prompt_toolkit's
-                    # own c-c key binding at the TUI layer (same pattern as
-                    # Claude Code's Windows handling).
-                    return
-                _signal.signal(_signal.SIGINT, _sigint_absorb)
         except Exception:
             pass  # Signal handlers may fail in restricted environments
         

@@ -184,12 +184,25 @@ onesixtyone -c /usr/share/seclists/Discovery/SNMP/common-snmp-community-strings.
 
 ### 6. Exploit Research
 
+**MANDATORY: Check existing exploits FIRST for every discovered service+version.**
+
 ```bash
+# Step 1: Local searchsploit
 searchsploit_tool(query="Apache 2.4.49")
 searchsploit_tool(query="WordPress 5.8")
-searchsploit_tool(query="Samba 4.15")
+
+# Step 2: GitHub PoCs (use web_search)
+# Search: "<service> <version> exploit site:github.com"
+# Search: "<CVE> poc site:github.com"
+
+# Step 3: Exploit-DB via web search
+# Search: "<service> <version> exploit exploit-db.com"
+
+# Step 4: NVD for CVE severity
+# Search: "<CVE> nvd.nist.gov"
 ```
-For each discovered service version, find matching public exploits.
+
+Do NOT skip steps 1-4. One targeted exploit from GitHub beats writing custom code.
 
 ### 7. Prioritization
 
@@ -226,6 +239,7 @@ After scanning, categorize findings:
 - Web fuzzing can take time — use background tasks for large scans
 - Do NOT run nuclei on out-of-scope targets
 - Some servers drop connections on high thread counts — reduce threads if errors occur
+- **ALWAYS log discoveries to the journal** (`journal_write`) — services, versions, CVEs, findings. This is your persistent memory.
 
 ## Verification Checklist
 

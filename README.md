@@ -2,15 +2,27 @@
 
 <p align="center">
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-48+-red?style=for-the-badge" alt="Tools"></a>
+  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-52+-red?style=for-the-badge" alt="Tools"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Platform-Kali%20Linux-purple?style=for-the-badge" alt="Platform"></a>
 </p>
 
 <p align="center">
-  <b>Elite cybersecurity operations agent</b> with 48+ security tools, 12 specialist roles, and full kill-chain methodology.
+  <b>Elite cybersecurity operations agent</b> with 52+ security tools, 12 specialist roles, stealth browsing, and full kill-chain methodology.
 </p>
+
+---
+
+## What's New (v1.0.0)
+
+- **52+ Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
+- **Stealth Browsing** — Anti-bot-detection browser with Cloudflare bypass, CAPTCHA handling, and fingerprint spoofing
+- **Engagement Journal** — Persistent memory across turns — track discoveries, CVEs, credentials, and decisions
+- **OpenRouter Integration** — Use any model via OpenRouter (default: `tencent/hy3:free`)
+- **12 Specialist Roles** — Pentester, SOC Analyst, Cloud Security, Mobile, Wireless, Social Engineering, Malware, AD, Web, OSINT, Privesc, Lead
+- **11 Expert Skills** — Recon, Scanning, Exploitation, AD, Cloud, Mobile, Wireless, Social Engineering, Physical, Report, Evasion
+- **14 Reference Files** — OWASP, MITRE ATT&CK, Cloud Security, AD Attack Trees, and more
 
 ---
 
@@ -24,22 +36,42 @@
 | **Scanning** | 17 tools | Nuclei, Gobuster, Feroxbuster, FFUF, Nikto, WPScan, Burp Suite, and more |
 | **Exploitation** | 13 tools | SQLMap, Hydra, Metasploit, Responder, Impacket, custom exploit chains |
 | **Active Directory** | 4 tools | BloodHound, Certipy, CrackMapExec, Kerbrute |
-| **Utility** | 3 tools | Findings management, reporting, delegation |
+| **Browsing** | 1 tool | Stealth web browsing with anti-bot-detection |
+| **Utility** | 9 tools | Findings management, engagement journal, reporting, delegation |
+
+### Stealth Browsing
+
+The `browse_autonomously` tool opens a real Chromium browser with:
+- **playwright-stealth** — anti-detection patches
+- **WebDriver flag disabled** — avoids headless detection
+- **Chrome runtime spoofing** — appears as real browser
+- **Cloudflare bypass** — detects and waits through challenges
+- **Turnstile checkbox clicking** — auto-solves Turnstile CAPTCHAs
+- **JS rendering wait** — waits for data tables and dynamic content
+
+### Engagement Journal
+
+Persistent markdown memory at `~/.cyberfox/ares/journal.md`:
+- `journal_init` — Start a new engagement
+- `journal_write` — Log discoveries (CVEs, credentials, decisions)
+- `journal_read` — Recall progress across turns
 
 ### Specialist Roles
 
-- **Pentester** — Reconnaissance and exploitation specialist
-- **SOC Analyst** — Defensive security analyst
-- **Cloud Security Specialist** — AWS, Azure, GCP security testing
-- **Mobile Security Specialist** — Android/iOS application security
-- **Wireless Security Specialist** — WiFi and Bluetooth security
-- **Social Engineering Specialist** — Phishing and pretexting assessments
-- **Malware Analyst** — Reverse engineering and threat intelligence
-- **AD Specialist** — Active Directory attack specialist
-- **Web Attacker** — Web application exploitation
-- **OSINT Analyst** — Passive reconnaissance specialist
-- **Privilege Escalation Specialist** — Local and domain privesc
-- **Lead Orchestrator** — Engagement coordination
+| Role | Focus |
+|------|-------|
+| **Pentester** | Reconnaissance and exploitation |
+| **SOC Analyst** | Defensive security analysis |
+| **Cloud Security** | AWS, Azure, GCP testing |
+| **Mobile Security** | Android/iOS app security |
+| **Wireless Security** | WiFi and Bluetooth |
+| **Social Engineering** | Phishing and pretexting |
+| **Malware Analyst** | Reverse engineering |
+| **AD Specialist** | Active Directory attacks |
+| **Web Attacker** | Web app exploitation |
+| **OSINT Analyst** | Passive reconnaissance |
+| **Privilege Escalation** | Local and domain privesc |
+| **Lead Orchestrator** | Engagement coordination |
 
 ### Kill-Chain Methodology
 
@@ -59,6 +91,12 @@
 
 ## Installation
 
+### Prerequisites
+
+- Kali Linux (required — no Windows/macOS support)
+- Python 3.11+
+- Node.js (for agent-browser)
+
 ### From Source
 
 ```bash
@@ -75,6 +113,17 @@ pip install -e .
 cyberfox              # Start interactive CLI
 cyberfox model        # Choose your LLM provider
 cyberfox setup        # Run setup wizard
+```
+
+### OpenRouter Setup
+
+```bash
+# Add your OpenRouter API key
+echo 'OPENROUTER_API_KEY=your_key_here' >> ~/.cyberfox/.env
+
+# Configure model
+cyberfox model
+# Select: openrouter → tencent/hy3:free
 ```
 
 ---
@@ -112,6 +161,7 @@ cyberfox
 > Enumerate services on discovered ports
 > Run nuclei scan for known vulnerabilities
 > Attempt SQL injection on web application
+> Browse exploit-db for public exploits
 > Export findings to report
 ```
 
@@ -125,17 +175,29 @@ cyberfox/
 ├── cyberfox_cli/       # CLI interface
 ├── plugins/
 │   └── ares/           # Cybersecurity plugin
-│       ├── tools/      # 48+ security tools
+│       ├── tools/      # 52+ security tools
+│       │   ├── recon/          # 8 recon tools
+│       │   ├── scanning/       # 17 scanning tools
+│       │   ├── exploitation/   # 13 exploit tools
+│       │   ├── ad/             # 4 AD tools
+│       │   ├── browsing/       # Stealth browsing
+│       │   └── utility/        # Findings, journal, reports
 │       ├── agents/     # 12 specialist roles
-│       ├── references/ # Security knowledge base
+│       ├── references/ # 14 security reference files
 │       └── safety/     # Scope validation, audit trail
 ├── skills/
-│   └── ares/           # Expert skills
+│   └── ares/           # 11 expert skills
 │       ├── recon/      # Reconnaissance
 │       ├── scanning/   # Vulnerability scanning
 │       ├── exploit/    # Exploitation
 │       ├── ad/         # Active Directory
-│       └── ...         # More specialized skills
+│       ├── cloud_pentest/
+│       ├── mobile_pentest/
+│       ├── wireless_pentest/
+│       ├── social_engineering/
+│       ├── physical_pentest/
+│       ├── report/
+│       └── evasion/
 └── docs/               # Documentation
 ```
 
@@ -150,12 +212,12 @@ cyberfox/
 | `ares/scanning` | Vulnerability scanning |
 | `ares/exploit` | Exploitation techniques |
 | `ares/ad` | Active Directory attacks |
-| `ares/report` | Report generation |
 | `ares/cloud_pentest` | Cloud security testing |
 | `ares/mobile_pentest` | Mobile app security |
 | `ares/wireless_pentest` | Wireless security testing |
 | `ares/social_engineering` | Social engineering assessments |
 | `ares/physical_pentest` | Physical security testing |
+| `ares/report` | Report generation |
 
 ---
 
@@ -198,12 +260,6 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 pytest tests/
 ```
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE)
 
 ---
 

@@ -290,41 +290,6 @@ def _cmd_install(*, realtime: bool, assume_yes: bool) -> int:
                     res = _sp.run(cmd, check=False)
                     if res.returncode != 0:
                         print("  apt install failed — install pulseaudio-utils manually")
-        elif system == "Darwin":
-            have_bh = False
-            try:
-                out = _sp.check_output(["system_profiler", "SPAudioDataType"], text=True)
-                have_bh = "BlackHole" in out
-            except Exception:
-                pass
-            have_ffmpeg = bool(_shutil.which("ffmpeg"))
-            needs = []
-            if not have_bh:
-                needs.append("blackhole-2ch")
-            if not have_ffmpeg:
-                needs.append("ffmpeg")
-            if not needs:
-                print("  BlackHole and ffmpeg already installed.")
-            elif not _shutil.which("brew"):
-                print(
-                    "  missing: " + ", ".join(needs) + "\n"
-                    "  install Homebrew first (https://brew.sh) or install the packages manually."
-                )
-            else:
-                if not _confirm(f"  install via brew: {' '.join(needs)}?"):
-                    print("  skipped (you can run it manually later)")
-                else:
-                    cmd = ["brew", "install", *needs]
-                    print(f"  $ {' '.join(cmd)}")
-                    res = _sp.run(cmd, check=False)
-                    if res.returncode != 0:
-                        print("  brew install failed — install them manually")
-            print(
-                "\n  NOTE: macOS does not auto-route audio. Open\n"
-                "    System Settings → Sound → Input\n"
-                "  and select 'BlackHole 2ch' before starting a realtime meeting.\n"
-                "  cyberfox will not switch your default input for you."
-            )
     else:
         print("\n[3/3] skipped (pass --realtime to install audio tooling too)")
 

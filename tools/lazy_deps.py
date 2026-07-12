@@ -460,12 +460,6 @@ def _unsupported_feature_reason(feature: str) -> Optional[str]:
     known-impossible installs out of both first-use lazy installation and the
     ``cyberfox update`` lazy-refresh pass.
     """
-    if sys.platform == "win32" and feature == "platform.matrix":
-        return (
-            "unsupported on Windows: Matrix E2EE depends on python-olm, "
-            "which has no Windows wheel and requires make + libolm to build "
-            "from sdist. Run Cyberfox under WSL to use Matrix on Windows."
-        )
     return None
 
 

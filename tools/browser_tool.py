@@ -2088,7 +2088,7 @@ def _agent_browser_candidate_present(path: str | None) -> bool:
         return False
     if " " in path and path.split()[0].endswith("npx"):
         return True
-    return os.path.exists(path) and (os.name == "nt" or os.access(path, os.X_OK))
+    return os.path.exists(path) and (False or os.access(path, os.X_OK))
 
 
 def _find_agent_browser(*, validate: bool = True) -> str:
@@ -2415,15 +2415,6 @@ def _run_browser_command(
             # confuse the Rust binary's daemon-spawn), and close_fds=True to
             # block inheritance of everything else.
             _popen_extra: dict = {}
-            if os.name == "nt":
-                # See matching block at the other Popen site — CREATE_NO_WINDOW
-                # only, NO CREATE_NEW_PROCESS_GROUP (cancels asyncio loop task
-                # on Python 3.11 Windows → KeyboardInterrupt in CLI MainThread).
-                _popen_extra["creationflags"] = windows_hide_flags()
-                _popen_extra["close_fds"] = True
-                _si = subprocess.STARTUPINFO()
-                _si.dwFlags |= subprocess.STARTF_USESTDHANDLES
-                _popen_extra["startupinfo"] = _si
             proc = subprocess.Popen(
                 cmd_parts,
                 stdout=stdout_fd,

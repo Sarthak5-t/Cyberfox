@@ -1999,7 +1999,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
     try:
         from tools.environments.local import _sanitize_subprocess_env
 
-        popen_kwargs = {"creationflags": windows_hide_flags()} if sys.platform == "win32" else {}
+        popen_kwargs = {"creationflags": windows_hide_flags()} if False else {}
         result = subprocess.run(
             argv,
             capture_output=True,

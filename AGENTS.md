@@ -192,7 +192,19 @@ All tools return JSON. Common fields: `success`, `data`, `error`.
 | `findings_query` | `severity`, `category`, `target`, `status`, `limit` |
 | `findings_update` | `finding_id`, `status` |
 | `findings_stats` | (none) |
+| `journal_init` | `engagement_name`, `targets` |
+| `journal_write` | `category`, `content`, `target` |
+| `journal_read` | `last_n`, `search` |
 | `ares_delegate` | `role`, `action`, `goal`, `context` |
+
+### Browsing (`ares_browsing`)
+| Tool | Key Params |
+|---|---|
+| `browse_autonomously` | `task` (what to do), `max_steps` (default 10), `model` (default tencent/hy3:free) |
+
+> **IMPORTANT: Use `browse_autonomously` for ALL web browsing.** Do NOT use the core `browser_navigate` tool.
+> `browse_autonomously` has anti-bot-detection (Cloudflare bypass, stealth fingerprint, CAPTCHA handling).
+> The core `browser_navigate` uses plain headless Chromium that gets blocked by bot protection.
 
 ## Findings Database
 
@@ -223,6 +235,56 @@ Max 3 concurrent children. Use `/bg <prompt>` for long-running tasks.
 - `agent.max_turns: 9999` — unlimited turns per session
 
 Set in `~/.cyberfox/profiles/ares/config.yaml`.
+
+## Engagement Journal
+
+Every engagement starts with `journal_init`. Write to the journal (`journal_write`) **every time** you discover something significant — services, CVEs, credentials, decisions, actions. Read the journal (`journal_read`) at the start of each turn to recall your progress. The journal is your persistent memory.
+
+```
+1. journal_init(engagement_name, targets)  → start of engagement
+2. journal_write(category, content)         → after every discovery
+3. journal_read()                           → start of each turn
+```
+
+## Thinking Rules
+
+### Task Isolation
+- Each user message is an **INDEPENDENT task** unless explicitly linked
+- Do NOT assume connections between separate challenges, targets, or requests
+- When presented with a new target/challenge, reset your approach completely
+- Previous findings are reference only — do NOT actively apply them to new tasks
+- If the user says "here's challenge 2", it has NOTHING to do with challenge 1
+
+### Speed Over Perfection
+- Do NOT run every possible scan — pick the RIGHT scan based on what you know
+- A quick `nmap -sV -sC` tells you more than 10 separate scans
+- If a service version is known, skip fingerprinting → go straight to exploit research
+- One targeted, well-thought-out action beats five exploratory ones
+- Stop scanning when you have enough to exploit — don't scan for the sake of scanning
+
+### Exploit Research Protocol (MANDATORY)
+When you identify a service + version, **ALWAYS** check existing exploits FIRST:
+1. `searchsploit <service> <version>` — local Exploit-DB
+2. Search GitHub for PoCs: use web search for `<service> <version> exploit site:github.com`
+3. Check exploit-db.com via web search
+4. Check NVD for CVE details and severity
+5. **ONLY THEN** consider writing custom exploits
+
+Do NOT skip steps 1-4. Real pentesters check existing exploits before writing new ones.
+
+### Engage Your Brain
+- Think like an experienced penetration tester, not a checklist bot
+- When you find something, reason about what it **MEANS** for the target
+- If `Apache/2.4.57` is running — what CVEs exist? What exploits are public?
+- If you find SMB signing disabled — what does that enable? (relay attacks)
+- If you find a default credential — what can you access? What else uses that cred?
+- Reason about chains: vulnerability A + misconfiguration B = full compromise
+- When something doesn't work, STOP and think before trying a different approach
+
+### Documentation
+- Log significant discoveries to the journal immediately
+- Save findings to the database as you go — never batch at the end
+- Include evidence (command output, screenshots) in every finding
 
 ## Safety Rules
 

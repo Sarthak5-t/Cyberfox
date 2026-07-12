@@ -90,17 +90,7 @@ dependencies = [
   # cryptography is pulled in transitively by PyJWT[crypto]; pin it explicitly
   # so the WeCom/Weixin crypto paths can't drift below the CVE-fixed floor.
   "cryptography==46.0.7",  # CVE-2026-39892, CVE-2026-34073
-  # Windows has no IANA tzdata shipped with the OS, so Python's ``zoneinfo``
-  # (PEP 615) raises ``ZoneInfoNotFoundError`` for every non-UTC timezone
-  # out of the box.  ``tzdata`` ships the Olson database as a data package
-  # Python resolves automatically.  No-op on Linux/macOS (which have
-  # /usr/share/zoneinfo).  Credits: PR #13182 (@sprmn24).
-  "tzdata==2025.3; sys_platform == 'win32'",
-  # Cross-platform process / PID management.  `psutil` is the canonical
-  # answer for "is this PID alive" and process-tree walking across Linux,
-  # macOS and Windows.  It replaces POSIX-only idioms like `os.kill(pid, 0)`
-  # (which is a silent killer on Windows — see CONTRIBUTING.md) and
-  # `os.killpg` (which doesn't exist on Windows).
+  # Cross-platform process / PID management.
   "psutil==7.2.2",
   # Browser CDP supervisor + browser_dialog import this directly. Keep core
   # so browser tool discovery doesn't fail on lean installs.
@@ -129,15 +119,7 @@ dependencies = [
   # Windows whenever any other process holds an append-mode handle on
   # ``agent.log`` (always the case in Cyberfox — TUI, gateway, ``hy_memory``
   # server, MCP servers, and on-demand CLI commands all log from separate
-  # processes), pinning ``agent.log`` at the 5 MiB threshold and spamming
-  # stderr on every emit (see #44873). ``concurrent-log-handler`` wraps the
-  # rename in a cross-process file lock (via ``portalocker``: pywin32 on
-  # Windows) so only one process rotates at a time. ``cyberfox_logging.py``
-  # aliases it ONLY on Windows — POSIX renames an open file fine, so stdlib
-  # already works there and managed-mode perms depend on its exact lifecycle.
-  # Hence the ``sys_platform == 'win32'`` marker: the dep (and its portalocker
-  # / pywin32 tree) ships only where it's actually used.
-  "concurrent-log-handler==0.9.29; sys_platform == 'win32'",
+  # processes).
 ]
 
 [project.optional-dependencies]
@@ -209,7 +191,7 @@ nemo-relay = ["nemo-relay==0.3"]
 homeassistant = ["aiohttp==3.14.1"]
 sms = ["aiohttp==3.14.1"]
 teams = ["microsoft-teams-apps==2.0.13.4", "aiohttp==3.14.1"]  # aiohttp 3.14.1: CVE-2026-34993(RCE)/47265 + 34513/34518/34519/34520/34525
-# Computer use — macOS background desktop control via cua-driver (MCP stdio).
+# Computer use — desktop control via cua-driver (MCP stdio).
 # The cua-driver binary itself is installed via `cyberfox tools` post-setup
 # (curl install script); this extra just pins the MCP client used to talk
 # to it, which is already provided by the `mcp` extra.
@@ -287,10 +269,8 @@ all = [
   #   dingtalk, feishu, bedrock, tts-premium (elevenlabs)
   #
   # Why: the matrix extra in particular pulls `mautrix[encryption]`
-  # which depends on `python-olm`. python-olm has Linux-only wheels and
-  # no native build path on Windows or modern macOS. With matrix in
-  # [all], `uv sync --locked` on Windows tried to build it from sdist
-  # and failed on `make`. Lazy-install routes that build to first use,
+  # which depends on `python-olm`. python-olm has Linux-only wheels.
+  # Lazy-install routes that build to first use,
   # where the user is expected to have a toolchain available.
   "cyberfox-agent[cron]",
   "cyberfox-agent[cli]",

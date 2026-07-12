@@ -65,14 +65,6 @@ def masked_secret_prompt(prompt: str, *, mask: str = "*") -> str:
     if not _stream_is_tty(stdin) or not _stream_is_tty(stdout):
         return getpass.getpass(prompt)
 
-    if os.name == "nt":
-        try:
-            return _masked_secret_prompt_windows(prompt, mask=mask)
-        except (KeyboardInterrupt, EOFError):
-            raise
-        except Exception:
-            return getpass.getpass(prompt)
-
     try:
         return _masked_secret_prompt_posix(prompt, mask=mask)
     except (KeyboardInterrupt, EOFError):

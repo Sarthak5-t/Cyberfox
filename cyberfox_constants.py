@@ -45,10 +45,6 @@ def get_cyberfox_home_override() -> str | None:
 
 def _get_platform_default_cyberfox_home() -> Path:
     """Return the platform-native default Cyberfox home path."""
-    if sys.platform == "win32":
-        local_appdata = os.environ.get("LOCALAPPDATA", "").strip()
-        base = Path(local_appdata) if local_appdata else Path.home() / "AppData" / "Local"
-        return base / "cyberfox"
     return Path.home() / ".cyberfox"
 
 
@@ -267,8 +263,6 @@ def iter_cyberfox_node_dirs(home: Path | None = None) -> list[Path]:
     # NOTE: keep this ordering in sync with cyberfoxManagedNodePathEntries() in
     # apps/desktop/electron/main.cjs — the Electron main process is Node and
     # cannot import this module, so the platform-ordering rule is mirrored there.
-    if sys.platform == "win32":
-        return dirs + [bin_dir]
     return [bin_dir] + dirs
 
 
@@ -308,10 +302,7 @@ def node_tool_runnable(path: str | None) -> bool:
     if not path:
         return False
     candidate = Path(path)
-    if sys.platform == "win32":
-        if not candidate.is_file():
-            return False
-    elif not os.path.exists(path) or not os.access(path, os.X_OK):
+    if not os.path.exists(path) or not os.access(path, os.X_OK):
         return False
 
     import subprocess
@@ -340,7 +331,7 @@ def cyberfox_managed_node_tree_present(home: Path | None = None) -> bool:
         for name in names:
             candidate = directory / name
             if candidate.is_file() and (
-                sys.platform == "win32" or os.access(candidate, os.X_OK)
+                False or os.access(candidate, os.X_OK)
             ):
                 return True
     return False
@@ -422,9 +413,6 @@ def heal_cyberfox_managed_node() -> bool:
         return False
     _managed_node_heal_attempted = True
 
-    if sys.platform == "win32":
-        return _heal_managed_node_windows()
-
     if not _NODE_BOOTSTRAP_SCRIPT.is_file():
         return False
 
@@ -455,7 +443,7 @@ def find_cyberfox_node_executable(command: str) -> str | None:
         for name in names:
             candidate = directory / name
             if candidate.is_file() and (
-                sys.platform == "win32" or os.access(candidate, os.X_OK)
+                False or os.access(candidate, os.X_OK)
             ):
                 resolved = str(candidate)
                 if node_tool_runnable(resolved):
@@ -466,7 +454,7 @@ def find_cyberfox_node_executable(command: str) -> str | None:
             for name in names:
                 candidate = directory / name
                 if candidate.is_file() and (
-                    sys.platform == "win32" or os.access(candidate, os.X_OK)
+                    False or os.access(candidate, os.X_OK)
                 ):
                     resolved = str(candidate)
                     if node_tool_runnable(resolved):

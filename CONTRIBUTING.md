@@ -21,9 +21,7 @@ cd Cyberfox
 
 # Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# or
-.venv\Scripts\activate     # Windows
+source .venv/bin/activate
 
 # Install in development mode
 pip install -e ".[dev]"

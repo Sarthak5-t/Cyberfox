@@ -63,8 +63,6 @@ def _get_rss_mb() -> Optional[int]:
         import resource
 
         maxrss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        if sys.platform == "darwin":
-            return int(maxrss / _BYTES_TO_MB)
         # Linux / other unices: KB
         return int(maxrss / 1024)
     except Exception:

@@ -202,12 +202,9 @@ def _install_uv(target: Path) -> None:
         "UV_INSTALL_DIR": str(target.parent),
     }
 
-    if system == "Windows":
-        _install_uv_windows(env)
-    else:
-        _install_uv_posix(env)
-
-
+    _install_uv_posix(env)
+    
+    
 def _install_uv_posix(env: dict[str, str]) -> None:
     """Download + sh the POSIX installer (two-stage to avoid curl|sh pitfalls)."""
     with tempfile.NamedTemporaryFile(suffix=".sh", delete=False) as f:

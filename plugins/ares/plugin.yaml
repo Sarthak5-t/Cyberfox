@@ -1,6 +1,6 @@
 name: ares
-version: 3.0.0
-description: "Elite cybersecurity agent — VAPT, SOC, red teaming with 48+ security tools."
+version: 3.1.0
+description: "Elite cybersecurity agent — VAPT, SOC, red teaming with 48+ security tools and engagement journal."
 author: Cyberfox
 kind: standalone
 provides_tools:
@@ -51,6 +51,10 @@ provides_tools:
   - findings_query
   - findings_update
   - findings_stats
+  - journal_init
+  - journal_write
+  - journal_read
+  - browse_autonomously
   - ares_delegate
 hooks:
   - pre_tool_call

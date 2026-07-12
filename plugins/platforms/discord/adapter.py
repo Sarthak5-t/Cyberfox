@@ -976,11 +976,6 @@ class DiscordAdapter(BasePlatformAdapter):
                     "/opt/homebrew/lib/libopus.dylib",  # Apple Silicon
                     "/usr/local/lib/libopus.dylib",     # Intel Mac
                 )
-                if sys.platform == "darwin":
-                    for _hp in _homebrew_paths:
-                        if os.path.isfile(_hp):
-                            opus_candidates.append(_hp)
-                            break
             for opus_path in opus_candidates:
                 try:
                     discord.opus.load_opus(opus_path)

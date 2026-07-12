@@ -5078,22 +5078,13 @@ def _write_desktop_build_stamp(project_root: Path, *, source_mode: bool) -> None
 def _desktop_packaged_executable(desktop_dir: Path) -> Optional[Path]:
     """Return the current platform's unpacked Electron app executable."""
     release_dir = desktop_dir / "release"
-    if sys.platform == "darwin":
-        candidates = list(release_dir.glob("mac*/Cyberfox.app/Contents/MacOS/Cyberfox"))
-    elif sys.platform == "win32":
-        candidates = [
-            release_dir / "win-unpacked" / "Cyberfox.exe",
-            release_dir / "win-ia32-unpacked" / "Cyberfox.exe",
-            release_dir / "win-arm64-unpacked" / "Cyberfox.exe",
-        ]
-    else:
-        candidates = [
-            release_dir / "linux-unpacked" / "cyberfox",
-            release_dir / "linux-unpacked" / "Cyberfox",
-            release_dir / "linux-arm64-unpacked" / "cyberfox",
-            release_dir / "linux-arm64-unpacked" / "Cyberfox",
-        ]
-
+    candidates = [
+        release_dir / "linux-unpacked" / "cyberfox",
+        release_dir / "linux-unpacked" / "Cyberfox",
+        release_dir / "linux-arm64-unpacked" / "cyberfox",
+        release_dir / "linux-arm64-unpacked" / "Cyberfox",
+    ]
+    
     existing = [p for p in candidates if p.exists()]
     if not existing:
         return None
@@ -5114,19 +5105,11 @@ def _electron_download_cache_dirs() -> list[Path]:
     override = os.environ.get("electron_config_cache") or os.environ.get("ELECTRON_CACHE")
     if override:
         candidates.append(Path(override))
-    if sys.platform == "darwin":
-        candidates.append(home / "Library" / "Caches" / "electron")
-    elif sys.platform == "win32":
-        local = os.environ.get("LOCALAPPDATA")
-        if local:
-            candidates.append(Path(local) / "electron" / "Cache")
-        candidates.append(home / "AppData" / "Local" / "electron" / "Cache")
-    else:
-        xdg = os.environ.get("XDG_CACHE_HOME")
-        if xdg:
-            candidates.append(Path(xdg) / "electron")
-        candidates.append(home / ".cache" / "electron")
-
+    xdg = os.environ.get("XDG_CACHE_HOME")
+    if xdg:
+        candidates.append(Path(xdg) / "electron")
+    candidates.append(home / ".cache" / "electron")
+    
     seen: set[Path] = set()
     out: list[Path] = []
     for c in candidates:
@@ -5228,10 +5211,6 @@ def _electron_dist_binary(project_root: Path) -> Path:
     platform Electron is named for the host the build runs on).
     """
     dist = _electron_dir(project_root) / "dist"
-    if sys.platform == "darwin":
-        return dist / "Electron.app" / "Contents" / "MacOS" / "Electron"
-    if sys.platform == "win32":
-        return dist / "electron.exe"
     return dist / "electron"
 
 
@@ -5721,9 +5700,6 @@ def cmd_gui(args: argparse.Namespace):
             if build_result.returncode != 0:
                 print("✗ Desktop GUI build failed")
                 print(f"  Run manually:  cd apps/desktop && npm run {build_script}")
-                if sys.platform == "win32":
-                    print("  If this says \"Access is denied\" on Cyberfox.exe, close any")
-                    print("  running Cyberfox desktop window and retry.")
                 print("  If the log shows Electron download retries, rebuild via a mirror:")
                 print("    ELECTRON_MIRROR=<mirror-base-url> cyberfox desktop --force-build")
                 sys.exit(build_result.returncode or 1)
@@ -6038,64 +6014,48 @@ def _kill_stale_dashboard_processes(
     killed: list[int] = []
     failed: list[tuple[int, str]] = []
 
-    if sys.platform == "win32":
-        for pid in pids:
-            try:
-                result = subprocess.run(
-                    ["taskkill", "/PID", str(pid), "/F"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if result.returncode == 0:
-                    killed.append(pid)
-                else:
-                    failed.append((pid, (result.stderr or result.stdout or "").strip()))
-            except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
-                failed.append((pid, str(e)))
-    else:
-        import signal as _signal
-        import time as _time
-
-        # SIGTERM first — give each process a chance to shut down cleanly
-        # (uvicorn closes its socket, flushes logs, etc.).
-        for pid in pids:
-            try:
-                os.kill(pid, _signal.SIGTERM)
-            except ProcessLookupError:
-                # Already gone — count as killed.
-                killed.append(pid)
-            except (PermissionError, OSError) as e:
-                failed.append((pid, str(e)))
-
-        # Poll for exit up to ~3s total.
-        deadline = _time.monotonic() + 3.0
-        pending = [
-            p for p in pids if p not in killed and p not in {f[0] for f in failed}
-        ]
-        while pending and _time.monotonic() < deadline:
-            _time.sleep(0.1)
-            still_pending = []
-            # On Windows, os.kill(pid, 0) is NOT a no-op. Route through
-            # the cross-platform existence check.
-            from gateway.status import _pid_exists
-            for pid in pending:
-                if _pid_exists(pid):
-                    still_pending.append(pid)
-                else:
-                    killed.append(pid)
-            pending = still_pending
-
-        # SIGKILL any survivors.
+    import signal as _signal
+    import time as _time
+    
+    # SIGTERM first — give each process a chance to shut down cleanly
+    # (uvicorn closes its socket, flushes logs, etc.).
+    for pid in pids:
+        try:
+            os.kill(pid, _signal.SIGTERM)
+        except ProcessLookupError:
+            # Already gone — count as killed.
+            killed.append(pid)
+        except (PermissionError, OSError) as e:
+            failed.append((pid, str(e)))
+    
+    # Poll for exit up to ~3s total.
+    deadline = _time.monotonic() + 3.0
+    pending = [
+        p for p in pids if p not in killed and p not in {f[0] for f in failed}
+    ]
+    while pending and _time.monotonic() < deadline:
+        _time.sleep(0.1)
+        still_pending = []
+        # On Windows, os.kill(pid, 0) is NOT a no-op. Route through
+        # the cross-platform existence check.
+        from gateway.status import _pid_exists
         for pid in pending:
-            try:
-                os.kill(pid, _signal.SIGKILL)
+            if _pid_exists(pid):
+                still_pending.append(pid)
+            else:
                 killed.append(pid)
-            except ProcessLookupError:
-                killed.append(pid)
-            except (PermissionError, OSError) as e:
-                failed.append((pid, str(e)))
-
+        pending = still_pending
+    
+    # SIGKILL any survivors.
+    for pid in pending:
+        try:
+            os.kill(pid, _signal.SIGKILL)
+            killed.append(pid)
+        except ProcessLookupError:
+            killed.append(pid)
+        except (PermissionError, OSError) as e:
+            failed.append((pid, str(e)))
+    
     for pid in killed:
         print(f"    ✓ stopped PID {pid}")
     for pid, err_msg in failed:
@@ -6971,50 +6931,6 @@ def _recover_from_interrupted_install() -> None:
     # "拒绝访问 / WinError 32" because the running .exe cannot be replaced.
     # Rather than entering the permanent retry loop described in issue
     # #45542, clear the marker and give the user an offline recovery command.
-    if _is_windows():
-        scripts_dir = _venv_scripts_dir()
-        if scripts_dir is not None:
-            shims = _cyberfox_exe_shims(scripts_dir)
-            if shims:
-                _shim_set: set[str] = set()
-                for _s in shims:
-                    try:
-                        _shim_set.add(str(_s.resolve()).lower())
-                    except OSError:
-                        _shim_set.add(str(_s).lower())
-                try:
-                    import psutil
-                    _me = psutil.Process()
-                    for _anc in [_me] + list(_me.parents()):
-                        try:
-                            _anc_exe = _anc.exe()
-                            _anc_norm = str(Path(_anc_exe).resolve()).lower()
-                        except Exception:
-                            continue
-                        if _anc_norm in _shim_set:
-                            print(
-                                "✗ Cyberfox is running from the binary that "
-                                "needs to be replaced — the auto-recovery "
-                                "cannot overwrite a running executable."
-                            )
-                            print(
-                                "  Restart Cyberfox from a different terminal, "
-                                "then run the manual recovery command below:"
-                            )
-                            print(f'    cd /d "{PROJECT_ROOT}"')
-                            print(
-                                f'    "{sys.executable}" -m pip install '
-                                '-e ".[all]"'
-                            )
-                            _clear_update_incomplete_marker()
-                            try:
-                                lock_path.unlink()
-                            except OSError:
-                                pass
-                            return
-                except Exception:
-                    pass  # psutil is best-effort; fall through to install
-
     saved_stdout_fd = None
     saved_sys_stdout = sys.stdout
     try:
@@ -7129,7 +7045,7 @@ def _run_install_with_heartbeat(
 
 
 def _is_windows() -> bool:
-    return sys.platform == "win32"
+    return False
 
 
 def _venv_scripts_dir() -> Path | None:
@@ -8359,9 +8275,6 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
         sys.exit(1)
 
     git_cmd = ["git"]
-    if sys.platform == "win32":
-        git_cmd = ["git", "-c", "windows.appendAtomically=false"]
-
     # Fetch only the branch we compare against; prefer upstream as the canonical
     # reference. A bare `git fetch <remote>` pulls every ref, and this repo has
     # thousands of auto-generated branches, so scope the fetch to <branch>.
@@ -9361,42 +9274,21 @@ def _cmd_update_impl(args, gateway_mode: bool):
     git_dir = PROJECT_ROOT / ".git"
 
     if not git_dir.exists():
-        if sys.platform == "win32":
-            use_zip_update = True
-        else:
-            from cyberfox_cli.config import detect_install_method
-            method = detect_install_method(PROJECT_ROOT)
-            if method == "pip":
-                _cmd_update_pip(args)
-                return
-            print("✗ Not a git repository. Please reinstall:")
-            print(
-                "  curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash"
-            )
-            sys.exit(1)
-
+        from cyberfox_cli.config import detect_install_method
+        method = detect_install_method(PROJECT_ROOT)
+        if method == "pip":
+            _cmd_update_pip(args)
+            return
+        print("✗ Not a git repository. Please reinstall:")
+        print(
+            "  curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash"
+        )
+        sys.exit(1)
+        
     # On Windows, git can fail with "unable to write loose object file: Invalid argument"
     # due to filesystem atomicity issues. Set the recommended workaround.
-    if sys.platform == "win32" and git_dir.exists():
-        subprocess.run(
-            [
-                "git",
-                "-c",
-                "windows.appendAtomically=false",
-                "config",
-                "windows.appendAtomically",
-                "false",
-            ],
-            cwd=PROJECT_ROOT,
-            check=False,
-            capture_output=True,
-        )
-
     # Build git command once — reused for fork detection and the update itself.
     git_cmd = ["git"]
-    if sys.platform == "win32":
-        git_cmd = ["git", "-c", "windows.appendAtomically=false"]
-
     # Discard npm lockfile churn before any stash/branch logic. npm rewrites
     # tracked package-lock.json files non-deterministically at install/build
     # time (platform-specific optional deps, ideallyInert annotations, etc.),
@@ -10689,32 +10581,6 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         )
 
             # --- Launchd services (macOS) ---
-            if is_macos():
-                try:
-                    from cyberfox_cli.gateway import (
-                        launchd_restart,
-                        get_launchd_label,
-                        get_launchd_plist_path,
-                    )
-
-                    plist_path = get_launchd_plist_path()
-                    if plist_path.exists():
-                        check = subprocess.run(
-                            ["launchctl", "list", get_launchd_label()],
-                            capture_output=True,
-                            text=True,
-                            timeout=5,
-                        )
-                        if check.returncode == 0:
-                            try:
-                                launchd_restart()
-                                restarted_services.append(get_launchd_label())
-                            except subprocess.CalledProcessError as e:
-                                stderr = (getattr(e, "stderr", "") or "").strip()
-                                print(f"  ⚠ Gateway restart failed: {stderr}")
-                except (FileNotFoundError, subprocess.TimeoutExpired, ImportError):
-                    pass
-
             # --- Manual (non-service) gateways ---
             # Kill any remaining gateway processes not managed by a service.
             # Exclude PIDs that belong to just-restarted services so we don't
@@ -10888,16 +10754,10 @@ def _cmd_update_impl(args, gateway_mode: bool):
         print("  cyberfox model              # Select provider and model")
 
     except subprocess.CalledProcessError as e:
-        if sys.platform == "win32":
-            print(f"⚠ Git update failed: {e}")
-            print("→ Falling back to ZIP download...")
-            print()
-            _update_via_zip(args)
-        else:
-            print(f"✗ Update failed: {e}")
-            sys.exit(1)
-
-
+        print(f"✗ Update failed: {e}")
+        sys.exit(1)
+        
+        
 def _coalesce_session_name_args(argv: list) -> list:
     """Join unquoted multi-word session names after -c/--continue and -r/--resume.
 
@@ -11335,7 +11195,7 @@ def cmd_profile(args):
                 print(f"Installed from: {dist_source}")
             print(f"  (run `cyberfox profile info {name}` for full manifest)")
         if alias_name:
-            is_windows = sys.platform == "win32"
+            is_windows = False
             wrapper = _get_wrapper_dir() / (f"{alias_name}.bat" if is_windows else alias_name)
             print(f"Alias:   {alias_name} → cyberfox -p {name}  ({wrapper})")
         print()
@@ -11924,12 +11784,8 @@ def cmd_dashboard(args):
         # this can crash with STATUS_ACCESS_VIOLATION (0xC0000005) when
         # re-executing the dashboard for a non-default profile.  Use
         # subprocess.Popen + sys.exit() on Windows to avoid the crash.
-        if sys.platform == "win32":
-            proc = subprocess.Popen(reexec_argv, env=env)
-            sys.exit(proc.wait())
-        else:
-            os.execvpe(sys.executable, reexec_argv, env)
-
+        os.execvpe(sys.executable, reexec_argv, env)
+        
     # Attach gui.log early so dashboard startup/build failures are captured in
     # the same logs directory as every other Cyberfox surface.
     try:

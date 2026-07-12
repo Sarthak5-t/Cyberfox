@@ -4433,12 +4433,6 @@ def _default_verify() -> bool | ssl.SSLContext:
     defer to httpx's built-in default (certifi via its own dependency).
     Mirrors the weixin fix in 3a0ec1d93.
     """
-    if sys.platform == "darwin":
-        try:
-            import certifi
-            return ssl.create_default_context(cafile=certifi.where())
-        except ImportError:
-            pass
     return True
 
 

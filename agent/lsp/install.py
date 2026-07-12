@@ -117,7 +117,7 @@ _WINDOWS_WRAPPER_SUFFIXES = (".cmd", ".exe", ".bat")
 
 
 def _is_windows() -> bool:
-    return os.name == "nt"
+    return False
 
 
 def cyberfox_lsp_bin_dir() -> Path:
@@ -133,14 +133,6 @@ def cyberfox_lsp_bin_dir() -> Path:
 def _native_binary_candidates(base: Path) -> list[Path]:
     """Return platform-native executable candidates for a staged binary."""
     candidates = [base]
-    if _is_windows():
-        existing = {str(base).lower()}
-        for suffix in _WINDOWS_WRAPPER_SUFFIXES:
-            candidate = Path(str(base) + suffix)
-            key = str(candidate).lower()
-            if key not in existing:
-                candidates.append(candidate)
-                existing.add(key)
     return candidates
 
 
@@ -152,11 +144,6 @@ def _existing_binary(name: str) -> Optional[str]:
     on_path = shutil.which(name)
     if on_path:
         return on_path
-    if _is_windows():
-        for suffix in _WINDOWS_WRAPPER_SUFFIXES:
-            on_path = shutil.which(f"{name}{suffix}")
-            if on_path:
-                return on_path
     return None
 
 
@@ -327,8 +314,6 @@ def _install_go(pkg: str, bin_name: str) -> Optional[str]:
         logger.warning("[install] go install errored for %s: %s", pkg, e)
         return None
     bin_path = staging / bin_name
-    if _is_windows():
-        bin_path = bin_path.with_suffix(".exe")
     if bin_path.exists():
         return str(bin_path)
     logger.warning("[install] go install for %s succeeded but bin %s not found", pkg, bin_name)
@@ -365,8 +350,6 @@ def _install_pip(pkg: str, bin_name: str) -> Optional[str]:
     # Look for the console script.  POSIX wheels generally write to bin/,
     # while native Windows installs use Scripts/.
     script_dirs = [pip_target / "bin"]
-    if _is_windows():
-        script_dirs.append(pip_target / "Scripts")
     for script_dir in script_dirs:
         for bin_path in _native_binary_candidates(script_dir / bin_name):
             if bin_path.exists():

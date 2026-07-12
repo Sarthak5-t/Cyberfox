@@ -253,9 +253,7 @@ def _detect_target() -> str | None:
     machine = platform.machine().lower()
 
     # Android (Termux) is ABI-compatible with Linux — reuse Linux binaries.
-    if system == "Darwin":
-        plat = "apple-darwin"
-    elif system in {"Linux", "Android"}:
+    if system in {"Linux", "Android"}:
         plat = "unknown-linux-gnu"
     else:
         return None

@@ -138,35 +138,6 @@ def _get_service_pids() -> set:
                 pass
 
     # --- launchd (macOS) ---
-    if is_macos():
-        try:
-            label = get_launchd_label()
-            result = subprocess.run(
-                ["launchctl", "list", label],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
-                # Try plist format first (macOS 26+): "PID" = <N>;
-                pid = _parse_launchd_pid_from_list_output(result.stdout)
-                if pid is not None and pid > 0:
-                    pids.add(pid)
-                else:
-                    # Fall back to legacy tab-separated format:
-                    # "PID\tStatus\tLabel"
-                    for line in result.stdout.strip().splitlines():
-                        parts = line.split()
-                        if len(parts) >= 3 and parts[2] == label:
-                            try:
-                                pid = int(parts[0])
-                                if pid > 0:
-                                    pids.add(pid)
-                            except ValueError:
-                                pass
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
-
     return pids
 
 
@@ -192,8 +163,6 @@ def _get_parent_pid(pid: int) -> int | None:
     # Fallback: shell out to ps (POSIX only).  Git Bash installs ``ps.exe`` on
     # Windows; running it from the windowless desktop/gateway backend flashes a
     # console, and psutil above is the authoritative Windows path anyway.
-    if is_windows():
-        return None
     if not shutil.which("ps"):
         return None
     try:
@@ -391,148 +360,69 @@ def _scan_gateway_pids(
         return include_restart_managers and looks_like_gateway_runtime_command_line(command)
 
     try:
-        if is_windows():
-            # Prefer wmic when present (fast, stable output format).  On
-            # modern Windows 11 / Win 10 late builds, wmic has been
-            # removed as part of the WMIC deprecation — fall back to
-            # PowerShell's Get-CimInstance.  Any OSError here (FileNotFoundError
-            # on missing wmic) trips the fallback.
-            # Hide the console window: this scan runs inside the windowless
-            # pythonw.exe gateway/desktop backend, so a bare wmic/powershell
-            # spawn would flash a conhost window on every watchdog probe.
-            from cyberfox_cli._subprocess_compat import windows_hide_flags
-
-            _no_window = {"creationflags": windows_hide_flags()}
-            wmic_path = shutil.which("wmic")
-            used_fallback = False
-            result = None
-            if wmic_path is not None:
-                try:
-                    result = subprocess.run(
-                        [
-                            wmic_path,
-                            "process",
-                            "get",
-                            "ProcessId,CommandLine",
-                            "/FORMAT:LIST",
-                        ],
-                        capture_output=True,
-                        text=True,
-                        encoding="utf-8",
-                        errors="ignore",
-                        timeout=10,
-                        **_no_window,
-                    )
-                except (OSError, subprocess.TimeoutExpired):
-                    result = None
-            if result is None or result.returncode != 0 or not (result.stdout or ""):
-                # Fallback: PowerShell Get-CimInstance, emit LIST-style output
-                # so the downstream parser below doesn't need to branch.
-                powershell = shutil.which("powershell") or shutil.which("pwsh")
-                if powershell is None:
-                    return []
-                ps_cmd = (
-                    "Get-CimInstance Win32_Process | "
-                    "ForEach-Object { "
-                    "  'CommandLine=' + ($_.CommandLine -replace \"`r`n\",' ' -replace \"`n\",' '); "
-                    "  'ProcessId=' + $_.ProcessId; "
-                    "  '' "
-                    "}"
-                )
-                try:
-                    result = subprocess.run(
-                        [powershell, "-NoProfile", "-Command", ps_cmd],
-                        capture_output=True,
-                        text=True,
-                        encoding="utf-8",
-                        errors="ignore",
-                        timeout=15,
-                        **_no_window,
-                    )
-                except (OSError, subprocess.TimeoutExpired):
-                    return []
-                used_fallback = True
-            if result.returncode != 0 or result.stdout is None:
+        # Try /proc first (works in Docker without procps installed),
+        # fall back to ps -A eww.
+        _found_via_proc = False
+        if os.path.isdir("/proc"):
+            try:
+                my_pid = os.getpid()
+                for entry in os.listdir("/proc"):
+                    if not entry.isdigit():
+                        continue
+                    pid = int(entry)
+                    if pid == my_pid or pid in exclude_pids:
+                        continue
+                    try:
+                        with open(f"/proc/{pid}/cmdline", "rb") as _f:
+                            cmdline = _f.read().decode("utf-8", errors="replace")
+                        cmdline = cmdline.replace("\x00", " ")
+                        if _matches_gateway_runtime(cmdline) and (
+                            all_profiles or _matches_current_profile(cmdline)
+                        ):
+                            _append_unique_pid(pids, pid, exclude_pids)
+                    except (OSError, PermissionError):
+                        continue
+                _found_via_proc = True
+            except Exception:
+                pass
+        
+        if not _found_via_proc:
+            result = subprocess.run(
+                ["ps", "-A", "eww", "-o", "pid=,command="],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode != 0:
                 return []
-            current_cmd = ""
             for line in result.stdout.split("\n"):
-                line = line.strip()
-                if line.startswith("CommandLine="):
-                    current_cmd = line[len("CommandLine=") :]
-                elif line.startswith("ProcessId="):
-                    pid_str = line[len("ProcessId=") :]
-                    if _matches_gateway_runtime(current_cmd) and (
-                        all_profiles or _matches_current_profile(current_cmd)
-                    ):
-                        try:
-                            _append_unique_pid(pids, int(pid_str), exclude_pids)
-                        except ValueError:
-                            pass
-                    current_cmd = ""
-        else:
-            # Try /proc first (works in Docker without procps installed),
-            # fall back to ps -A eww.
-            _found_via_proc = False
-            if os.path.isdir("/proc"):
-                try:
-                    my_pid = os.getpid()
-                    for entry in os.listdir("/proc"):
-                        if not entry.isdigit():
-                            continue
-                        pid = int(entry)
-                        if pid == my_pid or pid in exclude_pids:
-                            continue
-                        try:
-                            with open(f"/proc/{pid}/cmdline", "rb") as _f:
-                                cmdline = _f.read().decode("utf-8", errors="replace")
-                            cmdline = cmdline.replace("\x00", " ")
-                            if _matches_gateway_runtime(cmdline) and (
-                                all_profiles or _matches_current_profile(cmdline)
-                            ):
-                                _append_unique_pid(pids, pid, exclude_pids)
-                        except (OSError, PermissionError):
-                            continue
-                    _found_via_proc = True
-                except Exception:
-                    pass
-
-            if not _found_via_proc:
-                result = subprocess.run(
-                    ["ps", "-A", "eww", "-o", "pid=,command="],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if result.returncode != 0:
-                    return []
-                for line in result.stdout.split("\n"):
-                    stripped = line.strip()
-                    if not stripped or "grep" in stripped:
-                        continue
-
-                    pid = None
-                    command = ""
-
-                    parts = stripped.split(None, 1)
-                    if len(parts) == 2:
-                        try:
-                            pid = int(parts[0])
-                            command = parts[1]
-                        except ValueError:
-                            pid = None
-
-                    if pid is None:
-                        aux_parts = stripped.split()
-                        if len(aux_parts) > 10 and aux_parts[1].isdigit():
-                            pid = int(aux_parts[1])
-                            command = " ".join(aux_parts[10:])
-
-                    if pid is None:
-                        continue
-                    if _matches_gateway_runtime(command) and (
-                        all_profiles or _matches_current_profile(command)
-                    ):
-                        _append_unique_pid(pids, pid, exclude_pids)
+                stripped = line.strip()
+                if not stripped or "grep" in stripped:
+                    continue
+        
+                pid = None
+                command = ""
+        
+                parts = stripped.split(None, 1)
+                if len(parts) == 2:
+                    try:
+                        pid = int(parts[0])
+                        command = parts[1]
+                    except ValueError:
+                        pid = None
+        
+                if pid is None:
+                    aux_parts = stripped.split()
+                    if len(aux_parts) > 10 and aux_parts[1].isdigit():
+                        pid = int(aux_parts[1])
+                        command = " ".join(aux_parts[10:])
+        
+                if pid is None:
+                    continue
+                if _matches_gateway_runtime(command) and (
+                    all_profiles or _matches_current_profile(command)
+                ):
+                    _append_unique_pid(pids, pid, exclude_pids)
     except (OSError, subprocess.TimeoutExpired):
         return []
 
@@ -547,9 +437,6 @@ def _scan_gateway_pids(
     # Filter the stub: if a PID in our result is the PARENT of another
     # PID in our result, and both are pythonw.exe, the parent is the
     # launcher stub — drop it, keep the child.
-    if is_windows() and len(pids) > 1:
-        pids = _filter_venv_launcher_stubs(pids)
-
     return pids
 
 
@@ -756,22 +643,6 @@ def _spawn_gateway_restart_watcher(old_pid: int, run_argv: list[str]) -> bool:
     # No-op on POSIX.  See gateway_windows.windowless_gateway_restart_spec.
     respawn_cwd = ""
     respawn_env_overlay: dict[str, str] = {}
-    if sys.platform == "win32":
-        try:
-            from cyberfox_cli.gateway_windows import (
-                windowless_gateway_restart_spec,
-            )
-
-            run_argv, respawn_cwd, respawn_env_overlay = (
-                windowless_gateway_restart_spec(list(run_argv))
-            )
-        except Exception:
-            # Best-effort: if the rewrite fails for any reason, fall back to
-            # the original argv.  A visible window is worse than nothing, but
-            # a failed respawn is worse still — keep the gateway coming back.
-            respawn_cwd = ""
-            respawn_env_overlay = {}
-
     # Serialized as JSON literals embedded in the watcher source so the
     # inner respawn can apply cwd= / env= without extra argv plumbing.
     respawn_cwd_literal = json.dumps(respawn_cwd)
@@ -820,21 +691,8 @@ def _spawn_gateway_restart_watcher(old_pid: int, run_argv: list[str]) -> bool:
             _popen_kwargs["cwd"] = _respawn_cwd
         if _respawn_env_overlay:
             _popen_kwargs["env"] = {{**os.environ, **_respawn_env_overlay}}
-        if sys.platform == "win32":
-            try:
-                _popen_kwargs["creationflags"] = windows_detach_flags()
-                subprocess.Popen(cmd, **_popen_kwargs)
-            except OSError:
-                # CREATE_BREAKAWAY_FROM_JOB can be rejected with
-                # ERROR_ACCESS_DENIED when the parent's job object refuses
-                # breakaway. Retry without it — DETACHED_PROCESS et al.
-                # alone are enough in most setups. Mirrors the canonical
-                # fallback in gateway_windows._spawn_detached.
-                _popen_kwargs["creationflags"] = windows_detach_flags_without_breakaway()
-                subprocess.Popen(cmd, **_popen_kwargs)
-        else:
-            _popen_kwargs["start_new_session"] = True
-            subprocess.Popen(cmd, **_popen_kwargs)
+        _popen_kwargs["start_new_session"] = True
+        subprocess.Popen(cmd, **_popen_kwargs)
         """
     ).strip().format(
         respawn_cwd_literal=respawn_cwd_literal,
@@ -867,7 +725,7 @@ def _spawn_gateway_restart_watcher(old_pid: int, run_argv: list[str]) -> bool:
         try:
             fallback_kwargs: dict = (
                 {"creationflags": windows_detach_flags_without_breakaway()}
-                if sys.platform == "win32"
+                if False
                 else {"start_new_session": True}
             )
             subprocess.Popen(
@@ -1308,15 +1166,6 @@ def get_gateway_runtime_snapshot(system: bool = False) -> GatewayRuntimeSnapshot
             service_scope=scope_label,
         )
 
-    if is_macos():
-        return GatewayRuntimeSnapshot(
-            manager="launchd",
-            service_installed=get_launchd_plist_path().exists(),
-            service_running=_probe_launchd_service_running(),
-            gateway_pids=gateway_pids,
-            service_scope="launchd",
-        )
-
     return GatewayRuntimeSnapshot(
         manager="manual process",
         gateway_pids=gateway_pids,
@@ -1639,11 +1488,11 @@ def supports_systemd_services() -> bool:
 
 
 def is_macos() -> bool:
-    return sys.platform == "darwin"
+    return False
 
 
 def is_windows() -> bool:
-    return sys.platform == "win32"
+    return False
 
 
 def _windows_gateway_should_absorb_console_controls() -> bool:
@@ -2476,10 +2325,7 @@ def _detect_venv_dir() -> Path | None:
 def get_python_path() -> str:
     venv = _detect_venv_dir()
     if venv is not None:
-        if is_windows():
-            venv_python = venv / "Scripts" / "python.exe"
-        else:
-            venv_python = venv / "bin" / "python"
+        venv_python = venv / "bin" / "python"
         if venv_python.exists():
             return str(venv_python)
     return sys.executable
@@ -3904,298 +3750,6 @@ def generate_launchd_plist() -> str:
 """
 
 
-def launchd_plist_is_current() -> bool:
-    """Check if the installed launchd plist matches the currently generated one."""
-    plist_path = get_launchd_plist_path()
-    if not plist_path.exists():
-        return False
-
-    installed = plist_path.read_text(encoding="utf-8")
-    expected = generate_launchd_plist()
-    return _normalize_launchd_plist_for_comparison(
-        installed
-    ) == _normalize_launchd_plist_for_comparison(expected)
-
-
-def refresh_launchd_plist_if_needed() -> bool:
-    """Rewrite the installed launchd plist when the generated definition has changed.
-
-    Unlike systemd, launchd picks up plist changes on the next ``launchctl kill``/
-    ``launchctl kickstart`` cycle — no daemon-reload is needed. We still bootout/
-    bootstrap to make launchd re-read the updated plist immediately.
-    """
-    plist_path = get_launchd_plist_path()
-    if not plist_path.exists() or launchd_plist_is_current():
-        return False
-
-    new_plist = generate_launchd_plist()
-    if _refuse_temp_home_service_write(new_plist, "launchd plist"):
-        return False
-
-    plist_path.write_text(new_plist, encoding="utf-8")
-    label = get_launchd_label()
-    domain = _launchd_domain()
-    target = f"{domain}/{label}"
-
-    # If this refresh is running INSIDE the gateway's own launchd process tree
-    # (e.g. the agent triggered a self-update via its terminal tool), a direct
-    # `launchctl bootout` tears down the service's process group — which
-    # includes THIS CLI — before the follow-up `bootstrap` can run. The gateway
-    # then stays unloaded and KeepAlive can't revive it (#43842). Detect that
-    # case and hand the reload to a detached session that survives the bootout.
-    gateway_pid = None
-    try:
-        from gateway.status import get_running_pid
-        gateway_pid = get_running_pid()
-    except Exception:
-        gateway_pid = None
-
-    if (
-        gateway_pid is not None
-        and _is_pid_ancestor_of_current_process(gateway_pid)
-        and hasattr(os, "setsid")  # POSIX-only; launchd is macOS so always true here
-    ):
-        # Delegate to a new session: `start_new_session=True` detaches the
-        # helper from the gateway's process group, so the bootout that kills
-        # the gateway (and us) does not kill the helper before it bootstraps.
-        #
-        # The bootstrap is retried up to 5 times with verification: under
-        # high load (loadavg observed >= 9) or a launchd race, the bootout
-        # can succeed (removing the service from launchd) while the
-        # follow-up bootstrap fails silently. Without retry+verify the
-        # service stays unregistered — KeepAlive can't revive a service
-        # launchd no longer knows about, so the gateway stays dark until a
-        # manual `launchctl bootstrap`. Failures append a timestamped line
-        # to ~/.cyberfox/logs/launchd-reload.log, which the health watchdog
-        # can tail to detect a persistent orphan. See cyberfox-restart
-        # rootcause handoff (2026-06-26 incident).
-        reload_log_path = get_cyberfox_home() / "logs" / "launchd-reload.log"
-        try:
-            reload_log_path.parent.mkdir(parents=True, exist_ok=True)
-        except OSError:
-            pass
-        # Retry until launchctl LISTS the label (not merely a zero bootstrap
-        # exit) or the drain window elapses. The failure happens while the old
-        # gateway is still draining (default agent.restart_drain_timeout=180s),
-        # so a fixed ~10s window is too short — bound by that budget instead.
-        _reload_budget = int(max(30.0, _get_restart_drain_timeout()))
-        reload_script = (
-            f"sleep 2; "
-            f"launchctl bootout {shlex.quote(target)} 2>/dev/null; "
-            f"sleep 1; "
-            f"_deadline=$(($(date +%s) + {_reload_budget})); "
-            f"while :; do "
-            f"  launchctl bootstrap {shlex.quote(domain)} {shlex.quote(str(plist_path))} 2>/dev/null; "
-            f"  if launchctl list {shlex.quote(label)} >/dev/null 2>&1; then break; fi; "
-            f"  echo \"[$(date '+%Y-%m-%d %H:%M:%S %z')] bootstrap not yet registered for {shlex.quote(target)} — retrying\" >> {shlex.quote(str(reload_log_path))}; "
-            f"  if [ $(date +%s) -ge $_deadline ]; then break; fi; "
-            f"  sleep 2; "
-            f"done; "
-            f"if ! launchctl list {shlex.quote(label)} >/dev/null 2>&1; then "
-            f"  echo \"[$(date '+%Y-%m-%d %H:%M:%S %z')] FAILED launchd reload for {shlex.quote(target)} — service NOT registered after {_reload_budget}s of retries\" >> {shlex.quote(str(reload_log_path))}; "
-            f"fi"
-        )
-        try:
-            subprocess.Popen(
-                ["/bin/bash", "-c", reload_script],
-                start_new_session=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        except Exception as e:
-            logger.warning("Deferred launchd reload could not be spawned: %s", e)
-            return False
-        print(
-            "↻ Updated gateway launchd service definition; reload deferred to a "
-            "detached helper (refresh ran inside the gateway process tree)"
-        )
-        return True
-
-    # Bootout/bootstrap so launchd picks up the new definition. The reported
-    # incident (2026-06-26) happened when bootout succeeded but bootstrap
-    # failed silently under load (loadavg 9.48) during a graceful /restart
-    # drain, leaving the service unregistered — KeepAlive can't revive a job
-    # launchd no longer knows about. Retry the bootstrap (via the shared
-    # _launchctl_bootstrap EIO-recovery helper) until the label is actually
-    # registered or the drain window elapses, verify with `launchctl list`,
-    # and log exhaustion so the reload watchdog can detect a persistent orphan.
-    subprocess.run(
-        ["launchctl", "bootout", target],
-        check=False,
-        timeout=90,
-    )
-    # Size the retry window to the restart drain timeout (default 180s), not a
-    # fixed ~10s: the failure mode occurs while the old gateway is still
-    # draining, so a short window can exhaust before launchd settles.
-    _reload_budget = max(30.0, _get_restart_drain_timeout())
-    _deadline = time.monotonic() + _reload_budget
-    if not _retry_launchctl_bootstrap_until_registered(
-        domain, plist_path, label, deadline=_deadline
-    ):
-        _append_launchd_reload_log(
-            f"FAILED launchd reload of {target} — service NOT registered after "
-            f"retrying for {int(_reload_budget)}s (refresh ran outside gateway "
-            f"process tree)"
-        )
-        logger.error(
-            "launchd reload of %s failed — service not registered after %ds of "
-            "retries; see %s",
-            target,
-            int(_reload_budget),
-            _launchd_reload_log_path(),
-        )
-    print(
-        "↻ Updated gateway launchd service definition to match the current Cyberfox install"
-    )
-    return True
-
-
-def launchd_install(force: bool = False):
-    plist_path = get_launchd_plist_path()
-
-    if plist_path.exists() and not force:
-        if not launchd_plist_is_current():
-            print(f"↻ Repairing outdated launchd service at: {plist_path}")
-            refresh_launchd_plist_if_needed()
-            print("✓ Service definition updated")
-            return
-        print(f"Service already installed at: {plist_path}")
-        print("Use --force to reinstall")
-        return
-
-    plist_path.parent.mkdir(parents=True, exist_ok=True)
-    new_plist = generate_launchd_plist()
-    if _refuse_temp_home_service_write(new_plist, "launchd plist"):
-        return
-    print(f"Installing launchd service to: {plist_path}")
-    plist_path.write_text(new_plist)
-
-    try:
-        _launchctl_bootstrap(
-            _launchd_domain(), plist_path, get_launchd_label(), timeout=30
-        )
-    except subprocess.CalledProcessError as e:
-        if not _launchctl_domain_unsupported(e.returncode):
-            raise
-        _launchd_fallback_to_detached(f"launchctl bootstrap exit {e.returncode}")
-        return
-
-    print()
-    print("✓ Service installed and loaded!")
-    _clear_launchd_unsupported_marker()
-    print()
-    print("Next steps:")
-    print("  cyberfox gateway status             # Check status")
-    from cyberfox_constants import display_cyberfox_home as _dhh
-
-    print(f"  tail -f {_dhh()}/logs/gateway.log  # View logs")
-
-
-def launchd_uninstall():
-    plist_path = get_launchd_plist_path()
-    label = get_launchd_label()
-    subprocess.run(
-        ["launchctl", "bootout", f"{_launchd_domain()}/{label}"],
-        check=False,
-        timeout=90,
-    )
-
-    if plist_path.exists():
-        plist_path.unlink()
-        print(f"✓ Removed {plist_path}")
-
-    print("✓ Service uninstalled")
-
-
-def launchd_start():
-    plist_path = get_launchd_plist_path()
-    label = get_launchd_label()
-
-    # Self-heal if the plist is missing entirely (e.g., manual cleanup, failed upgrade)
-    if not plist_path.exists():
-        new_plist = generate_launchd_plist()
-        if _refuse_temp_home_service_write(new_plist, "launchd plist"):
-            sys.exit(1)
-        print("↻ launchd plist missing; regenerating service definition")
-        plist_path.parent.mkdir(parents=True, exist_ok=True)
-        plist_path.write_text(new_plist, encoding="utf-8")
-        try:
-            _launchctl_bootstrap(_launchd_domain(), plist_path, label, timeout=30)
-            subprocess.run(
-                ["launchctl", "kickstart", f"{_launchd_domain()}/{label}"],
-                check=True,
-                timeout=30,
-            )
-        except subprocess.CalledProcessError as e:
-            if not _launchctl_domain_unsupported(e.returncode):
-                raise
-            _launchd_fallback_to_detached(f"launchctl exit {e.returncode}")
-            return
-        print("✓ Service started")
-        _clear_launchd_unsupported_marker()
-        return
-
-    refresh_launchd_plist_if_needed()
-    try:
-        subprocess.run(
-            ["launchctl", "kickstart", f"{_launchd_domain()}/{label}"],
-            check=True,
-            timeout=30,
-        )
-    except subprocess.CalledProcessError as e:
-        if not _launchd_error_indicates_unloaded(e):
-            raise
-        # Job not loaded in this domain — re-bootstrap the plist and retry.
-        print("↻ launchd job was unloaded; reloading service definition")
-        try:
-            _launchctl_bootstrap(_launchd_domain(), plist_path, label, timeout=30)
-            subprocess.run(
-                ["launchctl", "kickstart", f"{_launchd_domain()}/{label}"],
-                check=True,
-                timeout=30,
-            )
-        except subprocess.CalledProcessError as e2:
-            # Even a fresh bootstrap can't manage the domain on this host —
-            # degrade to a detached background process (issue #23387).
-            if not _launchctl_domain_unsupported(e2.returncode):
-                raise
-            _launchd_fallback_to_detached(f"launchctl exit {e2.returncode}")
-            return
-    print("✓ Service started")
-    _clear_launchd_unsupported_marker()
-
-
-def launchd_stop():
-    label = get_launchd_label()
-    target = f"{_launchd_domain()}/{label}"
-    try:
-        from gateway.status import get_running_pid, write_planned_stop_marker
-
-        pid = get_running_pid(cleanup_stale=False)
-        if pid is not None:
-            write_planned_stop_marker(pid)
-    except Exception:
-        pass
-    # bootout unloads the service definition so KeepAlive doesn't respawn
-    # the process.  A plain `kill SIGTERM` only signals the process — launchd
-    # immediately restarts it because KeepAlive is unconditionally true.
-    # `cyberfox gateway start` re-bootstraps when it detects the job is unloaded.
-    try:
-        subprocess.run(["launchctl", "bootout", target], check=True, timeout=90)
-    except subprocess.CalledProcessError as e:
-        # Job already unloaded (3/113/125), or the domain can't be managed at
-        # all (5/125, macOS 26+ detached-fallback process, issue #23387) — in
-        # both cases just fall through to the PID-based kill below.
-        if _launchd_error_indicates_unloaded(e) or _launchctl_domain_unsupported(
-            e.returncode
-        ):
-            pass
-        else:
-            raise
-    _wait_for_gateway_exit(timeout=10.0, force_after=5.0)
-    print("✓ Service stopped")
-
-
 def _wait_for_gateway_exit(
     timeout: float = 10.0, force_after: float | None = 5.0
 ) -> bool:
@@ -4246,167 +3800,6 @@ def _wait_for_gateway_exit(
         )
         return False
     return True
-
-
-def launchd_restart():
-    label = get_launchd_label()
-    target = f"{_launchd_domain()}/{label}"
-    drain_timeout = _get_restart_drain_timeout()
-    from gateway.status import get_running_pid
-
-    try:
-        pid = get_running_pid()
-        if pid is not None and _request_gateway_self_restart(pid):
-            print("✓ Service restart requested")
-            _clear_launchd_unsupported_marker()
-            return
-        if pid is not None:
-            # Announce the drain BEFORE waiting on it. This wait can run for
-            # the full drain budget (180s by default) while the old gateway
-            # finishes in-flight agent runs, and it streams into surfaces with
-            # no other feedback — the desktop updater's live output most of
-            # all, where a silent stop here reads as "update stuck" (#44515).
-            # Mirrors the systemd branch's "draining (up to Ns)..." line.
-            print(
-                f"→ Stopping gateway (PID {pid}) — draining in-flight runs "
-                f"(up to {drain_timeout:.0f}s)..."
-            )
-            try:
-                terminate_pid(pid, force=False)
-            except (ProcessLookupError, PermissionError, OSError):
-                pid = None
-            if pid is not None:
-                exited = _wait_for_gateway_exit(timeout=drain_timeout, force_after=None)
-                if not exited:
-                    print(
-                        f"⚠ Gateway drain timed out after {drain_timeout:.0f}s — forcing launchd restart"
-                    )
-        subprocess.run(["launchctl", "kickstart", "-k", target], check=True, timeout=90)
-        print("✓ Service restarted")
-        _clear_launchd_unsupported_marker()
-    except subprocess.CalledProcessError as e:
-        if not _launchd_error_indicates_unloaded(e):
-            # Not a "job unloaded" code. If the domain is fundamentally
-            # unmanageable (error 5), degrade to detached; the old process was
-            # already drained/terminated above. Otherwise re-raise.
-            if _launchctl_domain_unsupported(e.returncode):
-                _launchd_fallback_to_detached(f"launchctl kickstart exit {e.returncode}")
-                return
-            raise
-        # Job not loaded — bootstrap and start fresh
-        print("↻ launchd job was unloaded; reloading")
-        plist_path = get_launchd_plist_path()
-        try:
-            # Restart is the one path where the job is almost always still
-            # registered (we just drained it), so a plain bootstrap would hit
-            # EIO on the common case. Boot the stale label out first — cheaper
-            # and clearer here than routing through _launchctl_bootstrap's
-            # bootstrap-first/retry-on-EIO flow. See #23387, #42914.
-            subprocess.run(
-                ["launchctl", "bootout", target],
-                check=False,
-                timeout=90,
-            )
-            subprocess.run(
-                ["launchctl", "bootstrap", _launchd_domain(), str(plist_path)],
-                check=True,
-                timeout=30,
-            )
-            subprocess.run(["launchctl", "kickstart", target], check=True, timeout=30)
-        except subprocess.CalledProcessError as e2:
-            if not _launchctl_domain_unsupported(e2.returncode):
-                raise
-            _launchd_fallback_to_detached(f"launchctl exit {e2.returncode}")
-            return
-        print("✓ Service restarted")
-        _clear_launchd_unsupported_marker()
-
-
-def launchd_status(deep: bool = False):
-    plist_path = get_launchd_plist_path()
-    label = get_launchd_label()
-    try:
-        result = subprocess.run(
-            ["launchctl", "list", label],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        service_listed = result.returncode == 0
-        list_output = result.stdout
-    except subprocess.TimeoutExpired:
-        service_listed = False
-        list_output = ""
-
-    # Determine whether launchd is actively supervising a process.
-    # ``launchctl list`` returns exit 0 whenever the service definition is
-    # registered — even when ``state = not running`` (macOS 26+ with an
-    # unmanageable domain).  A PID in the output confirms a live process.
-    launchd_pid = _parse_launchd_pid_from_list_output(list_output) if service_listed else None
-
-    # Cyberfox PID tracking — may be a detached fallback process spawned when
-    # launchd cannot manage the domain on this host.
-    from gateway.status import get_running_pid
-    fallback_pid = get_running_pid(cleanup_stale=False)
-
-    # Avoid double-counting: when launchd IS supervising, fallback_pid and
-    # launchd_pid point at the same process (the gateway writes both the
-    # launchd PID and the Cyberfox PID file).
-    if launchd_pid is not None and fallback_pid == launchd_pid:
-        fallback_pid = None
-
-    # Persistent marker written when launchd bootstrap/kickstart fails with
-    # exit 5/125 on this host.  Lets us explain *why* launchd can't supervise
-    # even when no fallback process is currently running.
-    launchd_unsupported = _launchd_unsupported_marker_exists()
-
-    # ── Report ──
-    print(f"Launchd plist: {plist_path}")
-    if launchd_plist_is_current():
-        print("✓ Service definition matches the current Cyberfox install")
-    else:
-        print("⚠ Service definition is stale relative to the current Cyberfox install")
-        print("  Run: cyberfox gateway start")
-
-    if service_listed:
-        if launchd_pid is not None:
-            print(f"✓ Gateway is supervised by launchd (PID {launchd_pid})")
-            print("  Auto-start at login and auto-restart on crash are available.")
-            if launchd_unsupported:
-                print("  (launchd domain was previously unavailable but is now working)")
-        elif launchd_unsupported:
-            print("⚠ Gateway service is registered but launchd is not supervising it")
-            print("  launchd cannot manage the gateway on this macOS version.")
-            if fallback_pid:
-                print(f"✓ Detached fallback process is running (PID {fallback_pid})")
-                print("  Cron jobs will fire. Stop with: cyberfox gateway stop")
-            else:
-                print("✗ No fallback process is running")
-                print("  Run: cyberfox gateway start")
-            print("  ⚠ Auto-start at login and auto-restart on crash are NOT available.")
-        else:
-            print("✓ Gateway service is registered with launchd")
-            print(list_output)
-            if fallback_pid:
-                print(f"  Detached gateway process is running (PID {fallback_pid})")
-    else:
-        print("✗ Gateway service is not loaded")
-        print("  Service definition exists locally but launchd has not loaded it.")
-        print("  Run: cyberfox gateway start")
-        if fallback_pid:
-            print(f"  Note: a detached gateway process is running (PID {fallback_pid})")
-
-    if deep:
-        log_file = get_cyberfox_home() / "logs" / "gateway.log"
-        if log_file.exists():
-            print()
-            print("Recent logs:")
-            subprocess.run(["tail", "-20", str(log_file)], timeout=10)
-
-
-# =============================================================================
-# Gateway Runner
-# =============================================================================
 
 
 def _truthy_env(value: str | None) -> bool:
@@ -5027,9 +4420,6 @@ def _all_platforms() -> list[dict]:
     platforms = [dict(p) for p in _PLATFORMS]
 
     # Drop platforms that can't function on this host. See docstring.
-    if sys.platform == "win32":
-        platforms = [p for p in platforms if p.get("key") != "matrix"]
-
     by_key = {p["key"]: p for p in platforms}
 
     try:
@@ -5043,8 +4433,6 @@ def _all_platforms() -> list[dict]:
         # Drop platforms that can't function on this host. Matrix is hidden on
         # Windows (python-olm has no Windows wheel) — applies whether matrix is
         # a built-in or, post-#41112, a registry-discovered plugin.
-        if sys.platform == "win32" and entry.name == "matrix":
-            continue
         platforms.append(
             {
                 "key": entry.name,
@@ -5374,12 +4762,6 @@ def _is_service_installed() -> bool:
             get_systemd_unit_path(system=False).exists()
             or get_systemd_unit_path(system=True).exists()
         )
-    elif is_macos():
-        return get_launchd_plist_path().exists()
-    elif is_windows():
-        from cyberfox_cli import gateway_windows
-
-        return gateway_windows.is_installed()
     return False
 
 
@@ -5418,24 +4800,6 @@ def _is_service_running() -> bool:
                 pass
 
         return False
-    elif is_macos() and get_launchd_plist_path().exists():
-        try:
-            result = subprocess.run(
-                ["launchctl", "list", get_launchd_label()],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            return result.returncode == 0
-        except subprocess.TimeoutExpired:
-            return False
-    elif is_windows():
-        from cyberfox_cli import gateway_windows
-
-        if gateway_windows.is_installed():
-            # "installed" doesn't necessarily mean "running" on Windows. The
-            # canonical check is whether a gateway process actually exists.
-            return len(find_gateway_pids()) > 0
     # Check for manual processes
     return len(find_gateway_pids()) > 0
 
@@ -6015,8 +5379,6 @@ def gateway_setup():
             try:
                 if supports_systemd_services():
                     systemd_start()
-                elif is_macos():
-                    launchd_start()
             except UserSystemdUnavailableError as e:
                 print_error("  Failed to start — user systemd not reachable:")
                 for line in str(e).splitlines():
@@ -6081,12 +5443,6 @@ def gateway_setup():
                 try:
                     if supports_systemd_services():
                         systemd_restart()
-                    elif is_macos():
-                        launchd_restart()
-                    elif is_windows():
-                        from cyberfox_cli import gateway_windows
-
-                        gateway_windows.restart()
                     else:
                         stop_profile_gateway()
                         print_info("Start manually: cyberfox gateway")
@@ -6106,12 +5462,6 @@ def gateway_setup():
                 try:
                     if supports_systemd_services():
                         systemd_start()
-                    elif is_macos():
-                        launchd_start()
-                    elif is_windows():
-                        from cyberfox_cli import gateway_windows
-
-                        gateway_windows.start()
                 except UserSystemdUnavailableError as e:
                     print_error("  Start failed — user systemd not reachable:")
                     for line in str(e).splitlines():
@@ -6126,8 +5476,6 @@ def gateway_setup():
             if supports_systemd_services() or is_macos() or is_windows():
                 if supports_systemd_services():
                     platform_name = "systemd"
-                elif is_macos():
-                    platform_name = "launchd"
                 else:
                     platform_name = "Scheduled Task"
                 wsl_note = " (note: services may not survive WSL restarts)" if is_wsl() else ""
@@ -6145,24 +5493,11 @@ def gateway_setup():
                                 force=False,
                                 enable_on_startup=start_on_login,
                             )
-                        elif is_macos():
-                            launchd_install(force=False)
-                            did_install = True
-                        else:
-                            from cyberfox_cli import gateway_windows
-
-                            gateway_windows.install(force=False)
-                            did_install = True
                         print()
                         if did_install and start_now:
                             try:
                                 if supports_systemd_services():
                                     systemd_start(system=installed_scope == "system")
-                                elif is_macos():
-                                    launchd_start()
-                                elif is_windows():
-                                    from cyberfox_cli import gateway_windows
-                                    gateway_windows.start()
                             except UserSystemdUnavailableError as e:
                                 print_error(
                                     "  Start failed — user systemd not reachable:"
@@ -6522,17 +5857,6 @@ def _gateway_command_inner(args):
             )
             if start_now:
                 systemd_start(system=system)
-        elif is_macos():
-            launchd_install(force)
-        elif is_windows():
-            from cyberfox_cli import gateway_windows
-
-            gateway_windows.install(
-                force=force,
-                start_now=getattr(args, 'start_now', None),
-                start_on_login=getattr(args, 'start_on_login', None),
-                elevated_handoff=getattr(args, 'elevated_handoff', False),
-            )
         elif is_wsl():
             print("WSL detected but systemd is not running.")
             print(
@@ -6596,12 +5920,6 @@ def _gateway_command_inner(args):
             sys.exit(1)
         if supports_systemd_services():
             systemd_uninstall(system=system)
-        elif is_macos():
-            launchd_uninstall()
-        elif is_windows():
-            from cyberfox_cli import gateway_windows
-
-            gateway_windows.uninstall()
         elif is_container():
             from cyberfox_cli.service_manager import detect_service_manager
             if detect_service_manager() == "s6":
@@ -6649,12 +5967,6 @@ def _gateway_command_inner(args):
             sys.exit(1)
         if supports_systemd_services():
             systemd_start(system=system)
-        elif is_macos():
-            launchd_start()
-        elif is_windows():
-            from cyberfox_cli import gateway_windows
-
-            gateway_windows.start()
         elif is_wsl():
             print("WSL detected but systemd is not available.")
             print("Run the gateway in foreground mode instead:")
@@ -6726,21 +6038,6 @@ def _gateway_command_inner(args):
                     service_available = True
                 except subprocess.CalledProcessError:
                     pass
-            elif is_macos() and get_launchd_plist_path().exists():
-                try:
-                    launchd_stop()
-                    service_available = True
-                except subprocess.CalledProcessError:
-                    pass
-            elif is_windows():
-                from cyberfox_cli import gateway_windows
-
-                if gateway_windows.is_installed():
-                    try:
-                        gateway_windows.stop()
-                        service_available = True
-                    except (subprocess.CalledProcessError, RuntimeError):
-                        pass
             killed = kill_gateway_processes(all_profiles=True)
             total = killed + (1 if service_available else 0)
             if total:
@@ -6759,22 +6056,6 @@ def _gateway_command_inner(args):
                     service_available = True
                 except subprocess.CalledProcessError:
                     pass
-            elif is_macos() and get_launchd_plist_path().exists():
-                try:
-                    launchd_stop()
-                    service_available = True
-                except subprocess.CalledProcessError:
-                    pass
-            elif is_windows():
-                from cyberfox_cli import gateway_windows
-
-                if gateway_windows.is_installed():
-                    try:
-                        gateway_windows.stop()
-                        service_available = True
-                    except (subprocess.CalledProcessError, RuntimeError):
-                        pass
-
             if not service_available:
                 # No systemd/launchd/schtasks service — use profile-scoped PID file
                 if stop_profile_gateway():
@@ -6823,21 +6104,6 @@ def _gateway_command_inner(args):
                     service_stopped = True
                 except subprocess.CalledProcessError:
                     pass
-            elif is_macos() and get_launchd_plist_path().exists():
-                try:
-                    launchd_stop()
-                    service_stopped = True
-                except subprocess.CalledProcessError:
-                    pass
-            elif is_windows():
-                from cyberfox_cli import gateway_windows
-
-                if gateway_windows.is_installed():
-                    try:
-                        gateway_windows.stop()
-                        service_stopped = True
-                    except (subprocess.CalledProcessError, RuntimeError):
-                        pass
             killed = kill_gateway_processes(all_profiles=True)
             total = killed + (1 if service_stopped else 0)
             if total:
@@ -6851,18 +6117,6 @@ def _gateway_command_inner(args):
                 or get_systemd_unit_path(system=True).exists()
             ):
                 systemd_start(system=system)
-            elif is_macos() and get_launchd_plist_path().exists():
-                launchd_start()
-            elif is_windows():
-                from cyberfox_cli import gateway_windows
-
-                # On Windows, even without a registered Scheduled Task / Startup
-                # entry, gateway_windows.start() uses the safe detached
-                # pythonw.exe launcher.  Do not fall back to run_gateway() here:
-                # when invoked from a gateway-hosted agent/tool call, foreground
-                # run_gateway() is tied to the very gateway process we just
-                # stopped and can die before the replacement is stable.
-                gateway_windows.start()
             else:
                 run_gateway(verbose=0)
             return
@@ -6877,30 +6131,6 @@ def _gateway_command_inner(args):
                 service_available = True
             except subprocess.CalledProcessError:
                 pass
-        elif is_macos() and get_launchd_plist_path().exists():
-            service_configured = True
-            try:
-                launchd_restart()
-                service_available = True
-            except subprocess.CalledProcessError:
-                pass
-        elif is_windows():
-            from cyberfox_cli import gateway_windows
-
-            # Prefer the Windows-specific restart path: it supports both
-            # registered Scheduled Task / Startup installs and no-service
-            # detached restarts.  In the normal successful Telegram-triggered
-            # restart flow, this avoids the generic foreground run_gateway()
-            # path that can be reaped with the old gateway process.  If the
-            # Windows backend raises, intentionally preserve the existing
-            # generic failure fallback below.
-            service_configured = gateway_windows.is_installed()
-            try:
-                gateway_windows.restart()
-                return
-            except (subprocess.CalledProcessError, RuntimeError, OSError):
-                pass
-
         if not service_available:
             # systemd/launchd restart failed — check if linger is the issue
             if supports_systemd_services():
@@ -6950,23 +6180,11 @@ def _gateway_command_inner(args):
 
         # Check for service first
         _windows_service_installed = False
-        if is_windows():
-            from cyberfox_cli import gateway_windows
-
-            _windows_service_installed = gateway_windows.is_installed()
         if supports_systemd_services() and (
             get_systemd_unit_path(system=False).exists()
             or get_systemd_unit_path(system=True).exists()
         ):
             systemd_status(deep, system=system, full=full)
-            _print_gateway_process_mismatch(snapshot)
-        elif is_macos() and get_launchd_plist_path().exists():
-            launchd_status(deep)
-            _print_gateway_process_mismatch(snapshot)
-        elif _windows_service_installed:
-            from cyberfox_cli import gateway_windows
-
-            gateway_windows.status(deep=deep)
             _print_gateway_process_mismatch(snapshot)
         else:
             # Check for manually running processes
@@ -6992,11 +6210,6 @@ def _gateway_command_inner(args):
                     print(
                         "  Use tmux or screen for persistence across terminal closes."
                     )
-                elif is_windows():
-                    print(
-                        "To install as a Windows Scheduled Task (auto-start on login):"
-                    )
-                    print("  cyberfox gateway install")
                 else:
                     print("To install as a service:")
                     print("  cyberfox gateway install")
@@ -7022,10 +6235,6 @@ def _gateway_command_inner(args):
                     )
                     print(
                         "  nohup cyberfox gateway run > ~/.cyberfox/logs/gateway.log 2>&1 &  # background"
-                    )
-                elif is_windows():
-                    print(
-                        "  cyberfox gateway install  # Install as Windows Scheduled Task (auto-start on login)"
                     )
                 else:
                     print("  cyberfox gateway install  # Install as user service")

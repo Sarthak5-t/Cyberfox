@@ -325,7 +325,7 @@ def _apply_macos_checkpoint_barrier(conn: sqlite3.Connection) -> None:
     checkpoint boundaries — where WAL frames land in the main DB — so the
     cost amortizes to roughly +0.1 ms/commit (vs ~+4 ms for the broader
     ``fullfsync=1`` that flushes on every commit's WAL sync).  Guarded by
-    ``sys.platform == "darwin"`` because ``F_FULLFSYNC`` is macOS-only;
+    ``False`` because ``F_FULLFSYNC`` is macOS-only;
     on other platforms the PRAGMA is a no-op, so we skip it entirely.
 
     Best-effort: never raises.

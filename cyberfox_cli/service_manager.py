@@ -1,18 +1,16 @@
 """Abstract service manager interface.
 
-Wraps the existing systemd (Linux host), launchd (macOS host), Windows
-Scheduled Task (native Windows host), and s6 (container) backends behind
+Wraps the existing systemd (Linux host) and s6 (container) backends behind
 a common Protocol. Only the s6 backend supports runtime registration
 (for per-profile gateways) — host backends raise NotImplementedError
 from those methods, and callers MUST check supports_runtime_registration()
 before invoking them.
 
 Host-side call sites (setup wizard, uninstall, status) continue to use
-the existing module-level functions in cyberfox_cli.gateway and
-cyberfox_cli.gateway_windows directly. This protocol is a thin facade
-used by new code that needs to be backend-agnostic — specifically the
-profile create/delete hooks (Phase 4) and the s6 dispatch path in
-``cyberfox gateway start/stop/restart`` when running inside a container.
+the existing module-level functions in cyberfox_cli.gateway directly. This
+protocol is a thin facade used by new code that needs to be backend-agnostic
+— specifically the profile create/delete hooks (Phase 4) and the s6 dispatch
+path in ``cyberfox gateway start/stop/restart`` when running inside a container.
 """
 from __future__ import annotations
 
@@ -20,7 +18,7 @@ import re
 from pathlib import Path
 from typing import Literal, Protocol, runtime_checkable
 
-ServiceManagerKind = Literal["systemd", "launchd", "windows", "s6", "none"]
+ServiceManagerKind = Literal["systemd", "s6", "none"]
 
 # Profile name → service directory mapping. Profile names must be safe
 # as filesystem directory names because the s6 backend creates a service
@@ -89,8 +87,6 @@ def detect_service_manager() -> ServiceManagerKind:
     Returns:
         "s6" — s6-svscan is PID 1 (s6-overlay image; Docker, Podman, or a
                Fly Firecracker microVM)
-        "windows" — native Windows host
-        "launchd" — macOS host
         "systemd" — Linux host with a working user/system bus
         "none" — anything else (Termux, sandbox shells, etc.)
 
@@ -102,11 +98,7 @@ def detect_service_manager() -> ServiceManagerKind:
     # Imports deferred so importing this module doesn't drag in the
     # whole gateway dependency graph for callers that only need the
     # Protocol type or validate_profile_name().
-    from cyberfox_cli.gateway import (
-        is_macos,
-        is_windows,
-        supports_systemd_services,
-    )
+    from cyberfox_cli.gateway import supports_systemd_services
 
     # Gate on _s6_running() alone (PID 1 comm == s6-svscan AND /run/s6/basedir),
     # NOT is_container(): the latter only detects Docker/Podman/lxc, so it is
@@ -117,10 +109,6 @@ def detect_service_manager() -> ServiceManagerKind:
     # already an s6-overlay-specific signal, so the container gate was redundant.
     if _s6_running():
         return "s6"
-    if is_windows():
-        return "windows"
-    if is_macos():
-        return "launchd"
     if supports_systemd_services():
         return "systemd"
     return "none"
@@ -228,78 +216,6 @@ class SystemdServiceManager(_RegistrationUnsupportedMixin):
         return running
 
 
-class LaunchdServiceManager(_RegistrationUnsupportedMixin):
-    """Thin wrapper around the ``launchd_*`` functions in cyberfox_cli.gateway."""
-
-    kind: ServiceManagerKind = "launchd"
-
-    def start(self, name: str) -> None:
-        from cyberfox_cli.gateway import launchd_start
-        launchd_start()
-
-    def stop(self, name: str) -> None:
-        from cyberfox_cli.gateway import launchd_stop
-        launchd_stop()
-
-    def restart(self, name: str) -> None:
-        from cyberfox_cli.gateway import launchd_restart
-        launchd_restart()
-
-    def is_running(self, name: str) -> bool:
-        from cyberfox_cli.gateway import _probe_launchd_service_running
-        return _probe_launchd_service_running()
-
-
-class WindowsServiceManager(_RegistrationUnsupportedMixin):
-    """Thin wrapper around ``cyberfox_cli.gateway_windows`` (Scheduled Task /
-    Startup-folder fallback).
-
-    The native Windows backend uses a Scheduled Task rather than a true
-    init-system service, but for protocol purposes the lifecycle is the
-    same: start / stop / restart / is_running. ``install`` accepts a
-    handful of Windows-specific kwargs (start_now, start_on_login,
-    elevated_handoff) that are passed straight through — non-Windows
-    callers should never invoke ``install`` on this wrapper.
-    """
-
-    kind: ServiceManagerKind = "windows"
-
-    def install(
-        self,
-        *,
-        force: bool = False,
-        start_now: bool | None = None,
-        start_on_login: bool | None = None,
-        elevated_handoff: bool = False,
-    ) -> None:
-        from cyberfox_cli import gateway_windows
-        gateway_windows.install(
-            force=force,
-            start_now=start_now,
-            start_on_login=start_on_login,
-            elevated_handoff=elevated_handoff,
-        )
-
-    def start(self, name: str) -> None:
-        from cyberfox_cli import gateway_windows
-        gateway_windows.start()
-
-    def stop(self, name: str) -> None:
-        from cyberfox_cli import gateway_windows
-        gateway_windows.stop()
-
-    def restart(self, name: str) -> None:
-        from cyberfox_cli import gateway_windows
-        gateway_windows.restart()
-
-    def is_running(self, name: str) -> bool:
-        from cyberfox_cli import gateway_windows
-        from cyberfox_cli.gateway import find_gateway_pids
-        if not gateway_windows.is_installed():
-            return False
-        return bool(find_gateway_pids())
-
-
 def get_service_manager() -> ServiceManager:
     """Return the ServiceManager instance for the current environment.
 
@@ -309,10 +225,6 @@ def get_service_manager() -> ServiceManager:
     kind = detect_service_manager()
     if kind == "systemd":
         return SystemdServiceManager()
-    if kind == "launchd":
-        return LaunchdServiceManager()
-    if kind == "windows":
-        return WindowsServiceManager()
     if kind == "s6":
         return S6ServiceManager()
     raise RuntimeError("no supported service manager detected")

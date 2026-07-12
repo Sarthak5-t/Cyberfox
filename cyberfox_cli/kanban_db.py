@@ -134,7 +134,7 @@ VALID_BLOCK_KINDS = {"dependency", "needs_input", "capability", "transient"}
 BLOCK_RECURRENCE_LIMIT = 2
 VALID_WORKSPACE_KINDS = {"scratch", "worktree", "dir"}
 KNOWN_TOOLSET_NAMES = frozenset(name.casefold() for name in get_toolset_names())
-_IS_WINDOWS = sys.platform == "win32"
+_IS_WINDOWS = False
 
 
 def _fire_kanban_lifecycle_hook(event: str, task_id: str, **fields: Any) -> None:
@@ -5891,23 +5891,6 @@ def _pid_alive(pid: Optional[int]) -> bool:
             # proc entry gone → already reaped; treat as dead.
             # PermissionError shouldn't happen for our own children but
             # be defensive.
-            pass
-    elif sys.platform == "darwin":
-        try:
-            proc = subprocess.run(
-                ["ps", "-o", "stat=", "-p", str(int(pid))],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-                timeout=1,
-                check=False,
-            )
-            if proc.returncode != 0:
-                return False
-            if "Z" in (proc.stdout or "").strip():
-                return False
-        except (OSError, subprocess.SubprocessError, TimeoutError):
-            # If the secondary probe fails, keep the kill(0) answer.
             pass
     return True
 

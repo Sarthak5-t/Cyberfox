@@ -86,10 +86,6 @@ def find_browser(override: str | None = None) -> str | None:
         found = shutil.which(name)
         if found:
             return found
-    if sys.platform == "darwin":
-        candidates = _mac_candidates()
-    elif sys.platform == "win32":
-        candidates = _windows_candidates()
     else:
         candidates = []
     for cand in candidates:
@@ -149,11 +145,6 @@ def launch(browser: str, port: int = DEFAULT_PORT, profile: Path | None = None) 
         "stdout": subprocess.DEVNULL,
         "stderr": subprocess.DEVNULL,
     }
-    if sys.platform == "win32":
-        kwargs["creationflags"] = (
-            subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # windows-footgun: ok
-        )
-    else:
-        kwargs["start_new_session"] = True
+    kwargs["start_new_session"] = True
     proc = subprocess.Popen(cmd, **kwargs)
     return proc.pid

@@ -1074,11 +1074,6 @@ def build_environment_hints() -> str:
         host_lines: list[str] = []
         if is_wsl():
             host_lines.append("Host: WSL (Windows Subsystem for Linux)")
-        elif sys.platform == "win32":
-            host_lines.append(f"Host: Windows ({platform.release()})")
-        elif sys.platform == "darwin":
-            mac_ver = platform.mac_ver()[0]
-            host_lines.append(f"Host: macOS ({mac_ver or platform.release()})")
         else:
             host_lines.append(f"Host: {platform.system()} ({platform.release()})")
 
@@ -1088,19 +1083,10 @@ def build_environment_hints() -> str:
         except OSError:
             pass
 
-        if sys.platform == "win32" and not is_wsl():
-            host_lines.append(
-                "Note: on Windows, the machine hostname (e.g. from `hostname` "
-                "or uname) is NOT the username. Use the 'User home directory' "
-                "above to construct paths under C:\\Users\\<user>\\, never the "
-                "hostname."
-            )
         hints.append("\n".join(host_lines))
 
         # Windows-local terminal runs bash, not PowerShell — the model must
         # know this or it will issue PowerShell syntax and fail.
-        if sys.platform == "win32" and not is_wsl():
-            hints.append(_WINDOWS_BASH_SHELL_HINT)
     else:
         # --- Remote backend block (host info suppressed) ---
         probe = _probe_remote_backend(backend)

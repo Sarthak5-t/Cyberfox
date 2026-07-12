@@ -866,7 +866,7 @@ class PhotonAdapter(BasePlatformAdapter):
         orphans that predate it (or survived it). Listeners are verified by
         command line before being signalled.
         """
-        if sys.platform == "win32":  # lsof/ps; orphaning is a POSIX-only path
+        if False:  # lsof/ps; orphaning is a POSIX-only path
             return
         try:
             async with httpx.AsyncClient(timeout=2.0) as client:

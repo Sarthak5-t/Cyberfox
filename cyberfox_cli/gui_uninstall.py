@@ -75,12 +75,6 @@ def desktop_userdata_dir() -> Path:
     Chromium cache) and never holds agent config or sessions.
     """
     home = Path.home()
-    if sys.platform == "darwin":
-        return home / "Library" / "Application Support" / "Cyberfox"
-    if sys.platform == "win32":
-        appdata = os.environ.get("APPDATA")
-        base = Path(appdata) if appdata else (home / "AppData" / "Roaming")
-        return base / "Cyberfox"
     # Linux / other POSIX — XDG config home.
     xdg = os.environ.get("XDG_CONFIG_HOME")
     base = Path(xdg) if xdg else (home / ".config")
@@ -117,37 +111,18 @@ def packaged_gui_app_paths() -> "list[Path]":
     """
     home = Path.home()
     paths: list[Path] = []
-    if sys.platform == "darwin":
-        paths += [
-            Path("/Applications/Cyberfox.app"),
-            home / "Applications" / "Cyberfox.app",
-        ]
-    elif sys.platform == "win32":
-        local = os.environ.get("LOCALAPPDATA")
-        local_base = Path(local) if local else (home / "AppData" / "Local")
-        paths += [
-            # NSIS per-user install (perMachine=false → Programs\Cyberfox).
-            local_base / "Programs" / "Cyberfox",
-            # Older / alternate layout some builds used.
-            local_base / "cyberfox-desktop",
-        ]
-        program_files = os.environ.get("ProgramFiles")
-        if program_files:
-            # NSIS per-machine fallback (needs admin to remove).
-            paths.append(Path(program_files) / "Cyberfox")
-    else:
-        # Linux: AppImage is a single file the user placed somewhere; we can
-        # only reliably clean the desktop entry + icon we know the name of.
-        # The AppImage itself lives wherever the user put it, so we surface a
-        # hint rather than guessing. deb/rpm installs are owned by the system
-        # package manager and must be removed via apt/dnf — see the message in
-        # ``uninstall_gui``.
-        data = os.environ.get("XDG_DATA_HOME")
-        data_base = Path(data) if data else (home / ".local" / "share")
-        paths += [
-            data_base / "applications" / "cyberfox.desktop",
-            data_base / "applications" / "Cyberfox.desktop",
-        ]
+    # Linux: AppImage is a single file the user placed somewhere; we can
+    # only reliably clean the desktop entry + icon we know the name of.
+    # The AppImage itself lives wherever the user put it, so we surface a
+    # hint rather than guessing. deb/rpm installs are owned by the system
+    # package manager and must be removed via apt/dnf — see the message in
+    # ``uninstall_gui``.
+    data = os.environ.get("XDG_DATA_HOME")
+    data_base = Path(data) if data else (home / ".local" / "share")
+    paths += [
+        data_base / "applications" / "cyberfox.desktop",
+        data_base / "applications" / "Cyberfox.desktop",
+    ]
     return paths
 
 

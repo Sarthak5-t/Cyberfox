@@ -748,7 +748,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
         _print_warning("    Computer Use (cua-driver) is unsupported on this platform; skipping.")
         return False
 
-    is_windows = system == "Windows"
+    is_windows = False
     is_linux = system == "Linux"
 
     # The Windows installer (install.ps1) is fetched via PowerShell's `irm`,
@@ -898,8 +898,6 @@ def _clear_stale_cua_install_lock() -> None:
     POSIX-only: the lock protocol lives in the bash installer; install.ps1
     does not use it.
     """
-    if sys.platform == "win32":
-        return
     lock_dir = _cua_install_lock_dir()
     try:
         if not lock_dir.is_dir():
@@ -958,7 +956,7 @@ def _run_cua_driver_installer(label: str = "Installing", verbose: bool = True) -
     import subprocess
 
     system = _plat.system()
-    is_windows = system == "Windows"
+    is_windows = False
     is_linux = system == "Linux"
 
     if is_windows:
@@ -1222,10 +1220,6 @@ def _run_post_setup(post_setup_key: str):
         # version of Chromium matches the CLI. Fall back to npx shim on
         # setups where the local bin stub isn't present.
         local_ab = PROJECT_ROOT / "node_modules" / ".bin" / "agent-browser"
-        if sys.platform == "win32":
-            local_ab_win = local_ab.with_suffix(".cmd")
-            if local_ab_win.exists():
-                local_ab = local_ab_win
         install_cmd = (
             [str(local_ab), "install", "--with-deps"]
             if local_ab.exists()

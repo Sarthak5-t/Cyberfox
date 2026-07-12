@@ -65,8 +65,6 @@ def _python_install_cmd() -> str:
 def _system_package_install_cmd(pkg: str) -> str:
     if _is_termux():
         return f"pkg install {pkg}"
-    if sys.platform == "darwin":
-        return f"brew install {pkg}"
     return f"sudo apt install {pkg}"
 
 
@@ -1613,16 +1611,10 @@ def run_doctor(args):
                             "Playwright Chromium not installed",
                             "(browser_* tools will be hidden from the agent)",
                         )
-                        if sys.platform == "win32":
-                            check_info(
-                                f"Install with: cd {PROJECT_ROOT} && "
-                                "npx playwright install chromium"
-                            )
-                        else:
-                            check_info(
-                                f"Install with: cd {PROJECT_ROOT} && "
-                                "npx playwright install --with-deps chromium"
-                            )
+                        check_info(
+                            f"Install with: cd {PROJECT_ROOT} && "
+                            "npx playwright install --with-deps chromium"
+                        )
     elif _is_termux():
         check_info("Node.js not found (browser tools are optional in the tested Termux path)")
         check_info("Install Node.js on Termux with: pkg install nodejs")

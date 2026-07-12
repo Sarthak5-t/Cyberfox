@@ -4556,65 +4556,33 @@ class GatewaySlashCommandsMixin:
         # so the simplest correct thing is: launch an inline Python helper
         # that runs the command and writes both outputs.
         try:
-            if sys.platform == "win32":
-                import textwrap
-                from cyberfox_cli._subprocess_compat import windows_detach_popen_kwargs
-
-                # cyberfox_cmd is a list of argv parts we can pass directly
-                # (no shell-quoting needed).
-                helper = textwrap.dedent(
-                    """
-                    import os, subprocess, sys
-                    output_path = sys.argv[1]
-                    exit_code_path = sys.argv[2]
-                    cmd = sys.argv[3:]
-                    env = dict(os.environ)
-                    env["PYTHONUNBUFFERED"] = "1"
-                    with open(output_path, "wb") as f:
-                        proc = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, env=env)
-                        rc = proc.wait(timeout=3600)
-                    with open(exit_code_path, "w") as f:
-                        f.write(str(rc))
-                    """
-                ).strip()
+            cyberfox_cmd_str = " ".join(shlex.quote(part) for part in cyberfox_cmd)
+            update_cmd = (
+                f"PYTHONUNBUFFERED=1 {cyberfox_cmd_str} update --gateway"
+                f" > {shlex.quote(str(output_path))} 2>&1; "
+                # Avoid `status=$?`: `status` is a read-only special parameter
+                # in zsh, and this command string is copied/reused in macOS/zsh
+                # operator wrappers. Keep the template zsh-safe even though this
+                # specific subprocess currently runs under bash.
+                f"rc=$?; printf '%s' \"$rc\" > {shlex.quote(str(exit_code_path))}"
+            )
+            setsid_bin = shutil.which("setsid")
+            if setsid_bin:
+                # Preferred: setsid creates a new session, fully detached
                 subprocess.Popen(
-                    [
-                        sys.executable, "-c", helper,
-                        str(output_path), str(exit_code_path),
-                        *cyberfox_cmd, "update", "--gateway",
-                    ],
+                    [setsid_bin, "bash", "-c", update_cmd],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    **windows_detach_popen_kwargs(),
+                    start_new_session=True,
                 )
             else:
-                cyberfox_cmd_str = " ".join(shlex.quote(part) for part in cyberfox_cmd)
-                update_cmd = (
-                    f"PYTHONUNBUFFERED=1 {cyberfox_cmd_str} update --gateway"
-                    f" > {shlex.quote(str(output_path))} 2>&1; "
-                    # Avoid `status=$?`: `status` is a read-only special parameter
-                    # in zsh, and this command string is copied/reused in macOS/zsh
-                    # operator wrappers. Keep the template zsh-safe even though this
-                    # specific subprocess currently runs under bash.
-                    f"rc=$?; printf '%s' \"$rc\" > {shlex.quote(str(exit_code_path))}"
+                # Fallback: start_new_session=True calls os.setsid() in child
+                subprocess.Popen(
+                    ["bash", "-c", update_cmd],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
                 )
-                setsid_bin = shutil.which("setsid")
-                if setsid_bin:
-                    # Preferred: setsid creates a new session, fully detached
-                    subprocess.Popen(
-                        [setsid_bin, "bash", "-c", update_cmd],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        start_new_session=True,
-                    )
-                else:
-                    # Fallback: start_new_session=True calls os.setsid() in child
-                    subprocess.Popen(
-                        ["bash", "-c", update_cmd],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        start_new_session=True,
-                    )
         except Exception as e:
             pending_path.unlink(missing_ok=True)
             exit_code_path.unlink(missing_ok=True)

@@ -165,15 +165,6 @@ def _platform_asset_name() -> str:
     system = platform.system()
     machine = platform.machine().lower()
 
-    if system == "Darwin":
-        # Universal binary works on both Intel and Apple Silicon — no
-        # need to pick a per-arch asset.
-        return f"bws-macos-universal-{_BWS_VERSION}.zip"
-
-    if system == "Windows":
-        arch = "aarch64" if machine in ("arm64", "aarch64") else "x86_64"
-        return f"bws-{arch}-pc-windows-msvc-{_BWS_VERSION}.zip"
-
     if system == "Linux":
         arch = "aarch64" if machine in ("arm64", "aarch64") else "x86_64"
         libc = "gnu"

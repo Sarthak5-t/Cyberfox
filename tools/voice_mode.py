@@ -1086,8 +1086,6 @@ def play_audio_file(file_path: str) -> bool:
     system = platform.system()
     players = []
 
-    if system == "Darwin":
-        players.append(["afplay", file_path])
     players.append(["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", file_path])
     if system == "Linux":
         players.append(["aplay", "-q", file_path])

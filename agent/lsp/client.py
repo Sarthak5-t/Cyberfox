@@ -85,12 +85,6 @@ def file_uri(path: str) -> str:
     Windows drive letters (``C:\\foo`` → ``file:///C:/foo``).
     """
     abs_path = os.path.abspath(path)
-    if os.name == "nt":
-        # Windows: backslash → forward slash, prepend extra slash so
-        # the drive letter shows up as part of the path component.
-        abs_path = abs_path.replace("\\", "/")
-        if not abs_path.startswith("/"):
-            abs_path = "/" + abs_path
     return "file://" + quote(abs_path, safe="/:")
 
 
@@ -99,8 +93,6 @@ def uri_to_path(uri: str) -> str:
     if not uri.startswith("file://"):
         return uri
     raw = uri[len("file://"):]
-    if os.name == "nt" and raw.startswith("/") and len(raw) > 2 and raw[2] == ":":
-        raw = raw[1:]  # strip leading slash before drive letter
     return os.path.normpath(unquote(raw))
 
 
@@ -259,9 +251,6 @@ class LSPClient:
             env.update(self._env)
 
         cmd = self._command
-        if sys.platform == "win32":
-            cmd = self._win_wrap_cmd(cmd)
-
         try:
             # start_new_session=True detaches the LSP server into its own
             # process group / session. Without this, the LSP server inherits

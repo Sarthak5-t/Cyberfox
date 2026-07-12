@@ -248,42 +248,11 @@ def uninstall_gateway_service():
             log_warn(f"Could not check systemd gateway services: {e}")
 
     # 3. macOS: uninstall launchd plist
-    elif system == "Darwin":
-        try:
-            from cyberfox_cli.gateway import get_launchd_plist_path
-            plist_path = get_launchd_plist_path()
-            if plist_path.exists():
-                subprocess.run(["launchctl", "unload", str(plist_path)],
-                               capture_output=True, check=False)
-                plist_path.unlink()
-                log_success(f"Removed macOS gateway service ({plist_path})")
-                stopped_something = True
-        except Exception as e:
-            log_warn(f"Could not remove launchd gateway service: {e}")
-
     # 4. Windows: uninstall Scheduled Task + Startup-folder entry.  The
     #    gateway_windows module already knows how to locate and remove both
     #    code paths (schtasks /Delete + .cmd unlink) and how to stop any
     #    running detached pythonw gateway process.  We call into it so the
     #    uninstall logic stays in exactly one place.
-    elif system == "Windows":
-        try:
-            from cyberfox_cli import gateway_windows
-            if gateway_windows.is_installed() or gateway_windows.is_task_registered() \
-                    or gateway_windows.is_startup_entry_installed():
-                try:
-                    gateway_windows.stop()
-                except Exception as e:
-                    log_warn(f"Could not stop Windows gateway cleanly: {e}")
-                try:
-                    gateway_windows.uninstall()
-                    log_success("Removed Windows gateway (Scheduled Task + Startup entry)")
-                    stopped_something = True
-                except Exception as e:
-                    log_warn(f"Could not fully uninstall Windows gateway: {e}")
-        except Exception as e:
-            log_warn(f"Could not check Windows gateway service: {e}")
-
     return stopped_something
 
 
@@ -415,7 +384,7 @@ def remove_portable_tooling_windows(cyberfox_home: Path) -> list[Path]:
 
 def _is_windows() -> bool:
     import sys
-    return sys.platform == "win32"
+    return False
 
 
 def _is_default_cyberfox_home(cyberfox_home: Path) -> bool:
@@ -772,26 +741,6 @@ def _perform_uninstall(
     else:
         log_info("No PATH entries found to remove in shell rc files")
 
-    if _is_windows():
-        log_info("Removing PATH entries from Windows User environment...")
-        # Expand %LOCALAPPDATA% etc. in cyberfox_home so the marker matching is
-        # against fully resolved paths — installer writes literal strings
-        # like C:\Users\<u>\AppData\Local\cyberfox\git\cmd, not %LOCALAPPDATA%.
-        removed_path_entries = remove_path_from_windows_registry(Path(os.path.expandvars(str(cyberfox_home))))
-        if removed_path_entries:
-            for entry in removed_path_entries:
-                log_success(f"Removed from User PATH: {entry}")
-        else:
-            log_info("No Cyberfox-owned PATH entries in User environment")
-
-        log_info("Removing CYBERFOX_HOME / CYBERFOX_GIT_BASH_PATH User env vars...")
-        removed_env = remove_cyberfox_env_vars_windows()
-        if removed_env:
-            for name in removed_env:
-                log_success(f"Removed User env var: {name}")
-        else:
-            log_info("No Cyberfox-set User env vars to remove")
-    
     # 3. Remove wrapper script
     log_info("Removing cyberfox command...")
     removed_wrappers = remove_wrapper_script()
@@ -855,15 +804,6 @@ def _perform_uninstall(
     #     remove even in "keep data" mode.  If we're doing a full uninstall
     #     the step-5 rmtree(cyberfox_home) would sweep them anyway; calling
     #     this helper there is a no-op since they'll already be gone.
-    if _is_windows():
-        log_info("Removing Windows installer artifacts (PortableGit, Node, gateway-service)...")
-        removed_artifacts = remove_portable_tooling_windows(cyberfox_home)
-        if removed_artifacts:
-            for path in removed_artifacts:
-                log_success(f"Removed {path}")
-        else:
-            log_info("No Windows installer artifacts to remove")
-    
     # 5. Optionally remove ~/.cyberfox/ data directory (and named profiles)
     if full_uninstall:
         # 5a. Stop and remove each named profile's gateway service and
@@ -898,18 +838,11 @@ def _perform_uninstall(
         print(f"  {cyberfox_home}/")
         print()
         print("To reinstall later with your existing settings:")
-        if _is_windows():
-            print(color("  iex (irm https://cyberfox-agent.nousresearch.com/install.ps1)", Colors.DIM))
-        else:
-            print(color("  curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash", Colors.DIM))
+        print(color("  curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash", Colors.DIM))
         print()
 
-    if _is_windows():
-        print(color("Open a new terminal (PowerShell / Windows Terminal) to pick up", Colors.YELLOW))
-        print(color("the updated User PATH and environment variables.", Colors.YELLOW))
-    else:
-        print(color("Reload your shell to complete the process:", Colors.YELLOW))
-        print("  source ~/.bashrc  # or ~/.zshrc")
+    print(color("Reload your shell to complete the process:", Colors.YELLOW))
+    print("  source ~/.bashrc  # or ~/.zshrc")
     print()
     print("Thank you for using Cyberfox Agent! ⚕")
     print()
