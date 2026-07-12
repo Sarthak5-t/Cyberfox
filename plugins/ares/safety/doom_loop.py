@@ -18,7 +18,7 @@ class DoomLoopDetector:
             return ()
         return tuple(sorted((k, str(v)) for k, v in args.items() if k != "task_id"))
 
-    def check(self, tool_name: str, args: dict, turn_id: str = None) -> bool:
+    def check(self, tool_name: str, args: dict, turn_id: str = None) -> int:
         if turn_id and turn_id != self._last_reset_turn:
             self._counts.clear()
             self._last_reset_turn = turn_id
@@ -60,8 +60,7 @@ def pre_tool_call(
     return {
         "action": "block",
         "message": (
-            f"Tool `{tool_name}` has been called {count} times with the same "
-            f"arguments (threshold: {threshold}). This appears to be a loop. "
-            f"Try a different approach or target."
+            f"Tool `{tool_name}` called {count} times with same args "
+            f"(threshold: {threshold}). This is a loop. Try a different approach."
         ),
     }

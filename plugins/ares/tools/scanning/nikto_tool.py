@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +30,10 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("nikto"):
         return json_result(False, error="nikto not found on PATH")
     try:
-        ssl_flag = "-ssl" if ssl else ""
-        cmd = f"nikto -h {shlex.quote(target)} {ssl_flag} -timeout {timeout_s} -format json"
-        result = run_command(cmd, timeout=600)
+        argv = ["nikto", "-h", target, "-timeout", str(timeout_s), "-format", "json"]
+        if ssl:
+            argv.append("-ssl")
+        result = run_command_argv(argv, timeout=600, shell=False)
         if result.returncode not in (0, 1):
             return json_result(False, error=result.stderr.strip() or f"nikto exited {result.returncode}")
         headers = []

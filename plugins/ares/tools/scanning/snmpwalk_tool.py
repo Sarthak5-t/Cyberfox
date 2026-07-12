@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +20,12 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("snmpwalk"):
         return json_result(False, error="snmpwalk not found on PATH")
     try:
-        cmd = f"snmpwalk -v{shlex.quote(str(version))} -c {shlex.quote(community)} {shlex.quote(target)} {shlex.quote(oid)}"
-        result = run_command(cmd, timeout=120)
+        argv = [
+            "snmpwalk", f"-v{version}",
+            "-c", community,
+            target, oid,
+        ]
+        result = run_command_argv(argv, timeout=120, shell=False)
         output = result.stdout.strip()[:50000]
         if result.returncode != 0 and not output:
             return json_result(False, error=result.stderr.strip() or f"snmpwalk exited {result.returncode}")

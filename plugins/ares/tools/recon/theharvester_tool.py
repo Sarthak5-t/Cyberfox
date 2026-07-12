@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +19,8 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("theHarvester"):
         return json_result(False, error="theHarvester not found on PATH")
     try:
-        cmd = f"theHarvester -d {shlex.quote(domain)} -b {shlex.quote(source)} -l {int(limit)}"
-        result = run_command(cmd, timeout=300)
+        argv = ["theHarvester", "-d", domain, "-b", source, "-l", str(int(limit))]
+        result = run_command_argv(argv, timeout=300)
         output = result.stdout.strip()[:50000]
         if result.returncode != 0 and not output:
             return json_result(False, error=result.stderr.strip() or f"theHarvester exited {result.returncode}")
@@ -36,24 +35,13 @@ def _handle(args: dict, **kw) -> str:
 
 SCHEMA = {
     "name": "theharvester_scan",
-    "description": "OSINT email and subdomain enumeration using theHarvester. Gathers emails, subdomains, IPs, and hosts from public sources.",
+    "description": "OSINT email and subdomain enumeration using theHarvester.",
     "parameters": {
         "type": "object",
         "properties": {
-            "domain": {
-                "type": "string",
-                "description": "Target domain to harvest (e.g. 'example.com')",
-            },
-            "source": {
-                "type": "string",
-                "default": "all",
-                "description": "Data source: all, bing, google, linkedin, twitter, dnsdumpster, crtsh, etc.",
-            },
-            "limit": {
-                "type": "integer",
-                "default": 500,
-                "description": "Maximum results per source",
-            },
+            "domain": {"type": "string", "description": "Target domain"},
+            "source": {"type": "string", "default": "all", "description": "Data source"},
+            "limit": {"type": "integer", "default": 500, "description": "Max results per source"},
         },
         "required": ["domain"],
     },

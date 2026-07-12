@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +18,11 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("enum4linux"):
         return json_result(False, error="enum4linux not found on PATH")
     try:
-        cmd = f"enum4linux -a {shlex.quote(target)}"
+        argv = ["enum4linux", "-a"]
         if username and password:
-            cmd = f"enum4linux -a -u {shlex.quote(username)} -p {shlex.quote(password)} {shlex.quote(target)}"
-        result = run_command(cmd, timeout=300)
+            argv.extend(["-u", username, "-p", password])
+        argv.append(target)
+        result = run_command_argv(argv, timeout=300, shell=False)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"enum4linux exited {result.returncode}")
         return json_result(True, data={

@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +18,10 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("amass"):
         return json_result(False, error="amass not found on PATH")
     try:
+        argv = ["amass", "enum", "-d", domain]
         if mode == "passive":
-            cmd = f"amass enum -passive -d {shlex.quote(domain)}"
-        else:
-            cmd = f"amass enum -d {shlex.quote(domain)}"
-        result = run_command(cmd, timeout=600)
+            argv.append("-passive")
+        result = run_command_argv(argv, timeout=600)
         output = result.stdout.strip()[:50000]
         if result.returncode != 0 and not output:
             return json_result(False, error=result.stderr.strip() or f"amass exited {result.returncode}")
@@ -38,20 +36,12 @@ def _handle(args: dict, **kw) -> str:
 
 SCHEMA = {
     "name": "amass_scan",
-    "description": "Deep subdomain enumeration — combines multiple OSINT sources for comprehensive subdomain discovery.",
+    "description": "Deep subdomain enumeration using multiple OSINT sources.",
     "parameters": {
         "type": "object",
         "properties": {
-            "domain": {
-                "type": "string",
-                "description": "Target domain (e.g. 'example.com')",
-            },
-            "mode": {
-                "type": "string",
-                "enum": ["enum", "passive"],
-                "default": "enum",
-                "description": "enum = active + passive (slower, more results), passive = OSINT only (faster, less noisy)",
-            },
+            "domain": {"type": "string", "description": "Target domain"},
+            "mode": {"type": "string", "enum": ["enum", "passive"], "default": "enum"},
         },
         "required": ["domain"],
     },

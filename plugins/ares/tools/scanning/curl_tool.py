@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -12,35 +11,37 @@ TOOLSET = "ares_scanning"
 
 
 def _handle(args: dict, **kw) -> str:
+    if not check_binary("curl"):
+        return json_result(False, error="curl not found on PATH (install with: apt install curl)")
     url = args.get("url", "")
     method = args.get("method", "GET")
     headers = args.get("headers", "")
     data = args.get("data", "")
-    follow = args.get("follow_redirects", True)
-    insecure = args.get("insecure", True)
+    follow = args.get("follow_redirects", False)
+    insecure = args.get("insecure", False)
     return_body = args.get("return_body", True)
     if not url:
         return json_result(False, error="url is required")
     try:
-        cmd = f"curl -sS --max-time 30"
+        argv = ["curl", "-sS", "--max-time", "30"]
         if return_body:
-            cmd += " -D-"
+            argv.append("-D-")
         else:
-            cmd += " -D- -o /dev/null"
+            argv.extend(["-D-", "-o", "/dev/null"])
         if follow:
-            cmd += " -L"
+            argv.append("-L")
         if insecure:
-            cmd += " -k"
-        cmd += f" -X {shlex.quote(method)}"
+            argv.append("-k")
+        argv.extend(["-X", method])
         if headers:
             for h in headers.split("\n"):
                 h = h.strip()
                 if h:
-                    cmd += f" -H {shlex.quote(h)}"
+                    argv.extend(["-H", h])
         if data:
-            cmd += f" -d {shlex.quote(data)}"
-        cmd += f" {shlex.quote(url)}"
-        result = run_command(cmd, timeout=60)
+            argv.extend(["-d", data])
+        argv.append(url)
+        result = run_command_argv(argv, timeout=60)
         output = result.stdout.strip()[:80000]
         return json_result(True, data={
             "url": url,
@@ -53,45 +54,17 @@ def _handle(args: dict, **kw) -> str:
 
 SCHEMA = {
     "name": "curl_tool",
-    "description": "HTTP request tool — test endpoints, check headers, probe for vulnerabilities, test auth, and verify findings.",
+    "description": "HTTP request tool — test endpoints, check headers, probe for vulnerabilities.",
     "parameters": {
         "type": "object",
         "properties": {
-            "url": {
-                "type": "string",
-                "description": "Target URL (e.g. 'http://10.10.10.1/robots.txt')",
-            },
-            "method": {
-                "type": "string",
-                "default": "GET",
-                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
-                "description": "HTTP method",
-            },
-            "headers": {
-                "type": "string",
-                "default": "",
-                "description": "Headers (newline-separated, e.g. 'X-Forwarded-For: 127.0.0.1\\nHost: internal.local')",
-            },
-            "data": {
-                "type": "string",
-                "default": "",
-                "description": "POST data (e.g. 'user=admin&pass=test')",
-            },
-            "follow_redirects": {
-                "type": "boolean",
-                "default": True,
-                "description": "Follow HTTP redirects",
-            },
-            "insecure": {
-                "type": "boolean",
-                "default": True,
-                "description": "Skip SSL/TLS verification",
-            },
-            "return_body": {
-                "type": "boolean",
-                "default": True,
-                "description": "Include response body (default True). Set False for headers-only.",
-            },
+            "url": {"type": "string", "description": "Target URL"},
+            "method": {"type": "string", "default": "GET", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]},
+            "headers": {"type": "string", "default": "", "description": "Newline-separated headers"},
+            "data": {"type": "string", "default": "", "description": "POST data"},
+            "follow_redirects": {"type": "boolean", "default": False, "description": "Follow HTTP redirects"},
+            "insecure": {"type": "boolean", "default": False, "description": "Skip SSL verification"},
+            "return_body": {"type": "boolean", "default": True, "description": "Include response body"},
         },
         "required": ["url"],
     },

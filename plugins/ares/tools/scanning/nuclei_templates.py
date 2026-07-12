@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +37,13 @@ def _run_nuclei_templates(target: str, template_type: str, severity: str) -> str
         
         template_dir = template_map.get(template_type, "cves")
         
-        cmd = f"nuclei -u {shlex.quote(target)} -severity {shlex.quote(severity)} -t nuclei-templates/{template_dir}/ -json"
-        result = run_command(cmd, timeout=600)
+        argv = [
+            "nuclei", "-u", target,
+            "-severity", severity,
+            "-t", f"nuclei-templates/{template_dir}/",
+            "-json",
+        ]
+        result = run_command_argv(argv, timeout=600, shell=False)
         
         findings = []
         for line in result.stdout.split("\n"):

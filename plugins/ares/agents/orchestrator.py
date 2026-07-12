@@ -19,6 +19,30 @@ def _handle(args: dict, **kw) -> str:
     if role not in AGENT_DEFINITIONS:
         return json_result(False, error=f"Unknown role: {role}. Available: {list(AGENT_DEFINITIONS.keys())}")
     agent_def = AGENT_DEFINITIONS[role]
+
+    parent_agent = kw.get("parent_agent")
+    if parent_agent:
+        try:
+            from tools.delegate_tool import delegate_task as _delegate_task
+            full_context = (
+                f"Role: {agent_def['description']}\n"
+                f"Allowed toolsets: {', '.join(agent_def['allowed_toolsets'])}\n\n"
+                f"{context}"
+            )
+            result = _delegate_task(
+                goal=goal,
+                context=full_context,
+                role="leaf",
+                background=False,
+                parent_agent=parent_agent,
+            )
+            return result if isinstance(result, str) else json_result(True, data=result)
+        except ImportError:
+            logger.warning("delegate_task not available, returning task definition only")
+        except Exception as e:
+            logger.error(f"Delegation failed: {e}")
+            return json_result(False, error=f"Delegation failed: {e}")
+
     payload = {
         "action": action,
         "role": role,
@@ -26,6 +50,7 @@ def _handle(args: dict, **kw) -> str:
         "allowed_toolsets": agent_def["allowed_toolsets"],
         "goal": goal,
         "context": context,
+        "note": "delegate_task unavailable — call delegate_task manually with this goal/context",
     }
     return json_result(True, data=payload)
 

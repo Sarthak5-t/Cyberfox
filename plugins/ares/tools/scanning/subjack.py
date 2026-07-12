@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +27,16 @@ def _handle(args: dict, **kw) -> str:
 def _scan_subdomains(domain: str, wordlist: str, threads: int) -> str:
     """Scan for subdomain takeover vulnerabilities."""
     try:
-        cmd = f"subjack -w {shlex.quote(wordlist)} -t {threads} -timeout 30 -ssl -c fingerprints.json -v {shlex.quote(domain)}"
-        result = run_command(cmd, timeout=600)
+        argv = [
+            "subjack",
+            "-w", wordlist,
+            "-t", str(threads),
+            "-timeout", "30",
+            "-ssl",
+            "-c", "fingerprints.json",
+            "-v", domain,
+        ]
+        result = run_command_argv(argv, timeout=600, shell=False)
         
         findings = []
         for line in result.stdout.split("\n"):

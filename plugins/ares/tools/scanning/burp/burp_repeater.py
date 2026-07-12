@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -12,47 +11,35 @@ TOOLSET = "ares_scanning"
 
 
 def _handle(args: dict, **kw) -> str:
+    if not check_binary("curl"):
+        return json_result(False, error="curl not found on PATH")
     target = args.get("target", "")
     method = args.get("method", "GET")
     headers = args.get("headers", {})
     data = args.get("data", "")
-    
     if not target:
         return json_result(False, error="target is required")
-    
     return _send_request(target, method, headers, data)
 
 
 def _send_request(target: str, method: str, headers: dict, data: str) -> str:
-    """Send HTTP request and analyze response."""
     try:
-        cmd_parts = ["curl", "-s", "-i", "-X", method, "--max-time", "15"]
-        
-        # Add headers
+        argv = ["curl", "-s", "-i", "-X", method, "--max-time", "15"]
         for key, value in headers.items():
-            cmd_parts.extend(["-H", f"{key}: {value}"])
-        
-        # Add data if present
+            argv.extend(["-H", f"{key}: {value}"])
         if data:
-            cmd_parts.extend(["-d", data])
-        
-        cmd_parts.append(target)
-        
-        cmd = " ".join(cmd_parts)
-        result = run_command(cmd, timeout=20)
-        
-        # Parse response
+            argv.extend(["-d", data])
+        argv.append(target)
+        result = run_command_argv(argv, timeout=20)
         response = {
             "status_code": 0,
             "headers": {},
             "body": "",
             "security_headers": [],
         }
-        
         lines = result.stdout.split("\n")
         in_body = False
         body_lines = []
-        
         for line in lines:
             if in_body:
                 body_lines.append(line)
@@ -61,32 +48,20 @@ def _send_request(target: str, method: str, headers: dict, data: str) -> str:
             elif ":" in line:
                 key, _, value = line.partition(":")
                 response["headers"][key.strip()] = value.strip()
-        
         response["body"] = "\n".join(body_lines)[:5000]
-        
-        # Check status code
         status_line = lines[0] if lines else ""
         if "HTTP/" in status_line:
             parts = status_line.split()
             if len(parts) >= 2:
                 response["status_code"] = int(parts[1])
-        
-        # Check security headers
         security_headers = [
-            "strict-transport-security",
-            "x-content-type-options",
-            "x-frame-options",
-            "x-xss-protection",
-            "content-security-policy",
-            "x-permitted-cross-domain-policies",
-            "referrer-policy",
-            "permissions-policy",
+            "strict-transport-security", "x-content-type-options",
+            "x-frame-options", "x-xss-protection", "content-security-policy",
+            "x-permitted-cross-domain-policies", "referrer-policy", "permissions-policy",
         ]
-        
         for header in security_headers:
             if header.lower() not in [k.lower() for k in response["headers"]]:
                 response["security_headers"].append(header)
-        
         return json_result(True, data={
             "target": target,
             "method": method,
@@ -98,14 +73,14 @@ def _send_request(target: str, method: str, headers: dict, data: str) -> str:
 
 SCHEMA = {
     "name": "burp_repeater",
-    "description": "Manual HTTP request crafting and analysis. Send custom requests and inspect responses for security testing.",
+    "description": "Manual HTTP request crafting and analysis.",
     "parameters": {
         "type": "object",
         "properties": {
-            "target": {"type": "string", "description": "Target URL (e.g. 'https://example.com/api')"},
-            "method": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"], "default": "GET", "description": "HTTP method"},
-            "headers": {"type": "object", "default": {}, "description": "Custom headers as key-value pairs"},
-            "data": {"type": "string", "default": "", "description": "Request body data"},
+            "target": {"type": "string", "description": "Target URL"},
+            "method": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"], "default": "GET"},
+            "headers": {"type": "object", "default": {}, "description": "Custom headers"},
+            "data": {"type": "string", "default": "", "description": "Request body"},
         },
         "required": ["target"],
     },

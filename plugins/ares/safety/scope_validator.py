@@ -7,11 +7,6 @@ from plugins.ares.tools.base import extract_target
 
 logger = logging.getLogger(__name__)
 
-_ARES_TOOLSETS = frozenset({
-    "ares_recon", "ares_dns", "ares_scanning", "ares_exploit",
-    "ares_ad", "ares_report", "ares_delegation",
-})
-
 
 def pre_tool_call(
     tool_name: str,
@@ -40,8 +35,7 @@ def pre_tool_call(
     return {
         "action": "block",
         "message": (
-            f"Target `{target}` is outside the authorized scope defined in "
-            f"`{cfg.scope_file}`. Allowed targets: {cfg.scope.get('allow', [])}. "
-            f"Update the scope file if this target should be tested."
+            f"Target `{target}` is outside the authorized scope. "
+            f"Allowed: {cfg.scope}. Update scope file to include this target."
         ),
     }

@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
-import time
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +27,13 @@ def _handle(args: dict, **kw) -> str:
 def _gobuster_spider(target: str, max_depth: int, max_urls: int) -> str:
     """Use gobuster for web crawling."""
     try:
-        cmd = f"gobuster dir -u {shlex.quote(target)} -w /usr/share/wordlists/dirb/common.txt -t 10 --no-error -q"
-        result = run_command(cmd, timeout=300)
+        argv = [
+            "gobuster", "dir",
+            "-u", target,
+            "-w", "/usr/share/wordlists/dirb/common.txt",
+            "-t", "10", "--no-error", "-q",
+        ]
+        result = run_command_argv(argv, timeout=300, shell=False)
         
         urls = []
         for line in result.stdout.split("\n"):
@@ -52,12 +55,13 @@ def _fallback_spider(target: str, max_depth: int) -> str:
     urls = []
     
     try:
-        cmd = f"curl -sL {shlex.quote(target)} --max-time 10 | grep -oP 'href=\"\\K[^\"]+' | head -50"
-        result = run_command(cmd, timeout=15)
+        argv = ["curl", "-sL", target, "--max-time", "10"]
+        result = run_command_argv(argv, timeout=15, shell=False)
         
-        for line in result.stdout.split("\n"):
-            if line.strip():
-                urls.append(line.strip())
+        import re
+        for match in re.findall(r'href="([^"]+)"', result.stdout):
+            if match.strip():
+                urls.append(match.strip())
     except Exception as e:
         logger.warning(f"Spider failed: {e}")
     

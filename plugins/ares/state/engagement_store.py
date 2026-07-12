@@ -121,7 +121,7 @@ def _db_path() -> Path:
 def _connect() -> sqlite3.Connection:
     p = _db_path()
     p.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(p))
+    conn = sqlite3.connect(str(p), timeout=5)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -137,9 +137,20 @@ def init_db() -> None:
         conn = _connect()
         try:
             conn.executescript(_SCHEMA_SQL)
+            _run_migrations(conn)
             conn.commit()
+            try:
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except Exception:
+                pass
         finally:
             conn.close()
+
+
+def _run_migrations(conn: sqlite3.Connection) -> None:
+    current = conn.execute("PRAGMA user_version").fetchone()[0]
+    if current < 1:
+        conn.execute("PRAGMA user_version = 1")
 
 
 def _row_to_dict(row: sqlite3.Row) -> dict:
@@ -162,6 +173,8 @@ def create_engagement(name: str, scope: list[str] | None = None, goals: str = ""
             )
             conn.commit()
             return cur.lastrowid or 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError) as e:
+            return 0
         finally:
             conn.close()
 
@@ -185,6 +198,8 @@ def get_engagement(name: str | None = None, engagement_id: int | None = None) ->
                 state=d["state"], started_at=d["started_at"],
                 updated_at=d["updated_at"],
             )
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return None
         finally:
             conn.close()
 
@@ -197,6 +212,8 @@ def list_engagements() -> list[dict]:
                 "SELECT id, name, state, started_at FROM engagements ORDER BY id DESC LIMIT 20"
             ).fetchall()
             return [_row_to_dict(r) for r in rows]
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return []
         finally:
             conn.close()
 
@@ -214,6 +231,8 @@ def transition_state(engagement_id: int, new_state: str) -> bool:
             )
             conn.commit()
             return cur.rowcount > 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return False
         finally:
             conn.close()
 
@@ -248,6 +267,8 @@ def save_entity(
             )
             conn.commit()
             return cur.lastrowid or 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return 0
         finally:
             conn.close()
 
@@ -266,6 +287,8 @@ def get_entity(entity_id: int) -> Optional[Entity]:
                 confidence=d["confidence"], verified=bool(d["verified"]),
                 parent_id=d["parent_id"], created_at=d["created_at"],
             )
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return None
         finally:
             conn.close()
 
@@ -301,6 +324,8 @@ def query_entities(
                 )
                 for r in rows
             ]
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return []
         finally:
             conn.close()
 
@@ -322,6 +347,8 @@ def get_entity_by_name(engagement_id: int, entity_type: str, name: str) -> Optio
                 confidence=d["confidence"], verified=bool(d["verified"]),
                 parent_id=d["parent_id"], created_at=d["created_at"],
             )
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return None
         finally:
             conn.close()
 
@@ -335,6 +362,8 @@ def count_entities(engagement_id: int) -> dict[str, int]:
                 (engagement_id,),
             ).fetchall()
             return {r["type"]: r["cnt"] for r in rows}
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return {}
         finally:
             conn.close()
 
@@ -366,6 +395,8 @@ def add_relationship(
             )
             conn.commit()
             return cur.lastrowid or 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return 0
         finally:
             conn.close()
 
@@ -424,6 +455,8 @@ def get_neighbors(
                     results.append(d)
 
             return results
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return []
         finally:
             conn.close()
 
@@ -459,6 +492,38 @@ def get_full_graph(engagement_id: int) -> GraphView:
                 for r in r_rows
             ]
             return GraphView(entities=entities, relationships=relationships)
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return []
+        finally:
+            conn.close()
+
+
+def get_context_summary(engagement_id: int, max_chars: int = 2000) -> str:
+    """Return a bounded text summary of the knowledge graph for LLM context injection."""
+    priority_types = ["host", "credential", "vulnerability", "finding", "port", "service", "technology", "subdomain", "user", "group"]
+    with _LOCK:
+        conn = _connect()
+        try:
+            lines = []
+            lines.append(f"=== Knowledge Graph ({max_chars} char budget) ===")
+            for etype in priority_types:
+                rows = conn.execute(
+                    "SELECT name, data FROM entities WHERE engagement = ? AND type = ? ORDER BY created_at DESC LIMIT 20",
+                    (engagement_id, etype),
+                ).fetchall()
+                if rows:
+                    entries = []
+                    for r in rows:
+                        d = json.loads(r["data"])
+                        detail = d.get("version") or d.get("severity") or d.get("service") or ""
+                        entries.append(f"{r['name']}" + (f" ({detail})" if detail else ""))
+                    lines.append(f"{etype}: {', '.join(entries)}")
+            summary = "\n".join(lines)
+            if len(summary) > max_chars:
+                summary = summary[:max_chars - 3] + "..."
+            return summary
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return ""
         finally:
             conn.close()
 
@@ -490,6 +555,8 @@ def create_task(
             )
             conn.commit()
             return cur.lastrowid or 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return 0
         finally:
             conn.close()
 
@@ -524,6 +591,8 @@ def update_task(
             )
             conn.commit()
             return cur.rowcount > 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return False
         finally:
             conn.close()
 
@@ -555,6 +624,8 @@ def get_next_task(engagement_id: int) -> Optional[PlanTask]:
                 result=d["result"], confidence=d["confidence"],
                 created_at=d["created_at"], updated_at=d["updated_at"],
             )
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return None
         finally:
             conn.close()
 
@@ -591,6 +662,8 @@ def get_tasks(
                 )
                 for r in rows
             ]
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return []
         finally:
             conn.close()
 
@@ -615,6 +688,8 @@ def get_plan_summary(engagement_id: int) -> dict:
                 "skipped": counts.get("skipped", 0),
                 "percent": round(counts.get("completed", 0) / max(total, 1) * 100),
             }
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return {"total": 0, "completed": 0, "pending": 0, "in_progress": 0, "failed": 0, "skipped": 0, "percent": 0}
         finally:
             conn.close()
 
@@ -641,6 +716,8 @@ def add_decision(
             )
             conn.commit()
             return cur.lastrowid or 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return 0
         finally:
             conn.close()
 
@@ -662,6 +739,8 @@ def get_decisions(engagement_id: int, limit: int = 20) -> list[Decision]:
                 )
                 for r in rows
             ]
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return []
         finally:
             conn.close()
 
@@ -694,6 +773,8 @@ def log_event(
             )
             conn.commit()
             return cur.lastrowid or 0
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            return 0
         finally:
             conn.close()
 
@@ -727,5 +808,7 @@ def get_events(
                 )
                 for r in rows
             ]
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, json.JSONDecodeError, OverflowError):
+            return []
         finally:
             conn.close()

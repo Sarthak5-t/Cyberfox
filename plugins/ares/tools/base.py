@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -16,6 +17,9 @@ logger = logging.getLogger(__name__)
 _MAX_OUTPUT_LINES = 2000
 _MAX_OUTPUT_BYTES = 51200
 _TRUNCATION_DIR: Optional[Path] = None
+
+_SAFE_KEY_RE = re.compile(r"^[A-Za-z0-9_./-]+$")
+_DANGEROUS_VALUE_RE = re.compile(r"[\n\r\x00`<%]")
 
 
 def _cyberfox_home() -> Path:
@@ -75,17 +79,40 @@ def truncate_output(
 
 
 def extract_target(args: dict) -> Optional[str]:
-    for key in ("target", "host", "domain", "url", "ip"):
+    for key in ("target", "host", "domain", "url", "ip", "rhosts", "rhost", "hostnames", "target_url", "target_ip"):
         val = args.get(key)
         if val and isinstance(val, str) and val.strip():
             return val.strip()
     return None
 
 
+def validate_option_key(key: str) -> bool:
+    return bool(_SAFE_KEY_RE.match(key))
+
+
+def validate_option_value(value: str) -> bool:
+    return not _DANGEROUS_VALUE_RE.search(value)
+
+
 def run_command(cmd: str, timeout: int = 300, **kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(
         cmd,
         shell=True,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        **kwargs,
+    )
+
+
+def run_command_argv(
+    argv: list[str],
+    timeout: int = 300,
+    **kwargs,
+) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        argv,
+        shell=False,
         capture_output=True,
         text=True,
         timeout=timeout,

@@ -4,6 +4,7 @@ import json
 
 from plugins.ares.tools.base import json_result
 from plugins.ares.state import engagement_store as store
+from plugins.ares.journal_store import init_journal, read_recent
 
 TOOLSET = "ares_utility"
 
@@ -40,62 +41,87 @@ _KILL_CHAIN_TEMPLATE = [
 
 
 def _handle_init(args: dict, **kw) -> str:
-    name = args.get("name", "engagement")
-    scope_raw = args.get("scope", "")
-    goals = args.get("goals", "")
-    if isinstance(scope_raw, str):
-        scope = [t.strip() for t in scope_raw.split(",") if t.strip()]
-    else:
-        scope = scope_raw or []
-    eid = store.create_engagement(name, scope, goals)
-    return json_result(True, data={
-        "engagement_id": eid,
-        "name": name,
-        "scope": scope,
-        "goals": goals,
-        "state": "planning",
-        "message": f"Engagement '{name}' created. Use plan_create to generate your attack plan.",
-    })
+    try:
+        name = args.get("name", "engagement")
+        scope_raw = args.get("scope", "")
+        goals = args.get("goals", "")
+        if isinstance(scope_raw, str):
+            scope = [t.strip() for t in scope_raw.split(",") if t.strip()]
+        else:
+            scope = scope_raw or []
+        eid = store.create_engagement(name, scope, goals)
+        if not eid:
+            return json_result(False, error="Failed to create engagement (database error)")
+        targets_str = ", ".join(scope) if scope else ""
+        init_journal(engagement_name=name, targets=targets_str)
+        return json_result(True, data={
+            "engagement_id": eid,
+            "name": name,
+            "scope": scope,
+            "goals": goals,
+            "state": "planning",
+            "message": f"Engagement '{name}' created. Use plan_create to generate your attack plan.",
+        })
+    except Exception as e:
+        return json_result(False, error=f"engage_init failed: {e}")
 
 
 def _handle_resume(args: dict, **kw) -> str:
-    name = args.get("name")
-    eid = args.get("engagement_id")
-    eng = store.get_engagement(name=name, engagement_id=eid)
-    if not eng:
-        return json_result(False, error="Engagement not found. Use engage_init to create one.")
-    counts = store.count_entities(eng.id)
-    plan = store.get_plan_summary(eng.id)
-    return json_result(True, data={
-        "engagement_id": eng.id,
-        "name": eng.name,
-        "state": eng.state,
-        "scope": eng.scope,
-        "goals": eng.goals,
-        "entities": counts,
-        "plan": plan,
-    })
+    try:
+        name = args.get("name")
+        eid = args.get("engagement_id")
+        eng = store.get_engagement(name=name, engagement_id=eid)
+        if not eng:
+            return json_result(False, error="Engagement not found. Use engage_init to create one.")
+        counts = store.count_entities(eng.id)
+        plan = store.get_plan_summary(eng.id)
+        entities = {}
+        for etype in counts:
+            items = store.query_entities(eng.id, entity_type=etype, limit=20)
+            entities[etype] = [{"name": e.name, "data": e.data} for e in items]
+        tasks = store.get_tasks(eng.id)
+        task_list = [{"id": t.id, "phase": t.phase, "title": t.title, "status": t.status, "tool": t.tool} for t in tasks]
+        recent_decisions = store.get_decisions(eng.id, limit=5)
+        decisions_list = [{"reasoning": d.reasoning, "action": d.action, "at": d.created_at} for d in recent_decisions]
+        journal_content = read_recent(10)
+        return json_result(True, data={
+            "engagement_id": eng.id,
+            "name": eng.name,
+            "state": eng.state,
+            "scope": eng.scope,
+            "goals": eng.goals,
+            "entities": entities,
+            "plan": task_list,
+            "plan_summary": plan,
+            "recent_decisions": decisions_list,
+            "journal": journal_content,
+        })
+    except Exception as e:
+        return json_result(False, error=f"engage_resume failed: {e}")
 
 
 def _handle_status(args: dict, **kw) -> str:
-    eng = store.get_engagement()
-    if not eng:
-        return json_result(False, error="No active engagement. Use engage_init to start one.")
-    counts = store.count_entities(eng.id)
-    plan = store.get_plan_summary(eng.id)
-    recent_decisions = store.get_decisions(eng.id, limit=5)
-    return json_result(True, data={
-        "engagement_id": eng.id,
-        "name": eng.name,
-        "state": eng.state,
-        "scope": eng.scope,
-        "entities": counts,
-        "plan": plan,
-        "recent_decisions": [
-            {"reasoning": d.reasoning, "action": d.action, "at": d.created_at}
-            for d in recent_decisions
-        ],
-    })
+    try:
+        eng = store.get_engagement()
+        if not eng:
+            return json_result(False, error="No active engagement. Use engage_init to start one.")
+        counts = store.count_entities(eng.id)
+        plan = store.get_plan_summary(eng.id)
+        recent_decisions = store.get_decisions(eng.id, limit=5)
+        return json_result(True, data={
+            "engagement_id": eng.id,
+            "name": eng.name,
+            "state": eng.state,
+            "scope": eng.scope,
+            "entities": counts,
+            "plan": plan,
+            "recent_decisions": [
+                {"reasoning": d.reasoning, "action": d.action, "at": d.created_at}
+                for d in recent_decisions
+            ],
+        })
+    except Exception as e:
+        return json_result(False, error=f"engage_status failed: {e}")
 
 
 _INIT_SCHEMA = {

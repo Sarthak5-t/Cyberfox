@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +22,18 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("certipy-ad"):
         return json_result(False, error="certipy-ad not found on PATH (install with: pip install certipy-ad)")
     try:
-        cmd = f"certipy-ad {shlex.quote(action)} -target {shlex.quote(target)}"
+        argv = ["certipy-ad", action, "-target", target]
         if username:
-            cmd += f" -u {shlex.quote(username)}"
+            argv.extend(["-u", username])
         if password:
-            cmd += f" -p {shlex.quote(password)}"
+            argv.extend(["-p", password])
         if hashes:
-            cmd += f" -hashes {shlex.quote(hashes)}"
+            argv.extend(["-hashes", hashes])
         if dc_ip:
-            cmd += f" -dc-ip {shlex.quote(dc_ip)}"
+            argv.extend(["-dc-ip", dc_ip])
         if ca:
-            cmd += f" -ca {shlex.quote(ca)}"
-        result = run_command(cmd, timeout=300)
+            argv.extend(["-ca", ca])
+        result = run_command_argv(argv, timeout=300, shell=False)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"certipy-ad exited {result.returncode}")
         return json_result(True, data={

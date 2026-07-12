@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
 TOOLSET = "ares_recon"
-
 
 
 def _handle(args: dict, **kw) -> str:
@@ -18,11 +16,10 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("subfinder"):
         return json_result(False, error="subfinder not found on PATH")
     try:
+        argv = ["subfinder", "-d", domain, "-oJ"]
         if sources and sources != "all":
-            cmd = f"subfinder -d {shlex.quote(domain)} -sources {shlex.quote(sources)} -oJ"
-        else:
-            cmd = f"subfinder -d {shlex.quote(domain)} -oJ"
-        result = run_command(cmd, timeout=180)
+            argv.extend(["-sources", sources])
+        result = run_command_argv(argv, timeout=180)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"subfinder exited {result.returncode}")
         subdomains = []
@@ -44,16 +41,12 @@ def _handle(args: dict, **kw) -> str:
 
 SCHEMA = {
     "name": "subdomain_enum",
-    "description": "Passive subdomain enumeration using subfinder. Discovers subdomains from various public sources.",
+    "description": "Passive subdomain enumeration using subfinder.",
     "parameters": {
         "type": "object",
         "properties": {
-            "domain": {"type": "string", "description": "Target domain to enumerate subdomains for"},
-            "sources": {
-                "type": "string",
-                "default": "all",
-                "description": "Comma-separated sources or 'all' (e.g. 'crtsh,virustotal,alienvault')",
-            },
+            "domain": {"type": "string", "description": "Target domain"},
+            "sources": {"type": "string", "default": "all", "description": "Comma-separated sources or 'all'"},
         },
         "required": ["domain"],
     },

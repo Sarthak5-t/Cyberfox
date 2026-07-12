@@ -12,8 +12,6 @@ _EXPLOIT_TOOLS = frozenset({
     "metasploit_tool", "ares_delegate",
 })
 
-_EXPLOIT_TOOLSETS = frozenset({"ares_exploit", "ares_ad"})
-
 
 def pre_tool_call(
     tool_name: str,
@@ -37,10 +35,7 @@ def pre_tool_call(
     return {
         "action": "block",
         "message": (
-            f"Tool `{tool_name}` is an exploitation tool and requires explicit "
-            f"approval. This is a safety control to prevent unintended "
-            f"exploitation. If you have confirmed the target is in scope and "
-            f"you intend to proceed, use a different approach or disable this "
-            f"guard via `ares.safety.require_exploit_approval: false` in config."
+            f"Tool `{tool_name}` is an exploitation tool requiring explicit "
+            f"approval. Disable via `ares.safety.require_exploit_approval: false`."
         ),
     }

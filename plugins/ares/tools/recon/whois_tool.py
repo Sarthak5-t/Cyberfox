@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("whois"):
         return json_result(False, error="whois not found on PATH")
     try:
-        result = run_command(f"whois {shlex.quote(target)}", timeout=60)
+        result = run_command_argv(["whois", target], timeout=60)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"whois exited {result.returncode}")
         return json_result(True, data={
@@ -31,14 +30,11 @@ def _handle(args: dict, **kw) -> str:
 
 SCHEMA = {
     "name": "whois_scan",
-    "description": "WHOIS lookup for domain/IP registration information. Returns registrant, name servers, creation/expiry dates, ASN, and related infrastructure.",
+    "description": "WHOIS lookup for domain/IP registration information.",
     "parameters": {
         "type": "object",
         "properties": {
-            "target": {
-                "type": "string",
-                "description": "Domain name, IP address, or ASN (e.g. 'example.com', '10.10.10.0', 'AS15169')",
-            },
+            "target": {"type": "string", "description": "Domain, IP, or ASN"},
         },
         "required": ["target"],
     },

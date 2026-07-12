@@ -2,22 +2,21 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
+import xml.etree.ElementTree as ET
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
 TOOLSET = "ares_recon"
 
 SCAN_TYPES = {
-    "quick": "-T4 -F",
-    "full": "-T4 -p- -A",
-    "vuln": "-T4 --script vuln",
-    "udp": "-T4 -sU --top-ports 100",
-    "stealth": "-T2 -sS -F",
+    "quick": ["-T4", "-F"],
+    "full": ["-T4", "-p-", "-A"],
+    "vuln": ["-T4", "--script", "vuln"],
+    "udp": ["-T4", "-sU", "--top-ports", "100"],
+    "stealth": ["-T2", "-sS", "-F"],
 }
-
 
 
 def _handle(args: dict, **kw) -> str:
@@ -26,11 +25,12 @@ def _handle(args: dict, **kw) -> str:
     ports = args.get("ports", "")
     if not check_binary("nmap"):
         return json_result(False, error="nmap not found on PATH")
-    flags = SCAN_TYPES.get(scan_type, "-T4 -F")
+    flags = list(SCAN_TYPES.get(scan_type, ["-T4", "-F"]))
     if ports:
-        flags = f"{flags} -p {shlex.quote(ports)}"
+        flags.extend(["-p", str(ports)])
     try:
-        result = run_command(f"nmap {flags} -oX - {shlex.quote(target)}", timeout=600)
+        argv = ["nmap", *flags, "-oX", "-", target]
+        result = run_command_argv(argv, timeout=600)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"nmap exited {result.returncode}")
         parsed = _parse_nmap_xml(result.stdout)
@@ -44,7 +44,6 @@ def _handle(args: dict, **kw) -> str:
 
 
 def _parse_nmap_xml(xml: str) -> list:
-    import xml.etree.ElementTree as ET
     hosts = []
     try:
         root = ET.fromstring(xml)
@@ -79,21 +78,9 @@ SCHEMA = {
     "parameters": {
         "type": "object",
         "properties": {
-            "target": {
-                "type": "string",
-                "description": "Target IP address, hostname, or CIDR range (e.g. '10.10.10.10' or '192.168.1.0/24')",
-            },
-            "scan_type": {
-                "type": "string",
-                "enum": list(SCAN_TYPES.keys()),
-                "default": "quick",
-                "description": "Scan intensity: quick (-T4 -F), full (-T4 -p- -A), vuln (--script vuln), udp (-sU), stealth (-T2 -sS)",
-            },
-            "ports": {
-                "type": "string",
-                "default": "",
-                "description": "Port specification override (e.g. '80,443' or '1-1000'). Adds to the scan_type's default flags.",
-            },
+            "target": {"type": "string", "description": "Target IP, hostname, or CIDR"},
+            "scan_type": {"type": "string", "enum": list(SCAN_TYPES.keys()), "default": "quick"},
+            "ports": {"type": "string", "default": "", "description": "Port spec (e.g. '80,443' or '1-1000')"},
         },
         "required": ["target"],
     },

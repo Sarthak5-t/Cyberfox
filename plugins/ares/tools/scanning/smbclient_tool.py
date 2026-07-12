@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+import re
+
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
+
+_DANGEROUS_FILENAME_RE = re.compile(r"[;|`\n\r\x00]")
 
 TOOLSET = "ares_scanning"
 
@@ -22,29 +25,36 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("smbclient"):
         return json_result(False, error="smbclient not found on PATH")
     try:
-        auth = ""
+        argv = ["smbclient"]
+        if share:
+            argv.append(f"//{target}/{share}")
+        else:
+            argv.extend(["-L", f"//{target}"])
         if username:
-            auth = f"-U {shlex.quote(username)}"
+            auth = username
             if password:
-                auth += f"%{shlex.quote(password)}"
+                auth += f"%{password}"
+            argv.extend(["-U", auth])
         if share:
             if action == "list":
-                cmd = f"smbclient {shlex.quote(f'//{target}/{share}')} {auth} -c 'ls'"
+                argv.extend(["-c", "ls"])
             elif action == "get":
                 remote_file = args.get("remote_file", "")
                 local_file = args.get("local_file", "/tmp/smb_loot")
-                cmd = f"smbclient {shlex.quote(f'//{target}/{share}')} {auth} -c 'get {shlex.quote(remote_file)} {shlex.quote(local_file)}'"
+                if _DANGEROUS_FILENAME_RE.search(remote_file) or _DANGEROUS_FILENAME_RE.search(local_file):
+                    return json_result(False, error="Filename contains dangerous characters")
+                argv.extend(["-c", f"get {remote_file} {local_file}"])
             elif action == "put":
                 local_file = args.get("local_file", "")
                 remote_file = args.get("remote_file", "uploaded")
-                cmd = f"smbclient {shlex.quote(f'//{target}/{share}')} {auth} -c 'put {shlex.quote(local_file)} {shlex.quote(remote_file)}'"
+                if _DANGEROUS_FILENAME_RE.search(local_file) or _DANGEROUS_FILENAME_RE.search(remote_file):
+                    return json_result(False, error="Filename contains dangerous characters")
+                argv.extend(["-c", f"put {local_file} {remote_file}"])
             elif action == "enum":
-                cmd = f"smbclient {shlex.quote(f'//{target}/{share}')} {auth} -c 'recurse; ls'"
+                argv.extend(["-c", "recurse; ls"])
             else:
                 return json_result(False, error=f"Unknown action: {action}")
-        else:
-            cmd = f"smbclient -L {shlex.quote(f'//{target}')} {auth}"
-        result = run_command(cmd, timeout=60)
+        result = run_command_argv(argv, timeout=60)
         output = result.stdout.strip()[:50000]
         if result.returncode != 0 and not output:
             return json_result(False, error=result.stderr.strip() or f"smbclient exited {result.returncode}")
@@ -60,45 +70,17 @@ def _handle(args: dict, **kw) -> str:
 
 SCHEMA = {
     "name": "smbclient_tool",
-    "description": "SMB client — list shares, browse files, upload/download files via SMB. Supports null sessions and authenticated access.",
+    "description": "SMB client — list shares, browse files, upload/download via SMB.",
     "parameters": {
         "type": "object",
         "properties": {
-            "target": {
-                "type": "string",
-                "description": "Target IP (e.g. '10.10.10.1')",
-            },
-            "share": {
-                "type": "string",
-                "default": "",
-                "description": "Share name (e.g. 'IPC$', 'ADMIN$', 'C$', 'Users'). Empty = list shares.",
-            },
-            "username": {
-                "type": "string",
-                "default": "",
-                "description": "Username (empty for null session)",
-            },
-            "password": {
-                "type": "string",
-                "default": "",
-                "description": "Password",
-            },
-            "action": {
-                "type": "string",
-                "enum": ["list", "get", "put", "enum"],
-                "default": "list",
-                "description": "Action: list (files), get (download), put (upload), enum (recursive list)",
-            },
-            "remote_file": {
-                "type": "string",
-                "default": "",
-                "description": "Remote file path for get/put",
-            },
-            "local_file": {
-                "type": "string",
-                "default": "/tmp/smb_loot",
-                "description": "Local file path for get/put",
-            },
+            "target": {"type": "string", "description": "Target IP"},
+            "share": {"type": "string", "default": "", "description": "Share name (empty = list shares)"},
+            "username": {"type": "string", "default": ""},
+            "password": {"type": "string", "default": ""},
+            "action": {"type": "string", "enum": ["list", "get", "put", "enum"], "default": "list"},
+            "remote_file": {"type": "string", "default": ""},
+            "local_file": {"type": "string", "default": "/tmp/smb_loot"},
         },
         "required": ["target"],
     },

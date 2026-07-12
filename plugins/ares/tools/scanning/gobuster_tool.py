@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +20,10 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("gobuster"):
         return json_result(False, error="gobuster not found on PATH")
     try:
-        cmd = f"gobuster {shlex.quote(mode)} -u {shlex.quote(target)} -w {shlex.quote(wordlist)} -q -t {threads}"
+        argv = ["gobuster", mode, "-u", target, "-w", wordlist, "-q", "-t", str(threads)]
         if extensions:
-            cmd += f" -x {shlex.quote(extensions)}"
-        result = run_command(cmd, timeout=300)
+            argv.extend(["-x", extensions])
+        result = run_command_argv(argv, timeout=300, shell=False)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"gobuster exited {result.returncode}")
         lines = [line for line in result.stdout.strip().split("\n") if line.strip()]

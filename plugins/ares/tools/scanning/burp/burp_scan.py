@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
-import time
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,6 @@ def _handle(args: dict, **kw) -> str:
     if not target:
         return json_result(False, error="target is required")
     
-    # Check for burpsuite headless or use curl-based scanning
     if check_binary("burpsuite"):
         return _burp_scan(target, scan_type, scope)
     else:
@@ -30,18 +27,17 @@ def _handle(args: dict, **kw) -> str:
 def _burp_scan(target: str, scan_type: str, scope: str) -> str:
     """Use Burp Suite headless for scanning."""
     try:
-        # Create Burp project and scan
-        cmd = f"""
-        timeout 600 burpsuite headless \\
-            --project-file /tmp/burp_project.burp \\
-            --config-file /dev/null \\
-            --scan-target {shlex.quote(target)} \\
-            --scan-type {scan_type} \\
-            --scan-scope {scope}
-        """
-        result = run_command(cmd, timeout=600)
+        argv = [
+            "timeout", "600",
+            "burpsuite", "headless",
+            "--project-file", "/tmp/burp_project.burp",
+            "--config-file", "/dev/null",
+            "--scan-target", target,
+            "--scan-type", scan_type,
+            "--scan-scope", scope,
+        ]
+        result = run_command_argv(argv, timeout=600, shell=False)
         
-        # Parse Burp output
         findings = []
         for line in result.stdout.split("\n"):
             if "Vulnerability" in line or "Issue" in line:
@@ -63,14 +59,12 @@ def _fallback_scan(target: str, scan_type: str) -> str:
     """Fallback to curl-based scanning when Burp is not available."""
     findings = []
     
-    # Check for common headers
     try:
-        cmd = f"curl -sI {shlex.quote(target)} --max-time 10"
-        result = run_command(cmd, timeout=15)
+        argv = ["curl", "-sI", target, "--max-time", "10"]
+        result = run_command_argv(argv, timeout=15, shell=False)
         
         headers = result.stdout.lower()
         
-        # Security header checks
         security_headers = {
             "strict-transport-security": "Missing HSTS header",
             "x-content-type-options": "Missing X-Content-Type-Options header",
@@ -87,7 +81,6 @@ def _fallback_scan(target: str, scan_type: str) -> str:
                     "detail": issue,
                 })
         
-        # Check for server header disclosure
         if "server:" in headers:
             for line in result.stdout.split("\n"):
                 if line.lower().startswith("server:"):

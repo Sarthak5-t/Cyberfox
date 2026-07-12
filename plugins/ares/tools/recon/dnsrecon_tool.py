@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
 TOOLSET = "ares_recon"
-
 
 
 def _handle(args: dict, **kw) -> str:
@@ -18,8 +16,8 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("dnsrecon"):
         return json_result(False, error="dnsrecon not found on PATH")
     try:
-        cmd = f"dnsrecon -d {shlex.quote(target)} -t {shlex.quote(scan_type)} -j /dev/stdout"
-        result = run_command(cmd, timeout=120)
+        argv = ["dnsrecon", "-d", target, "-t", scan_type, "-j", "/dev/stdout"]
+        result = run_command_argv(argv, timeout=120)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"dnsrecon exited {result.returncode}")
         return json_result(True, data={
@@ -45,17 +43,12 @@ def _parse_json_lines(text: str) -> list:
 
 SCHEMA = {
     "name": "dns_recon",
-    "description": "DNS reconnaissance and enumeration using dnsrecon. Returns DNS records including A, AAAA, MX, NS, TXT, SOA, and SRV.",
+    "description": "DNS reconnaissance and enumeration using dnsrecon.",
     "parameters": {
         "type": "object",
         "properties": {
-            "domain": {"type": "string", "description": "Target domain to enumerate"},
-            "type": {
-                "type": "string",
-                "enum": ["std", "brt", "srv", "axfr", "zonewalk"],
-                "default": "std",
-                "description": "Scan type: std (standard), brt (bruteforce), srv (SRV records), axfr (zone transfer), zonewalk (DNSSEC zonewalk)",
-            },
+            "domain": {"type": "string", "description": "Target domain"},
+            "type": {"type": "string", "enum": ["std", "brt", "srv", "axfr", "zonewalk"], "default": "std"},
         },
         "required": ["domain"],
     },

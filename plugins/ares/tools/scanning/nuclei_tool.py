@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +18,12 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("nuclei"):
         return json_result(False, error="nuclei not found on PATH")
     try:
-        cmd = f"nuclei -target {shlex.quote(target)} -json"
+        argv = ["nuclei", "-target", target, "-json"]
         if templates and templates != "all":
-            cmd += f" -tags {shlex.quote(templates)}"
+            argv.extend(["-tags", templates])
         if severity:
-            cmd += f" -severity {shlex.quote(severity)}"
-        result = run_command(cmd, timeout=600)
+            argv.extend(["-severity", severity])
+        result = run_command_argv(argv, timeout=600, shell=False)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"nuclei exited {result.returncode}")
         findings = []

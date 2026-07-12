@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +20,11 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("wfuzz"):
         return json_result(False, error="wfuzz not found on PATH")
     try:
-        cmd = f"wfuzz -c -w {shlex.quote(wordlist)} -t {int(threads)}"
+        argv = ["wfuzz", "-c", "-w", wordlist, "-t", str(int(threads))]
         if extensions:
-            cmd += f" -e {shlex.quote(extensions)}"
-        cmd += f" {shlex.quote(target)}"
-        result = run_command(cmd, timeout=600)
+            argv.extend(["-e", extensions])
+        argv.append(target)
+        result = run_command_argv(argv, timeout=600, shell=False)
         output = result.stdout.strip()[:50000]
         if result.returncode != 0 and not output:
             return json_result(False, error=result.stderr.strip() or f"wfuzz exited {result.returncode}")

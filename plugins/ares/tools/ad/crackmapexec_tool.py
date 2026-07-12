@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +23,18 @@ def _handle(args: dict, **kw) -> str:
         return json_result(False, error="neither netexec nor crackmapexec found on PATH")
     try:
         binary = "netexec" if check_binary("netexec") else "crackmapexec"
-        cmd = f"{binary} {shlex.quote(protocol)} {shlex.quote(target)}"
+        argv = [binary, protocol, target]
         if username:
-            cmd += f" -u {shlex.quote(username)}"
+            argv.extend(["-u", username])
         if password:
-            cmd += f" -p {shlex.quote(password)}"
+            argv.extend(["-p", password])
         if hashes:
-            cmd += f" -H {shlex.quote(hashes)}"
+            argv.extend(["-H", hashes])
         if domain:
-            cmd += f" -d {shlex.quote(domain)}"
+            argv.extend(["-d", domain])
         if module:
-            cmd += f" -M {shlex.quote(module)}"
-        result = run_command(cmd, timeout=120)
+            argv.extend(["-M", module])
+        result = run_command_argv(argv, timeout=120, shell=False)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"{binary} exited {result.returncode}")
         return json_result(True, data={

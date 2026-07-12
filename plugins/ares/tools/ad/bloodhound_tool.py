@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +21,19 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("bloodhound-python"):
         return json_result(False, error="bloodhound-python not found on PATH")
     try:
-        cmd = f"bloodhound-python -d {shlex.quote(domain)} -u {shlex.quote(username)} -c {shlex.quote(methods)}"
+        argv = [
+            "bloodhound-python",
+            "-d", domain,
+            "-u", username,
+            "-c", methods,
+        ]
         if password:
-            cmd += f" -p {shlex.quote(password)}"
+            argv.extend(["-p", password])
         if hashes:
-            cmd += f" --hashes {shlex.quote(hashes)}"
+            argv.extend(["--hashes", hashes])
         if target:
-            cmd += f" -dc {shlex.quote(target)}"
-        result = run_command(cmd, timeout=300)
+            argv.extend(["-dc", target])
+        result = run_command_argv(argv, timeout=300, shell=False)
         if result.returncode != 0:
             return json_result(False, error=result.stderr.strip() or f"bloodhound-python exited {result.returncode}")
         return json_result(True, data={

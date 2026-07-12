@@ -2,28 +2,36 @@ from __future__ import annotations
 
 from plugins.ares.tools.base import json_result
 from plugins.ares.state import engagement_store as store
+from plugins.ares.journal_store import append_entry
 
 TOOLSET = "ares_utility"
 
 
 def _handle_decide(args: dict, **kw) -> str:
-    eng = store.get_engagement()
-    if not eng:
-        return json_result(False, error="No active engagement. Call engage_init first.")
-    reasoning = args.get("reasoning", "")
-    action = args.get("action", "")
-    if not reasoning or not action:
-        return json_result(False, error="reasoning and action are required")
-    context = args.get("context")
-    tool_call_id = args.get("tool_call_id")
-    did = store.add_decision(
-        engagement_id=eng.id,
-        reasoning=reasoning,
-        action=action,
-        context=context,
-        tool_call_id=tool_call_id,
-    )
-    return json_result(True, data={"decision_id": did, "logged": True})
+    try:
+        eng = store.get_engagement()
+        if not eng:
+            return json_result(False, error="No active engagement. Call engage_init first.")
+        reasoning = args.get("reasoning", "")
+        action = args.get("action", "")
+        if not reasoning or not action:
+            return json_result(False, error="reasoning and action are required")
+        context = args.get("context")
+        tool_call_id = args.get("tool_call_id")
+        did = store.add_decision(
+            engagement_id=eng.id,
+            reasoning=reasoning,
+            action=action,
+            context=context,
+            tool_call_id=tool_call_id,
+        )
+        try:
+            append_entry("decision", f"{action}: {reasoning}")
+        except Exception:
+            pass
+        return json_result(True, data={"decision_id": did, "logged": True})
+    except Exception as e:
+        return json_result(False, error=f"decide failed: {e}")
 
 
 _SCHEMA = {

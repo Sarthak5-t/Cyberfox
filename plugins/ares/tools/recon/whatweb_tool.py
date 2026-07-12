@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import shlex
 
-from plugins.ares.tools.base import check_binary, run_command, json_result
+from plugins.ares.tools.base import check_binary, run_command_argv, json_result
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +18,8 @@ def _handle(args: dict, **kw) -> str:
     if not check_binary("whatweb"):
         return json_result(False, error="whatweb not found on PATH")
     try:
-        cmd = f"whatweb -a {int(aggression)} --color=never {shlex.quote(target)}"
-        result = run_command(cmd, timeout=120)
+        argv = ["whatweb", "-a", str(int(aggression)), "--color=never", target]
+        result = run_command_argv(argv, timeout=120)
         output = result.stdout.strip()[:50000]
         if result.returncode != 0 and not output:
             return json_result(False, error=result.stderr.strip() or f"whatweb exited {result.returncode}")
@@ -35,21 +34,12 @@ def _handle(args: dict, **kw) -> str:
 
 SCHEMA = {
     "name": "whatweb_scan",
-    "description": "Web fingerprinting — detects technologies, CMS, frameworks, server version, headers, and more.",
+    "description": "Web fingerprinting — detects technologies, CMS, frameworks, server version.",
     "parameters": {
         "type": "object",
         "properties": {
-            "target": {
-                "type": "string",
-                "description": "Target URL or IP (e.g. 'http://example.com', '10.10.10.1')",
-            },
-            "aggression": {
-                "type": "integer",
-                "default": 3,
-                "minimum": 1,
-                "maximum": 4,
-                "description": "Detection level (1=passive, 4=aggressive). Higher = more thorough but noisier.",
-            },
+            "target": {"type": "string", "description": "Target URL or IP"},
+            "aggression": {"type": "integer", "default": 3, "minimum": 1, "maximum": 4},
         },
         "required": ["target"],
     },
