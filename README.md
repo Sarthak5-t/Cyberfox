@@ -1,32 +1,93 @@
-# Cyberfox 🔥
+# Cyberfox
 
 <p align="center">
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-52+-red?style=for-the-badge" alt="Tools"></a>
+  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-4.0.0-blue?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-65-red?style=for-the-badge" alt="Tools"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Platform-Kali%20Linux-purple?style=for-the-badge" alt="Platform"></a>
 </p>
 
 <p align="center">
-  <b>Elite cybersecurity operations agent</b> with 52+ security tools, 12 specialist roles, stealth browsing, and full kill-chain methodology.
+  <b>Elite cybersecurity operations agent</b> with 65 tools, knowledge graph, autonomous orchestration, and stealth browsing.
 </p>
 
 ---
 
-## What's New (v1.0.0)
+## What's New (v4.0.0)
 
-- **52+ Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
-- **Stealth Browsing** — Anti-bot-detection browser with Cloudflare bypass, CAPTCHA handling, and fingerprint spoofing
-- **Engagement Journal** — Persistent memory across turns — track discoveries, CVEs, credentials, and decisions
-- **OpenRouter Integration** — Use any model via OpenRouter (default: `tencent/hy3:free`)
-- **12 Specialist Roles** — Pentester, SOC Analyst, Cloud Security, Mobile, Wireless, Social Engineering, Malware, AD, Web, OSINT, Privesc, Lead
-- **11 Expert Skills** — Recon, Scanning, Exploitation, AD, Cloud, Mobile, Wireless, Social Engineering, Physical, Report, Evasion
-- **14 Reference Files** — OWASP, MITRE ATT&CK, Cloud Security, AD Attack Trees, and more
+- **Agent Intelligence Layer** — Structured plan, act, reflect, adapt loop
+- **Knowledge Graph** — SQLite-backed entities + relationships (hosts, ports, services, technologies, vulnerabilities, credentials)
+- **13 Orchestration Tools** — `engage_init`, `plan_create`, `plan_next`, `entity_save`, `decide`, and more
+- **Post-Tool Reflection** — Auto-extracts entities from nmap, whatweb, nuclei, hydra, sqlmap output
+- **Dynamic Plan Expansion** — Plans evolve as discoveries are made (found WordPress -> add WPScan task)
+- **Decision Logging** — Records reasoning for every approach change
+- **Stealth Browsing** — Anti-bot-detection browser with Cloudflare bypass
+- **65 Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
 
 ---
 
 ## Features
+
+### Agent Intelligence
+
+Cyberfox doesn't just run commands — it plans, executes, reflects, and adapts.
+
+```
+User: Find vulnerabilities on app.example.com
+    |
+    v
+engage_init -> plan_create -> plan_next
+    |
+    v
+[Execute tool] -> [Extract entities] -> [Reflect] -> [Replan]
+    |
+    v
+Continue autonomously until goal achieved
+```
+
+| Component | What It Does |
+|-----------|-------------|
+| **Plan** | Kill-chain template with dynamic task expansion |
+| **Knowledge Graph** | Tracks hosts, ports, services, techs, vulns, creds as connected entities |
+| **Reflection** | Post-tool hook auto-extracts entities from output |
+| **Decision Log** | Records why you changed approach |
+| **Event Bus** | Publishes events (PORT_FOUND, HTTP_DETECTED, etc.) for specialist agents |
+
+### Orchestration Tools
+
+| Tool | Purpose |
+|------|---------|
+| `engage_init` | Start new engagement with scope and goals |
+| `engage_resume` | Resume a previous engagement |
+| `engage_status` | Current state, entity counts, plan progress |
+| `plan_create` | Generate plan from kill-chain template |
+| `plan_next` | Get next pending task (respects dependencies) |
+| `plan_update` | Mark task completed/failed/skipped |
+| `plan_add` | Dynamically add tasks from discoveries |
+| `entity_save` | Save entity to knowledge graph |
+| `entity_query` | Query entities by type/name |
+| `entity_graph` | Get full graph or subgraph around an entity |
+| `entity_link` | Create relationship between entities |
+| `entity_count` | Count entities by type |
+| `decide` | Log decision with reasoning |
+
+### Knowledge Graph
+
+Entities are stored in SQLite and connected by typed relationships:
+
+```
+Host (10.10.10.10)
+  |-- has_port --> Port (80/tcp)
+                     |-- has_service --> Service (Apache/2.4.57)
+                                          |-- uses_tech --> Technology (WordPress)
+                                          |-- has_vulnerability --> Vulnerability (CVE-2024-xxxx)
+Credential (admin:pass) -- authenticated_with --> Service (Apache)
+```
+
+**Entity types:** host, domain, subdomain, port, service, technology, vulnerability, finding, credential, user, group
+
+**Relationship types:** has_port, has_service, uses_tech, has_vulnerability, discovered_by, authenticated_with, resolves_to, member_of, and more
 
 ### Security Capabilities
 
@@ -37,7 +98,8 @@
 | **Exploitation** | 13 tools | SQLMap, Hydra, Metasploit, Responder, Impacket, custom exploit chains |
 | **Active Directory** | 4 tools | BloodHound, Certipy, CrackMapExec, Kerbrute |
 | **Browsing** | 1 tool | Stealth web browsing with anti-bot-detection |
-| **Utility** | 9 tools | Findings management, engagement journal, reporting, delegation |
+| **Orchestration** | 13 tools | Engagement, planning, knowledge graph, decisions |
+| **Utility** | 9 tools | Findings, journal, reporting, delegation |
 
 ### Stealth Browsing
 
@@ -48,13 +110,6 @@ The `browse_autonomously` tool opens a real Chromium browser with:
 - **Cloudflare bypass** — detects and waits through challenges
 - **Turnstile checkbox clicking** — auto-solves Turnstile CAPTCHAs
 - **JS rendering wait** — waits for data tables and dynamic content
-
-### Engagement Journal
-
-Persistent markdown memory at `~/.cyberfox/ares/journal.md`:
-- `journal_init` — Start a new engagement
-- `journal_write` — Log discoveries (CVEs, credentials, decisions)
-- `journal_read` — Recall progress across turns
 
 ### Specialist Roles
 
@@ -76,7 +131,7 @@ Persistent markdown memory at `~/.cyberfox/ares/journal.md`:
 ### Kill-Chain Methodology
 
 ```
-1. RECON → 2. SCANNING → 3. EXPLOITATION → 4. AD ATTACKS → 5. REPORTING
+1. RECON -> 2. SCANNING -> 3. EXPLOITATION -> 4. AD ATTACKS -> 5. REPORTING
 ```
 
 | Phase | Objective | Key Tools |
@@ -93,9 +148,9 @@ Persistent markdown memory at `~/.cyberfox/ares/journal.md`:
 
 ### Prerequisites
 
-- Kali Linux (required — no Windows/macOS support)
+- Kali Linux (required)
 - Python 3.11+
-- Node.js (for agent-browser)
+- Node.js
 
 ### From Source
 
@@ -118,12 +173,9 @@ cyberfox setup        # Run setup wizard
 ### OpenRouter Setup
 
 ```bash
-# Add your OpenRouter API key
 echo 'OPENROUTER_API_KEY=your_key_here' >> ~/.cyberfox/.env
-
-# Configure model
 cyberfox model
-# Select: openrouter → tencent/hy3:free
+# Select: openrouter -> tencent/hy3:free
 ```
 
 ---
@@ -141,28 +193,32 @@ cyberfox update             # Update to latest version
 cyberfox doctor             # Diagnose issues
 ```
 
-### Ares Plugin
-
-The Ares cybersecurity plugin provides all security tools:
+### Autonomous Engagement
 
 ```bash
-# Enable the plugin
-echo "plugins:\n  enabled:\n    - ares" >> ~/.cyberfox/config.yaml
-
-# Start a pentest session
 cyberfox
-> Run an nmap scan against 10.10.10.10
+> Scan 10.10.10.10 for vulnerabilities and get root
 ```
 
-### Example Workflow
+The agent will automatically:
+1. Initialize an engagement and create a plan
+2. Execute reconnaissance (nmap, whatweb, etc.)
+3. Save discoveries to the knowledge graph
+4. Expand the plan based on findings
+5. Continue through exploitation phases
+6. Report results with full evidence
 
-```
-> Scan target 10.10.10.10 for open ports
-> Enumerate services on discovered ports
-> Run nuclei scan for known vulnerabilities
-> Attempt SQL injection on web application
-> Browse exploit-db for public exploits
-> Export findings to report
+### Manual Orchestration
+
+```bash
+cyberfox
+> engage_init targeting 10.10.10.10
+> plan_create
+> plan_next
+> [run nmap scan]
+> entity_save type=host name=10.10.10.10
+> plan_update task_id=1 status=completed
+> decide reasoning="HTTP found" action="queue web scanning"
 ```
 
 ---
@@ -171,34 +227,29 @@ cyberfox
 
 ```
 cyberfox/
-├── agent/              # Core agent logic
-├── cyberfox_cli/       # CLI interface
+├── agent/                  # Core agent logic
+├── cyberfox_cli/           # CLI interface
 ├── plugins/
-│   └── ares/           # Cybersecurity plugin
-│       ├── tools/      # 52+ security tools
+│   └── ares/               # Cybersecurity plugin (v4.0.0)
+│       ├── state/          # Engagement state + knowledge graph
+│       │   ├── models.py       # Entity, Relationship, PlanTask dataclasses
+│       │   └── engagement_store.py  # SQLite CRUD
+│       ├── hooks/          # Auto-reflection + event bus
+│       │   └── reflection.py   # Post-tool entity extraction
+│       ├── tools/
+│       │   ├── orchestration/  # 13 orchestration tools
 │       │   ├── recon/          # 8 recon tools
 │       │   ├── scanning/       # 17 scanning tools
 │       │   ├── exploitation/   # 13 exploit tools
 │       │   ├── ad/             # 4 AD tools
 │       │   ├── browsing/       # Stealth browsing
 │       │   └── utility/        # Findings, journal, reports
-│       ├── agents/     # 12 specialist roles
-│       ├── references/ # 14 security reference files
-│       └── safety/     # Scope validation, audit trail
+│       ├── agents/         # 12 specialist roles
+│       ├── references/     # 14 security reference files
+│       └── safety/         # Scope validation, audit trail
 ├── skills/
-│   └── ares/           # 11 expert skills
-│       ├── recon/      # Reconnaissance
-│       ├── scanning/   # Vulnerability scanning
-│       ├── exploit/    # Exploitation
-│       ├── ad/         # Active Directory
-│       ├── cloud_pentest/
-│       ├── mobile_pentest/
-│       ├── wireless_pentest/
-│       ├── social_engineering/
-│       ├── physical_pentest/
-│       ├── report/
-│       └── evasion/
-└── docs/               # Documentation
+│   └── ares/               # 11 expert skills
+└── docs/                   # Documentation
 ```
 
 ---
