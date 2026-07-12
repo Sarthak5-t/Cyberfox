@@ -155,6 +155,11 @@ def _register_tools(ctx) -> None:
     from plugins.ares.tools import journal_tool
     from plugins.ares.tools.browsing import browse_autonomously
     from plugins.ares.agents import orchestrator
+    # Orchestration tools
+    from plugins.ares.tools.orchestration import engage_tool
+    from plugins.ares.tools.orchestration import plan_tool
+    from plugins.ares.tools.orchestration import entity_tool
+    from plugins.ares.tools.orchestration import decide_tool
 
     _TOOL_MODULES = [
         # Recon
@@ -209,6 +214,11 @@ def _register_tools(ctx) -> None:
         journal_tool,
         browse_autonomously,
         orchestrator,
+        # Orchestration
+        engage_tool,
+        plan_tool,
+        entity_tool,
+        decide_tool,
     ]
 
     for mod in _TOOL_MODULES:
@@ -249,4 +259,10 @@ def _register_hooks(ctx) -> None:
         ctx.register_hook("on_session_end", audit_finalize)
     except Exception as e:
         logger.debug("audit_trail session hook not registered: %s", e)
+
+    try:
+        from plugins.ares.hooks.reflection import post_tool_call as reflection_hook
+        ctx.register_hook("post_tool_call", reflection_hook)
+    except Exception as e:
+        logger.debug("reflection hook not registered: %s", e)
 

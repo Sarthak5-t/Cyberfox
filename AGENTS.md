@@ -236,15 +236,90 @@ Max 3 concurrent children. Use `/bg <prompt>` for long-running tasks.
 
 Set in `~/.cyberfox/profiles/ares/config.yaml`.
 
-## Engagement Journal
+## Engagement Orchestration
 
-Every engagement starts with `journal_init`. Write to the journal (`journal_write`) **every time** you discover something significant — services, CVEs, credentials, decisions, actions. Read the journal (`journal_read`) at the start of each turn to recall your progress. The journal is your persistent memory.
+Every engagement uses structured state management with a knowledge graph.
+
+### Lifecycle
 
 ```
-1. journal_init(engagement_name, targets)  → start of engagement
-2. journal_write(category, content)         → after every discovery
-3. journal_read()                           → start of each turn
+1. engage_init(name, scope, goals)     → creates engagement + DB
+2. plan_create()                        → generates plan from kill-chain template
+3. plan_next()                          → get next task
+4. [execute tool]                       → do the work
+5. entity_save(type, name, data)        → save discoveries as entities
+6. decide(reasoning, action)            → log reasoning when changing approach
+7. plan_add(title, description)         → dynamically add tasks from discoveries
+8. plan_update(task_id, status)         → mark task done
+9. Repeat 3-8 until plan complete
+10. Brief user on results
 ```
+
+### Decision Loop
+
+After EVERY tool execution:
+
+```
+Tool returns result
+    ↓
+Did it succeed?
+    ├─ YES → What did I learn? → Save entities → Add new tasks if needed → Next task
+    └─ NO → Why did it fail? → Change approach (decide) → Try alternative → Next task
+```
+
+**Never wait for user prompts between steps.** Continue autonomously until the goal is met.
+
+### Entity Types
+
+| Type | Example | Parent |
+|------|---------|--------|
+| `host` | `10.10.10.10` | — |
+| `port` | `80/tcp` | host |
+| `service` | `Apache/2.4.57` | port |
+| `technology` | `WordPress` | service |
+| `vulnerability` | `CVE-2024-xxxx` | service |
+| `finding` | `SQL Injection` | vulnerability |
+| `credential` | `admin:pass@10.10.10.10` | — |
+| `subdomain` | `app.example.com` | — |
+| `user` | `jsmith` | — |
+| `group` | `Domain Admins` | — |
+
+### Relationships
+
+| Relation | From → To | Example |
+|----------|-----------|---------|
+| `has_port` | host → port | `10.10.10.10` → `80/tcp` |
+| `has_service` | port → service | `80/tcp` → `Apache/2.4.57` |
+| `uses_tech` | service → technology | `Apache` → `WordPress` |
+| `has_vulnerability` | service → vulnerability | `Apache` → `CVE-2024-xxxx` |
+| `discovered_by` | entity → tool | `finding` → `nuclei_scan` |
+| `authenticated_with` | credential → service | `admin:pass` → `SSH` |
+| `resolves_to` | subdomain → host | `app.example.com` → `10.10.10.10` |
+| `member_of` | user → group | `jsmith` → `Domain Admins` |
+
+### Engagement States
+
+```
+planning → recon → scanning → enumeration → validation → exploitation → reporting → completed
+```
+
+### Available Orchestration Tools
+
+| Tool | Purpose |
+|------|---------|
+| `engage_init` | Start new engagement |
+| `engage_resume` | Resume previous engagement |
+| `engage_status` | Current status + stats |
+| `plan_create` | Generate plan from template |
+| `plan_next` | Get next pending task |
+| `plan_update` | Mark task status |
+| `plan_add` | Add dynamic task |
+| `entity_save` | Save entity to graph |
+| `entity_query` | Query entities |
+| `entity_graph` | Get full graph or subgraph |
+| `entity_link` | Create relationship |
+| `entity_count` | Count entities by type |
+| `decide` | Log decision with reasoning |
 
 ## Thinking Rules
 
