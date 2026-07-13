@@ -197,45 +197,13 @@ def billing_state_from_payload(
 
 
 def build_billing_state(*, timeout: float = 15.0) -> BillingState:
-    """Fetch + parse ``/api/billing/state``. Fail-open.
+    """Return an empty billing state.
 
-    Returns ``BillingState(logged_in=False)`` when not logged in. On a portal/HTTP
-    failure, returns ``logged_in=False`` with ``error`` set so the surface can show
-    a clear message rather than crashing.
+    The billing portal has been removed from this fork, so there is
+    no billing backend to query. Returns ``BillingState(logged_in=False)`` so the
+    surface renders gracefully without a billing section.
     """
-    try:
-        from cyberfox_cli.nous_billing import (
-            BillingAuthError,
-            BillingError,
-            _absolutize_portal_url,
-            get_billing_state,
-            resolve_portal_base_url,
-        )
-    except Exception:
-        return BillingState(logged_in=False, error="billing client unavailable")
-
-    try:
-        payload = get_billing_state(timeout=timeout)
-    except BillingAuthError:
-        return BillingState(logged_in=False)
-    except BillingError as exc:
-        logger.debug("billing ▸ /state fetch failed (fail-open)", exc_info=True)
-        return BillingState(logged_in=False, error=str(exc))
-    except Exception:
-        logger.debug("billing ▸ /state unexpected error (fail-open)", exc_info=True)
-        return BillingState(logged_in=False, error="could not load billing state")
-
-    # Prefer a server-supplied portalUrl if present (resolved to absolute in case
-    # it's relative); else build the standard one.
-    raw_portal = payload.get("portalUrl") if isinstance(payload, dict) else None
-    portal_url = _absolutize_portal_url(raw_portal) if raw_portal else None
-    if not portal_url:
-        try:
-            portal_url = _fallback_portal_url(resolve_portal_base_url())
-        except Exception:
-            portal_url = None
-
-    return billing_state_from_payload(payload, portal_url=portal_url)
+    return BillingState(logged_in=False)
 
 
 def _fallback_portal_url(base: str) -> str:

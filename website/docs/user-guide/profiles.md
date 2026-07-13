@@ -25,7 +25,7 @@ That's it. `coder` is now its own Cyberfox profile with its own config, memory, 
 ## Creating a profile
 
 :::tip
-Quickest setup: run `cyberfox setup --portal` inside the new profile to wire up models + tools at once. See [Nous Portal](/integrations/nous-portal).
+Quickest setup: run `cyberfox setup --portal` inside the new profile to wire up models + tools at once. See [the web dashboard](/integrations/nous-portal).
 :::
 
 ### Blank profile

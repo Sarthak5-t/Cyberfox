@@ -1166,7 +1166,7 @@ class TestWebServerEndpoints:
         assert data["name"] == "cyberfox-update"
         assert data["pid"] is None
         assert data["error"] == "docker_update_unsupported"
-        assert "docker pull nousresearch/cyberfox-agent:latest" in data["message"]
+        assert "docker pull sarthak5t/cyberfox-agent:latest" in data["message"]
         assert spawned is False
 
         status = self.client.get("/api/actions/cyberfox-update/status")
@@ -1175,7 +1175,7 @@ class TestWebServerEndpoints:
         assert status_data["running"] is False
         assert status_data["exit_code"] == 1
         assert status_data["pid"] is None
-        assert any("docker pull nousresearch/cyberfox-agent:latest" in line for line in status_data["lines"])
+        assert any("docker pull sarthak5t/cyberfox-agent:latest" in line for line in status_data["lines"])
 
     def test_update_cyberfox_returns_managed_runtime_guidance_without_spawning(self, monkeypatch):
         import cyberfox_cli.web_server as web_server
@@ -1521,7 +1521,7 @@ class TestWebServerEndpoints:
             "/api/model/set",
             json={
                 "scope": "main",
-                "provider": "nous",
+                "provider": "openai",
                 "model": "openai/gpt-5.5-pro",
             },
         )
@@ -1536,7 +1536,7 @@ class TestWebServerEndpoints:
             "/api/model/set",
             json={
                 "scope": "main",
-                "provider": "nous",
+                "provider": "openai",
                 "model": "openai/gpt-5.5-pro",
                 "confirm_expensive_model": True,
             },
@@ -1919,7 +1919,7 @@ class TestWebServerEndpoints:
         assert "personal WeChat" in weixin["description"]
         assert "Official Account" not in f"{weixin['name']} {weixin['description']}"
         assert weixin["docs_url"] == (
-            "https://cyberfox-agent.nousresearch.com/docs/user-guide/messaging/weixin/"
+            "https://github.com/Sarthak5-t/Cyberfox/user-guide/messaging/weixin/"
         )
 
         fields = {field["key"]: field for field in weixin["env_vars"]}
@@ -1937,7 +1937,7 @@ class TestWebServerEndpoints:
 
         teams = _build_catalog_entry("teams")
         assert teams["docs_url"] == (
-            "https://cyberfox-agent.nousresearch.com/docs/user-guide/messaging/teams"
+            "https://github.com/Sarthak5-t/Cyberfox/user-guide/messaging/teams"
         )
 
     def test_google_chat_messaging_metadata_links_setup_guide(self):
@@ -1950,7 +1950,7 @@ class TestWebServerEndpoints:
         google_chat = _build_catalog_entry("google_chat")
         assert google_chat["name"] == "Google Chat"
         assert google_chat["docs_url"] == (
-            "https://cyberfox-agent.nousresearch.com/docs/user-guide/messaging/google_chat"
+            "https://github.com/Sarthak5-t/Cyberfox/user-guide/messaging/google_chat"
         )
 
     def test_messaging_catalog_covers_gateway_platforms(self):
@@ -2548,53 +2548,6 @@ class TestWebServerEndpoints:
             assert resp.status_code == 404
             assert "web UI disabled" in resp.json()["error"]
 
-    def test_set_model_main_nous_applies_gateway_defaults(self, monkeypatch):
-        """Switching the main provider to Nous calls apply_nous_managed_defaults
-        (mirroring the CLI's post-model-selection Tool Gateway routing) and
-        surfaces the routed tools in the response."""
-        import cyberfox_cli.nous_subscription as ns
-
-        called = {}
-
-        def fake_apply(config, *, enabled_toolsets=None, force_fresh=False):
-            called["enabled"] = set(enabled_toolsets or ())
-            called["force_fresh"] = force_fresh
-            # Simulate routing the unconfigured web tool through the gateway.
-            web = config.setdefault("web", {})
-            web["backend"] = "firecrawl"
-            return {"web"}
-
-        monkeypatch.setattr(ns, "apply_nous_managed_defaults", fake_apply)
-
-        resp = self.client.post(
-            "/api/model/set",
-            json={"scope": "main", "provider": "nous", "model": "cyberfox-4"},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["ok"] is True
-        assert data["provider"] == "nous"
-        assert data["gateway_tools"] == ["web"]
-        assert called["force_fresh"] is True
-
-    def test_set_model_main_non_nous_skips_gateway_defaults(self, monkeypatch):
-        """Non-Nous providers must NOT trigger Tool Gateway auto-routing."""
-        import cyberfox_cli.nous_subscription as ns
-
-        def boom(*args, **kwargs):  # pragma: no cover - must not be called
-            raise AssertionError("apply_nous_managed_defaults called for non-nous provider")
-
-        monkeypatch.setattr(ns, "apply_nous_managed_defaults", boom)
-
-        resp = self.client.post(
-            "/api/model/set",
-            json={"scope": "main", "provider": "openrouter", "model": "anthropic/claude-opus-4.8"},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["ok"] is True
-        assert data.get("gateway_tools", []) == []
-
     def test_apply_main_model_assignment_base_url_and_context_reconcile(self):
         """The shared main-slot assignment helper must persist a supplied
         base_url, clear a stale base_url only when switching providers, preserve
@@ -2828,14 +2781,14 @@ class TestWebServerEndpoints:
         from cyberfox_cli.config import load_config, save_config
 
         cfg = load_config()
-        cfg["model"] = {"provider": "nous", "default": "cyberfox-4"}
+        cfg["model"] = {"provider": "deepseek", "default": "deepseek-chat"}
         cfg["auxiliary"] = {
-            # Pinned to nous — same as the OLD main, becomes stale after switch.
-            "compression": {"provider": "nous", "model": "anthropic/claude-sonnet-4.6"},
+            # Pinned to deepseek — same as the OLD main, becomes stale after switch.
+            "compression": {"provider": "deepseek", "model": "anthropic/claude-sonnet-4.6"},
             # Auto — follows main, never stale.
             "vision": {"provider": "auto", "model": ""},
             # Pinned to a third provider — also stale vs the new main.
-            "curator": {"provider": "deepseek", "model": "deepseek-chat"},
+            "curator": {"provider": "anthropic", "model": "claude-opus-4.8"},
         }
         save_config(cfg)
 
@@ -2851,7 +2804,7 @@ class TestWebServerEndpoints:
         assert "vision" not in stale_tasks
         # Provider/model echoed back for the UI label.
         comp = next(e for e in stale if e["task"] == "compression")
-        assert comp["provider"] == "nous"
+        assert comp["provider"] == "deepseek"
         assert comp["model"] == "anthropic/claude-sonnet-4.6"
 
     def test_set_model_main_no_stale_when_aux_matches_new_provider(self):
@@ -2859,7 +2812,7 @@ class TestWebServerEndpoints:
         from cyberfox_cli.config import load_config, save_config
 
         cfg = load_config()
-        cfg["model"] = {"provider": "nous", "default": "cyberfox-4"}
+        cfg["model"] = {"provider": "deepseek", "default": "deepseek-chat"}
         cfg["auxiliary"] = {
             "compression": {"provider": "openrouter", "model": "google/gemini-2.5-flash"},
             "vision": {"provider": "auto", "model": ""},
@@ -2877,81 +2830,16 @@ class TestWebServerEndpoints:
         assert model_cfg["provider"] == "openrouter"
         assert model_cfg.get("base_url", "") == ""
 
-    def test_set_model_main_gateway_failure_does_not_block_save(self, monkeypatch):
-        """A Portal/gateway hiccup must never prevent saving the model."""
-        import cyberfox_cli.nous_subscription as ns
-
-        def boom(*args, **kwargs):
-            raise RuntimeError("portal unreachable")
-
-        monkeypatch.setattr(ns, "apply_nous_managed_defaults", boom)
-
-        resp = self.client.post(
-            "/api/model/set",
-            json={"scope": "main", "provider": "nous", "model": "cyberfox-4"},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["ok"] is True
-        assert data.get("gateway_tools", []) == []
-
-    def test_recommended_default_nous_honors_free_tier(self, monkeypatch):
-        """For a free-tier Nous user, the recommended default must be a free
-        model (mirroring `cyberfox model`), not the first curated paid entry."""
-        import cyberfox_cli.models as models_mod
-
-        monkeypatch.setattr(models_mod, "get_curated_nous_model_ids", lambda: ["paid/expensive", "free/cheap"])
-        monkeypatch.setattr(
-            models_mod, "get_pricing_for_provider",
-            lambda provider: {"paid/expensive": {"input": "1"}, "free/cheap": {"input": "0"}},
-        )
-        monkeypatch.setattr(models_mod, "check_nous_free_tier", lambda *, force_fresh=False: True)
-        monkeypatch.setattr(
-            models_mod, "union_with_portal_free_recommendations",
-            lambda ids, pricing, url: (ids, pricing),
-        )
-        # Free partition keeps only the free model selectable.
-        monkeypatch.setattr(
-            models_mod, "partition_nous_models_by_tier",
-            lambda ids, pricing, free_tier: (["free/cheap"], ["paid/expensive"]),
-        )
-
-        resp = self.client.get("/api/model/recommended-default?provider=nous")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["provider"] == "nous"
-        assert data["model"] == "free/cheap"
-        assert data["free_tier"] is True
-
-    def test_recommended_default_nous_paid_uses_curated_default(self, monkeypatch):
-        """A paid Nous user gets the first curated/paid-augmented model."""
-        import cyberfox_cli.models as models_mod
-
-        monkeypatch.setattr(models_mod, "get_curated_nous_model_ids", lambda: ["top/model", "other/model"])
-        monkeypatch.setattr(models_mod, "get_pricing_for_provider", lambda provider: {})
-        monkeypatch.setattr(models_mod, "check_nous_free_tier", lambda *, force_fresh=False: False)
-        monkeypatch.setattr(
-            models_mod, "union_with_portal_paid_recommendations",
-            lambda ids, pricing, url: (ids, pricing),
-        )
-
-        resp = self.client.get("/api/model/recommended-default?provider=nous")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["provider"] == "nous"
-        assert data["model"] == "top/model"
-        assert data["free_tier"] is False
-
     def test_recommended_default_handles_failure_gracefully(self, monkeypatch):
         """Endpoint never 500s — returns empty model on internal error."""
-        import cyberfox_cli.models as models_mod
+        import cyberfox_cli.inventory as inventory_mod
 
-        def boom():
-            raise RuntimeError("portal down")
+        def boom(*args, **kwargs):
+            raise RuntimeError("picker down")
 
-        monkeypatch.setattr(models_mod, "get_curated_nous_model_ids", boom)
+        monkeypatch.setattr(inventory_mod, "build_models_payload", boom)
 
-        resp = self.client.get("/api/model/recommended-default?provider=nous")
+        resp = self.client.get("/api/model/recommended-default?provider=openrouter")
         assert resp.status_code == 200
         data = resp.json()
         assert data["model"] == ""

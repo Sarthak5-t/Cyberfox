@@ -7,7 +7,7 @@ operation). It must therefore be a *silent* predicate — returning True/False
 without logging — otherwise every user without the ``raft`` CLI installed
 gets their logs flooded with WARNING messages every few seconds.
 
-See: https://github.com/NousResearch/cyberfox-agent/issues/49234
+See: https://github.com/Sarthak5-t/Cyberfox/issues/49234
 """
 
 import logging

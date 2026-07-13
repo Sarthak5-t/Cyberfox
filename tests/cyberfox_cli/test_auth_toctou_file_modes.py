@@ -112,7 +112,7 @@ def test_save_qwen_cli_tokens_writes_0o600_with_0o700_parent(tmp_path, monkeypat
 # ---------------------------------------------------------------------------
 
 
-def test_shared_nous_store_writes_0o600_with_0o700_parent(tmp_path, monkeypatch):
+def test_shared_legacy_store_writes_0o600_with_0o700_parent(tmp_path, monkeypatch):
     """The Nous shared-credential store must land at 0o600 / parent 0o700."""
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path))
     # _nous_shared_store_path() refuses to touch the real shared store during

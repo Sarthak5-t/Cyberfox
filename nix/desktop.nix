@@ -160,7 +160,7 @@ stdenv.mkDerivation {
 
   meta = with lib; {
     description = "Native Electron desktop shell for Cyberfox Agent";
-    homepage = "https://github.com/NousResearch/cyberfox-agent";
+    homepage = "https://github.com/Sarthak5-t/Cyberfox";
     license = licenses.mit;
     platforms = platforms.unix;
     mainProgram = "cyberfox-desktop";

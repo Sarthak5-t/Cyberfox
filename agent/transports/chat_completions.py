@@ -1,7 +1,7 @@
 """OpenAI Chat Completions transport.
 
 Handles the default api_mode ('chat_completions') used by ~16 OpenAI-compatible
-providers (OpenRouter, Nous, NVIDIA, Qwen, Ollama, DeepSeek, xAI, Kimi, etc.).
+providers (OpenRouter, NVIDIA, Qwen, Ollama, DeepSeek, xAI, Kimi, etc.).
 
 Messages and tools are already in OpenAI format — convert_messages and
 convert_tools are near-identity.  The complexity lives in build_kwargs
@@ -247,7 +247,6 @@ class ChatCompletionsTransport(ProviderTransport):
             # (i.e. custom / unregistered providers). Known providers all go
             # through provider_profile.
             is_openrouter: bool
-            is_nous: bool
             is_qwen_portal: bool
             is_github_models: bool
             is_nvidia_nim: bool
@@ -269,7 +268,7 @@ class ChatCompletionsTransport(ProviderTransport):
             supports_reasoning: bool
             github_reasoning_extra: dict | None
             lmstudio_reasoning_options: list[str] | None  # raw allowed_options from /api/v1/models
-            # Claude on OpenRouter/Nous max output
+            # Claude on OpenRouter max output
             anthropic_max_output: int | None
             extra_body_additions: dict | None
         """
@@ -312,7 +311,7 @@ class ChatCompletionsTransport(ProviderTransport):
         # Tools
         if tools:
             # Moonshot/Kimi uses a stricter flavored JSON Schema.  Rewriting
-            # tool parameters here keeps aggregator routes (Nous, OpenRouter,
+            # tool parameters here keeps aggregator routes (OpenRouter,
             # etc.) compatible, in addition to direct moonshot.ai endpoints.
             if is_moonshot_model(model):
                 tools = sanitize_moonshot_tools(tools)
@@ -381,7 +380,6 @@ class ChatCompletionsTransport(ProviderTransport):
         extra_body: dict[str, Any] = {}
 
         is_openrouter = params.get("is_openrouter", False)
-        is_nous = params.get("is_nous", False)
         is_github_models = params.get("is_github_models", False)
         provider_name = str(params.get("provider_name") or "").strip().lower()
         base_url = params.get("base_url")
@@ -578,8 +576,8 @@ class ChatCompletionsTransport(ProviderTransport):
             # keys (tags, reasoning, provider, plugins, …) are unknown fields
             # there and Gemini rejects the whole request with a non-retryable
             # HTTP 400 ("Invalid JSON payload received. Unknown name 'tags'").
-            # This happens when a profile that emits extra_body (e.g. the Nous
-            # profile's portal `tags`) is active but the resolved endpoint is a
+            # This happens when a profile that emits extra_body (e.g. a portal
+            # profile's `tags`) is active but the resolved endpoint is a
             # Gemini base_url — typical when only Google credentials are set and
             # a fallback/aux call lands on Gemini. The native client only reads
             # thinking_config from extra_body, so drop everything else here.
@@ -673,7 +671,7 @@ class ChatCompletionsTransport(ProviderTransport):
         # OpenAI structured-refusal field. When a model declines, the SDK
         # populates ``message.refusal`` with the explanation and leaves
         # ``content`` empty. OpenAI-compatible proxies that front Anthropic /
-        # Bedrock (e.g. Nous Portal) surface a Claude refusal this way — or via
+        # Bedrock (e.g. certain portals) surface a Claude refusal this way — or via
         # ``finish_reason="content_filter"`` — instead of the native
         # ``stop_reason="refusal"``. Without capturing it the refusal looks
         # like an empty response, so the agent loop retries a deterministic

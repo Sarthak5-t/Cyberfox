@@ -50,7 +50,6 @@ import threading
 import uuid
 from pathlib import Path
 from typing import Callable, Dict, Any, Optional
-from urllib.parse import urljoin
 
 from cyberfox_cli._subprocess_compat import windows_hide_flags
 from cyberfox_constants import display_cyberfox_home
@@ -69,13 +68,7 @@ def get_env_value(name, default=None):
         return os.getenv(name, default)
     value = _get_env_value(name)
     return default if value is None else value
-from tools.managed_tool_gateway import resolve_managed_tool_gateway
-from tools.tool_backend_helpers import (
-    managed_nous_tools_enabled,
-    nous_tool_gateway_unavailable_message,
-    prefers_gateway,
-    resolve_openai_audio_api_key,
-)
+from tools.tool_backend_helpers import resolve_openai_audio_api_key
 from tools.xai_http import cyberfox_xai_user_agent
 
 # ---------------------------------------------------------------------------
@@ -172,11 +165,6 @@ DEFAULT_ELEVENLABS_VOICE_ID = "pNInz6obpgDQGcFmaJgB"  # Adam
 DEFAULT_ELEVENLABS_MODEL_ID = "eleven_multilingual_v2"
 DEFAULT_ELEVENLABS_STREAMING_MODEL_ID = "eleven_flash_v2_5"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini-tts"
-# The managed OpenAI audio gateway (Nous portal proxy) only proxies these speech
-# models. A user's tts.openai.model set for *direct* OpenAI (e.g. "tts-1-hd")
-# is rejected with a 400 "Unsupported managed OpenAI speech model", so it must be
-# coerced to a supported model when routing through the gateway.
-MANAGED_OPENAI_TTS_MODELS = frozenset({"gpt-4o-mini-tts"})
 DEFAULT_KITTENTTS_MODEL = "KittenML/kitten-tts-nano-0.8-int8"  # 25MB
 DEFAULT_KITTENTTS_VOICE = "Jasper"
 DEFAULT_PIPER_VOICE = "en_US-lessac-medium"  # balanced size/quality
@@ -1006,7 +994,7 @@ def _generate_openai_tts(text: str, output_path: str, tts_config: Dict[str, Any]
     Returns:
         Path to the saved audio file.
     """
-    api_key, base_url, is_managed = _resolve_openai_audio_client_config()
+    api_key, base_url = _resolve_openai_audio_client_config()
 
     oai_config = tts_config.get("openai", {})
     model = oai_config.get("model", DEFAULT_OPENAI_MODEL)
@@ -1015,19 +1003,6 @@ def _generate_openai_tts(text: str, output_path: str, tts_config: Dict[str, Any]
     if custom_base_url:
         base_url = custom_base_url
     speed = float(oai_config.get("speed", tts_config.get("speed", 1.0)))
-
-    # The managed OpenAI audio gateway only proxies MANAGED_OPENAI_TTS_MODELS.
-    # A model set for direct OpenAI (e.g. "tts-1-hd") 400s there with
-    # "Unsupported managed OpenAI speech model", so coerce it — unless the user
-    # redirected base_url to their own endpoint, in which case respect it.
-    if is_managed and not custom_base_url and model not in MANAGED_OPENAI_TTS_MODELS:
-        logger.warning(
-            "TTS: managed OpenAI audio gateway does not support model %r; "
-            "falling back to %s. Set VOICE_TOOLS_OPENAI_KEY or OPENAI_API_KEY "
-            "to use %r directly.",
-            model, DEFAULT_OPENAI_MODEL, model,
-        )
-        model = DEFAULT_OPENAI_MODEL
 
     # Determine response format from extension
     if output_path.endswith(".ogg"):
@@ -2504,40 +2479,19 @@ def check_tts_requirements() -> bool:
     return False
 
 
-def _resolve_openai_audio_client_config() -> tuple[str, str, bool]:
-    """Return ``(api_key, base_url, is_managed)`` for the OpenAI audio client.
-
-    ``is_managed`` is True when the config resolves to the Nous managed audio
-    gateway (a restricted proxy), so callers can coerce the request to what the
-    gateway supports. When ``tts.use_gateway`` is set the gateway is preferred
-    even if direct OpenAI credentials are present.
-    """
-    direct_api_key = resolve_openai_audio_api_key()
-    if direct_api_key and not prefers_gateway("tts"):
-        return direct_api_key, DEFAULT_OPENAI_BASE_URL, False
-
-    managed_gateway = resolve_managed_tool_gateway("openai-audio")
-    if managed_gateway is None:
-        message = "Neither VOICE_TOOLS_OPENAI_KEY nor OPENAI_API_KEY is set"
-        if managed_nous_tools_enabled() or prefers_gateway("tts"):
-            message += (
-                ". "
-                + nous_tool_gateway_unavailable_message(
-                    "managed OpenAI audio for TTS",
-                )
-            )
-        raise ValueError(message)
-
-    return (
-        managed_gateway.nous_user_token,
-        urljoin(f"{managed_gateway.gateway_origin.rstrip('/')}/", "v1"),
-        True,
-    )
+def _resolve_openai_audio_client_config() -> tuple[str, str]:
+    """Return ``(api_key, base_url)`` for the OpenAI audio client."""
+    api_key = resolve_openai_audio_api_key()
+    if not api_key:
+        raise ValueError(
+            "Neither VOICE_TOOLS_OPENAI_KEY nor OPENAI_API_KEY is set"
+        )
+    return api_key, DEFAULT_OPENAI_BASE_URL
 
 
 def _has_openai_audio_backend() -> bool:
-    """Return True when OpenAI audio can use direct credentials or the managed gateway."""
-    return bool(resolve_openai_audio_api_key() or resolve_managed_tool_gateway("openai-audio"))
+    """Return True when OpenAI audio can use direct credentials."""
+    return bool(resolve_openai_audio_api_key())
 
 
 # ===========================================================================

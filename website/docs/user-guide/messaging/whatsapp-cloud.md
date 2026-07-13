@@ -309,7 +309,7 @@ Meta only allows **free-form messages** within a 24-hour window after the user's
 
 Cyberfox warns the agent about this window in its system prompt, so the model knows to mention it when scheduling delayed messages.
 
-Message-template support (the workaround for outside-window sends) is not yet implemented in Cyberfox. If you need it, please [open an issue](https://github.com/NousResearch/cyberfox-agent/issues) — it's planned but waiting on a clear demand signal.
+Message-template support (the workaround for outside-window sends) is not yet implemented in Cyberfox. If you need it, please [open an issue](https://github.com/Sarthak5-t/Cyberfox/issues) — it's planned but waiting on a clear demand signal.
 
 ### Group chats
 
@@ -373,7 +373,7 @@ cyberfox config set stt.use_gateway true
 cyberfox gateway restart
 ```
 
-This uses your Nous Portal access token instead of needing a separate OpenAI key.
+This uses your the web dashboard access token instead of needing a separate OpenAI key.
 
 ---
 

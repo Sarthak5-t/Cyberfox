@@ -295,15 +295,15 @@ export default function UserStoriesCollage(): JSX.Element {
       <div className={styles.footer}>
         Built something with Cyberfox?{' '}
         <a
-          href="https://github.com/NousResearch/cyberfox-agent/edit/main/website/src/data/userStories.json"
+          href="https://github.com/Sarthak5-t/Cyberfox/edit/main/website/src/data/userStories.json"
           target="_blank"
           rel="noopener noreferrer"
         >
           Add your story to this page
         </a>{' '}
         by editing <code>userStories.json</code>, or post it in the{' '}
-        <a href="https://discord.gg/NousResearch" target="_blank" rel="noopener noreferrer">
-          Nous Research Discord
+        <a href="https://github.com/Sarthak5-t/Cyberfox/discussions" target="_blank" rel="noopener noreferrer">
+          Cyberfox community
         </a>{' '}
         and we&apos;ll pick it up.
       </div>

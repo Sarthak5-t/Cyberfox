@@ -6,7 +6,7 @@ Usage (via cron with --no-agent):
     cyberfox cron create cyberfox-issues \\
       --schedule "*/5 * * * *" --no-agent \\
       --script "$CYBERFOX_HOME/skills/devops/watchers/scripts/watch_github.py" \\
-      --script-args "--name cyberfox-issues --repo NousResearch/cyberfox-agent --scope issues"
+      --script-args "--name cyberfox-issues --repo Sarthak5-t/Cyberfox --scope issues"
 
 Set GITHUB_TOKEN (or GH_TOKEN) in the Cyberfox .env file
 (``${CYBERFOX_HOME:-~/.cyberfox}/.env``) to avoid the 60 req/hr

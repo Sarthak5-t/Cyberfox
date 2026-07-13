@@ -5,9 +5,7 @@ Three cookies in play:
                          (HttpOnly, lifetime = token TTL, ~15 min)
   - cyberfox_session_rt:   the OAuth refresh token
                          (HttpOnly, lifetime = 24h, ROTATING + reuse-detected)
-                         Nous Portal issues a rotating refresh token for the
-                         dashboard auth-code grant (Portal NAS #293 / cyberfox
-                         #37247). ``set_session_cookies`` writes this cookie
+                         ``set_session_cookies`` writes this cookie
                          whenever the provider returns a non-empty
                          ``refresh_token``; the middleware uses it to rotate a
                          fresh access token transparently on AT expiry. A
@@ -83,7 +81,7 @@ SSO_ATTEMPT_COOKIE = "cyberfox_sso_attempt"
 _NAME_VARIANTS = ("__Host-", "__Secure-", "")
 
 # RT cookie Max-Age. Kept at 30 days as a generous upper bound on the cookie's
-# browser lifetime; Portal's actual refresh-token TTL (24h, rotating) is the
+# browser lifetime; the auth provider's actual refresh-token TTL is the
 # real authority — once the RT itself expires/rotates out, a refresh attempt
 # returns 400 → RefreshExpiredError → clean re-login, regardless of how long
 # the cookie lingers. (Not tightened to 24h here to avoid coupling the cookie
@@ -155,8 +153,8 @@ def set_session_cookies(
     ``access_token_expires_in`` is in seconds. Use the provider's reported
     TTL for the access token.
 
-    ``refresh_token`` is written as the RT cookie when non-empty. Nous Portal
-    issues a 24h rotating refresh token (cyberfox #37247); a provider that
+    ``refresh_token`` is written as the RT cookie when non-empty. An auth
+    provider may issue a rotating refresh token; a provider that
     omits it returns ``Session.refresh_token == ""`` and we simply don't
     persist the RT cookie — the session then behaves as access-token-only
     until the AT expires. No other branch changes between the two cases.

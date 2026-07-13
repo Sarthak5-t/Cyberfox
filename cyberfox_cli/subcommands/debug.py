@@ -29,9 +29,9 @@ Examples:
     cyberfox debug share --lines 500  Include more log lines
     cyberfox debug share --expire 30  Keep paste for 30 days
     cyberfox debug share --local      Print report locally (no upload)
-    cyberfox debug share --no-redact  Disable upload-time secret redaction
-    cyberfox debug share --nous       Upload to Nous-internal storage (private)
-    cyberfox debug delete <url>       Delete a previously uploaded paste
+     cyberfox debug share --no-redact  Disable upload-time secret redaction
+     cyberfox debug delete <url>       Delete a previously uploaded paste
+
 """,
     )
     debug_sub = debug_parser.add_subparsers(dest="debug_command")
@@ -74,17 +74,6 @@ Examples:
             "are normally run through agent.redact.redact_sensitive_text "
             "with force=True before upload so credentials are not leaked "
             "into the public paste service."
-        ),
-    )
-    share_parser.add_argument(
-        "--nous",
-        action="store_true",
-        help=(
-            "Upload the debug bundle to Nous-internal storage (AWS S3) instead "
-            "of a public paste service. The bundle is private — viewable only "
-            "by Nous staff (and allowlisted Discord mods) via a Google-login-"
-            "gated viewer — and auto-deletes after 14 days. Still force-redacts "
-            "secrets unless --no-redact is also passed."
         ),
     )
     delete_parser = debug_sub.add_parser(

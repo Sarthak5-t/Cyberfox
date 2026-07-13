@@ -1259,7 +1259,7 @@ def test_load_pool_missing_env_does_not_overwrite_other_process_seed(tmp_path, m
     assert persisted[0]["source"] == "env:MINIMAX_API_KEY"
 
 
-def test_load_pool_migrates_nous_provider_state(tmp_path, monkeypatch):
+def test_load_pool_migrates_legacy_provider_state(tmp_path, monkeypatch):
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     _write_auth_store(
         tmp_path,
@@ -1294,7 +1294,7 @@ def test_load_pool_migrates_nous_provider_state(tmp_path, monkeypatch):
     assert entry.agent_key == "agent-key"
 
 
-def test_load_pool_mirrors_nous_invoke_jwt_agent_key_runtime_api_key(tmp_path, monkeypatch):
+def test_load_pool_mirrors_legacy_invoke_jwt_agent_key_runtime_api_key(tmp_path, monkeypatch):
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     expires_at = datetime.fromtimestamp(time.time() + 3600, tz=timezone.utc).isoformat()
     token = _jwt_with_claims({
@@ -1340,7 +1340,7 @@ def test_load_pool_mirrors_nous_invoke_jwt_agent_key_runtime_api_key(tmp_path, m
     assert pool_entry["agent_key_expires_at"] == expires_at
 
 
-def test_nous_runtime_api_key_rejects_opaque_agent_key():
+def test_legacy_runtime_api_key_rejects_opaque_agent_key():
     from agent.credential_pool import PooledCredential
 
     entry = PooledCredential(
@@ -1363,7 +1363,7 @@ def test_nous_runtime_api_key_rejects_opaque_agent_key():
     assert entry.runtime_api_key == ""
 
 
-def test_nous_pool_terminal_refresh_removes_device_code_entry(tmp_path, monkeypatch):
+def test_legacy_pool_terminal_refresh_removes_device_code_entry(tmp_path, monkeypatch):
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     monkeypatch.setenv("CYBERFOX_SHARED_AUTH_DIR", str(tmp_path / "shared"))
     _write_auth_store(
@@ -1440,7 +1440,7 @@ def test_nous_pool_terminal_refresh_removes_device_code_entry(tmp_path, monkeypa
     assert refresh_calls["count"] == 1
 
 
-def test_load_pool_removes_nous_device_code_when_singleton_quarantined(tmp_path, monkeypatch):
+def test_load_pool_removes_legacy_device_code_when_singleton_quarantined(tmp_path, monkeypatch):
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     _write_auth_store(
         tmp_path,
@@ -1536,7 +1536,7 @@ def test_load_pool_removes_stale_file_backed_singleton_entry(tmp_path, monkeypat
     assert auth_payload["credential_pool"]["anthropic"] == []
 
 
-def test_load_pool_migrates_nous_provider_state_preserves_tls(tmp_path, monkeypatch):
+def test_load_pool_migrates_legacy_provider_state_preserves_tls(tmp_path, monkeypatch):
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     _write_auth_store(
         tmp_path,
@@ -2360,7 +2360,7 @@ def test_load_pool_does_not_seed_qwen_oauth_when_no_token(tmp_path, monkeypatch)
     assert pool.entries() == []
 
 
-def test_nous_seed_from_singletons_preserves_obtained_at_timestamps(tmp_path, monkeypatch):
+def test_legacy_seed_from_singletons_preserves_obtained_at_timestamps(tmp_path, monkeypatch):
     """Regression test for #15099 secondary issue.
 
     When ``_seed_from_singletons`` materialises a device_code pool entry from
@@ -2380,8 +2380,8 @@ def test_nous_seed_from_singletons_preserves_obtained_at_timestamps(tmp_path, mo
                     "access_token": "at_XXXXXXXX",
                     "refresh_token": "rt_YYYYYYYY",
                     "client_id": "cyberfox-cli",
-                    "portal_base_url": "https://portal.nousresearch.com",
-                    "inference_base_url": "https://inference.nousresearch.com/v1",
+                    "portal_base_url": "https://github.com/Sarthak5-t/Cyberfox",
+                    "inference_base_url": "https://api.openai.com/v1",
                     "token_type": "Bearer",
                     "scope": "openid profile",
                     "obtained_at": "2026-04-24T10:00:00+00:00",
@@ -2461,7 +2461,7 @@ class TestLeastUsedStrategy:
 
 # ── PR #10160 salvage: Nous OAuth cross-process sync tests ─────────────────
 
-def test_sync_nous_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypatch):
+def test_sync_legacy_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypatch):
     """When auth.json has a newer refresh token, the pool entry should adopt it."""
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     _write_auth_store(
@@ -2523,7 +2523,7 @@ def test_sync_nous_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypat
     assert synced.agent_key == "agent-key-NEW"
     assert synced.agent_key_expires_at == "2026-03-24T14:00:00+00:00"
 
-def test_sync_nous_entry_noop_when_tokens_match(tmp_path, monkeypatch):
+def test_sync_legacy_entry_noop_when_tokens_match(tmp_path, monkeypatch):
     """When auth.json has the same refresh token, sync should be a no-op."""
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     _write_auth_store(
@@ -2557,7 +2557,7 @@ def test_sync_nous_entry_noop_when_tokens_match(tmp_path, monkeypatch):
     synced = pool._sync_nous_entry_from_auth_store(entry)
     assert synced is entry
 
-def test_nous_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatch):
+def test_legacy_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatch):
     """An exhausted Nous entry should recover when auth.json has newer tokens."""
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path / "cyberfox"))
     from agent.credential_pool import load_pool, STATUS_EXHAUSTED

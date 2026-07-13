@@ -15,19 +15,19 @@ Cyberfox isn't just a CLI tool. You can import `AIAgent` directly and use it pro
 Install Cyberfox directly from the repository:
 
 ```bash
-pip install git+https://github.com/NousResearch/cyberfox-agent.git
+pip install git+https://github.com/Sarthak5-t/Cyberfox.git
 ```
 
 Or with [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv pip install git+https://github.com/NousResearch/cyberfox-agent.git
+uv pip install git+https://github.com/Sarthak5-t/Cyberfox.git
 ```
 
 You can also pin it in your `requirements.txt`:
 
 ```text
-cyberfox-agent @ git+https://github.com/NousResearch/cyberfox-agent.git
+cyberfox-agent @ git+https://github.com/Sarthak5-t/Cyberfox.git
 ```
 
 :::tip

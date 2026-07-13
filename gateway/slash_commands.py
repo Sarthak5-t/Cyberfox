@@ -1925,8 +1925,8 @@ class GatewaySlashCommandsMixin:
             lines = [t("gateway.model.switched", model=result.new_model)]
             lines.append(t("gateway.model.provider_label", provider=provider_label))
 
-            # Context: always resolve via the provider-aware chain so Codex OAuth,
-            # Copilot, and Nous-enforced caps win over the raw models.dev entry.
+            # Context: always resolve via the provider-aware chain so Codex OAuth
+            # and Copilot win over the raw models.dev entry.
             mi = result.model_info
             from cyberfox_cli.model_switch import resolve_display_context_length
             _sw2_config_ctx = None
@@ -3850,7 +3850,7 @@ class GatewaySlashCommandsMixin:
         return t(key, title=branch_title, count=msg_count, parent=parent_session_id, new=new_session_id)
 
     async def _handle_credits_command(self, event: MessageEvent) -> str:
-        """Handle /credits -- show Nous credit balance and the top-up handoff.
+        """Handle /credits -- show credit balance and the top-up handoff.
 
         Renders the balance block + identity line + a tappable top-up URL that
         opens the portal billing page with the modal open. The terminal does NOT
@@ -3869,7 +3869,7 @@ class GatewaySlashCommandsMixin:
         if view is None or not view.logged_in:
             return t("gateway.credits.not_logged_in")
 
-        lines: list[str] = ["💳 **Nous credits**"]
+        lines: list[str] = ["💳 **Credits**"]
         for line in view.balance_lines:
             if line.lstrip().startswith("📈"):
                 continue  # drop the helper's header; we print our own
@@ -3965,7 +3965,6 @@ class GatewaySlashCommandsMixin:
         # Fetch account usage off the event loop so slow provider APIs don't
         # block the gateway. Failures are non-fatal -- account_lines stays [].
         account_lines: list[str] = []
-        credits_lines: list[str] = []
         if provider:
             try:
                 account_snapshot = await asyncio.to_thread(
@@ -3978,22 +3977,6 @@ class GatewaySlashCommandsMixin:
                 account_snapshot = None
             if account_snapshot:
                 account_lines = render_account_usage_lines(account_snapshot, markdown=True)
-
-        # ── Nous credits magnitudes + monthly-grant % gauge ─────────────
-        # Shared with the CLI / TUI /usage block via nous_credits_lines(): a single
-        # auth-gate + portal-fetch + render path (which also honors the dev fixture).
-        # Run off the event loop. The helper gates on "a Nous account is logged in"
-        # — NOT the inference provider and NOT nested under `if provider:` — so a
-        # Nous-credentialled user running inference elsewhere (or with none resident)
-        # still sees their balance. NO recovery trigger: messaging binds no notice
-        # consumer, so /usage only displays. Fail-open: never break /usage.
-        try:
-            from agent.account_usage import nous_credits_lines
-
-            credits_lines = await asyncio.to_thread(nous_credits_lines, markdown=True)
-        except Exception:
-            credits_lines = []  # fail-open: never break /usage
-
         if agent and hasattr(agent, "session_total_tokens") and agent.session_api_calls > 0:
             lines = []
 
@@ -4036,9 +4019,6 @@ class GatewaySlashCommandsMixin:
             if account_lines:
                 lines.append("")
                 lines.extend(account_lines)
-            if credits_lines:
-                lines.append("")
-                lines.extend(credits_lines)
 
             return "\n".join(lines)
 
@@ -4058,18 +4038,9 @@ class GatewaySlashCommandsMixin:
             if account_lines:
                 lines.append("")
                 lines.extend(account_lines)
-            if credits_lines:
-                lines.append("")
-                lines.extend(credits_lines)
             return "\n".join(lines)
-        if account_lines or credits_lines:
-            # account-only, credits-only, or both — joined with a blank divider.
-            parts = list(account_lines)
-            if credits_lines:
-                if parts:
-                    parts.append("")
-                parts.extend(credits_lines)
-            return "\n".join(parts)
+        if account_lines:
+            return "\n".join(account_lines)
         return t("gateway.usage.no_data")
 
     async def _handle_insights_command(self, event: MessageEvent) -> str:

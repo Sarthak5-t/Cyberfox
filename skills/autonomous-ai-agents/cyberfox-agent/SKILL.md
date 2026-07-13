@@ -8,13 +8,13 @@ platforms: [linux, macos, windows]
 metadata:
   cyberfox:
     tags: [cyberfox, setup, configuration, multi-agent, spawning, cli, gateway, development]
-    homepage: https://github.com/NousResearch/cyberfox-agent
+    homepage: https://github.com/Sarthak5-t/Cyberfox
     related_skills: [claude-code, codex, opencode]
 ---
 
 # Cyberfox Agent
 
-Cyberfox Agent is an open-source AI agent framework by Nous Research that runs in your terminal, a native desktop app, messaging platforms, and IDEs. It's in the same category as Claude Code (Anthropic), Codex (OpenAI), and OpenClaw — autonomous coding and task-execution agents that use tool calling to interact with your system. Cyberfox works with any LLM provider (OpenRouter, Anthropic, OpenAI, Google, DeepSeek, xAI, local models, and 20+ others) and runs on Linux, macOS, Windows, and WSL.
+Cyberfox Agent is an open-source AI agent framework that runs in your terminal, a native desktop app, messaging platforms, and IDEs. It's in the same category as Claude Code (Anthropic), Codex (OpenAI), and OpenClaw — autonomous coding and task-execution agents that use tool calling to interact with your system. Cyberfox works with any LLM provider (OpenRouter, Anthropic, OpenAI, Google, DeepSeek, xAI, local models, and 20+ others) and runs on Linux, macOS, Windows, and WSL.
 
 What makes Cyberfox different:
 
@@ -30,7 +30,7 @@ People use Cyberfox for software development, research, system administration, d
 
 **This skill helps you work with Cyberfox Agent effectively** — setting it up, configuring features, spawning additional agent instances, troubleshooting issues, finding the right commands and settings, and understanding how the system works when you need to extend or contribute to it.
 
-**Docs:** https://cyberfox-agent.nousresearch.com/docs/
+**Docs:** https://github.com/Sarthak5-t/Cyberfox/
 
 ## Scope & Verification
 
@@ -39,14 +39,14 @@ This skill is a concise operating guide, not the complete source of truth for ev
 Good verification targets:
 
 - CLI commands: `cyberfox --help`, `cyberfox <command> --help`, and `cyberfox_cli/main.py`
-- User documentation: https://cyberfox-agent.nousresearch.com/docs/
-- Source tree: https://github.com/NousResearch/cyberfox-agent
+- User documentation: https://github.com/Sarthak5-t/Cyberfox/
+- Source tree: https://github.com/Sarthak5-t/Cyberfox
 
 ## Quick Start
 
 ```bash
 # Install (shell installer — sets up uv, Python, the venv, and the launcher)
-curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://github.com/Sarthak5-t/Cyberfox/install.sh | bash
 
 # Or via PyPI (ships the TUI bundle + shell launcher)
 pip install cyberfox-agent       # or: uv pip install cyberfox-agent
@@ -96,7 +96,7 @@ cyberfox chat [flags]
   -q, --query TEXT          Single query, non-interactive
   -m, --model MODEL         Model (e.g. anthropic/claude-sonnet-4)
   -t, --toolsets LIST       Comma-separated toolsets
-  --provider PROVIDER       Force provider (openrouter, anthropic, nous, etc.)
+  --provider PROVIDER       Force provider (openrouter, anthropic, etc.)
   -v, --verbose             Verbose output
   -Q, --quiet               Suppress banner, spinner, tool previews
   --checkpoints             Enable filesystem checkpoints (/rollback)
@@ -170,7 +170,7 @@ cyberfox gateway setup        Configure platforms
 
 Supported platforms (20+): Telegram, Discord, Slack, WhatsApp (Baileys bridge + official Business Cloud API), iMessage (Photon — `cyberfox photon setup`, the BlueBubbles successor with no Mac relay), Signal, Email, SMS, Matrix, Mattermost, Microsoft Teams, LINE, SimpleX, ntfy, Google Chat, Home Assistant, DingTalk, Feishu, WeCom, Weixin (WeChat), Raft (agent network), API Server, Webhooks. Open WebUI connects via the API Server adapter. Most adapters ship under `plugins/platforms/`, so new ones drop in without touching core.
 
-Platform docs: https://cyberfox-agent.nousresearch.com/docs/user-guide/messaging/
+Platform docs: https://github.com/Sarthak5-t/Cyberfox/user-guide/messaging/
 
 ### Sessions
 
@@ -227,7 +227,7 @@ cyberfox profile import FILE  Import from archive
 ```
 cyberfox auth                 Interactive credential manager
 cyberfox auth add [PROVIDER]  Add OAuth or API-key credential
-                            (e.g. nous, openai-codex, qwen-oauth, anthropic)
+                            (e.g. openai-codex, qwen-oauth, anthropic)
 cyberfox auth list [PROVIDER] List pooled credentials
 cyberfox auth remove P INDEX  Remove by provider + index
 cyberfox auth reset PROVIDER  Clear exhaustion status
@@ -243,7 +243,7 @@ cyberfox update               Update to latest version
 cyberfox desktop / gui        Launch the native desktop app
 cyberfox dashboard            Web admin panel + embedded chat
 cyberfox proxy                OpenAI-compatible local proxy backed by an OAuth provider
-cyberfox portal               Quick setup / sign in via Nous Portal
+cyberfox setup                First-time setup (model provider, tools)
 cyberfox kanban <verb>        Multi-agent work-queue board (init/create/list/show/assign/…)
 cyberfox pairing list/approve/revoke  DM authorization
 cyberfox plugins list/install/remove  Plugin management
@@ -264,7 +264,7 @@ For the full, authoritative command list run `cyberfox --help` (and `cyberfox <c
 
 Type these during an interactive chat session. New commands land fairly
 often; if something below looks stale, run `/help` in-session for the
-authoritative list or see the [live slash commands reference](https://cyberfox-agent.nousresearch.com/docs/reference/slash-commands).
+authoritative list or see the [live slash commands reference](https://github.com/Sarthak5-t/Cyberfox/reference/slash-commands).
 The registry of record is `cyberfox_cli/commands.py` — every consumer
 (autocomplete, Telegram menu, Slack mapping, `/help`) derives from it.
 
@@ -398,7 +398,7 @@ Edit with `cyberfox config edit` or `cyberfox config set section.key value`.
 | `checkpoints` | `enabled`, `max_snapshots` (50) |
 | `curator` | `enabled`, `consolidate` (false — opt-in aux-model skill consolidation), `interval_hours`, `stale_after_days` |
 
-Full config reference: https://cyberfox-agent.nousresearch.com/docs/user-guide/configuration
+Full config reference: https://github.com/Sarthak5-t/Cyberfox/user-guide/configuration
 
 ### Providers
 
@@ -408,7 +408,7 @@ Full config reference: https://cyberfox-agent.nousresearch.com/docs/user-guide/c
 |----------|------|-------------|
 | OpenRouter | API key | `OPENROUTER_API_KEY` |
 | Anthropic | API key | `ANTHROPIC_API_KEY` |
-| Nous Portal | OAuth | `cyberfox auth` |
+
 | OpenAI Codex | OAuth | `cyberfox auth` |
 | GitHub Copilot | Token | `COPILOT_GITHUB_TOKEN` |
 | Google Gemini | API key | `GOOGLE_API_KEY` or `GEMINI_API_KEY` |
@@ -428,7 +428,7 @@ Full config reference: https://cyberfox-agent.nousresearch.com/docs/user-guide/c
 | Custom endpoint | Config | `model.base_url` + `model.api_key` in config.yaml |
 | GitHub Copilot ACP | External | `COPILOT_CLI_PATH` or Copilot CLI |
 
-Full provider docs: https://cyberfox-agent.nousresearch.com/docs/integrations/providers
+Full provider docs: https://github.com/Sarthak5-t/Cyberfox/integrations/providers
 
 ### Toolsets
 
@@ -740,7 +740,7 @@ the `cronjob` tool, the `cyberfox cron` CLI (`list`, `add`, `edit`,
   header/footer instead of being mirrored into the target gateway
   session (keeps role alternation intact).
 
-User docs: https://cyberfox-agent.nousresearch.com/docs/user-guide/features/cron
+User docs: https://github.com/Sarthak5-t/Cyberfox/user-guide/features/cron
 
 ### Curator (skill lifecycle)
 
@@ -766,7 +766,7 @@ so nothing is lost.
 
 Config: `curator.*` (`enabled`, `interval_hours`, `min_idle_hours`,
 `stale_after_days`, `archive_after_days`, `backup.*`).
-User docs: https://cyberfox-agent.nousresearch.com/docs/user-guide/features/curator
+User docs: https://github.com/Sarthak5-t/Cyberfox/user-guide/features/curator
 
 ### Kanban (multi-agent work queue)
 
@@ -795,7 +795,7 @@ sessions still have zero `kanban_*` schema footprint unless configured.
   `CYBERFOX_KANBAN_BOARD` pinned in env); tenant is a soft namespace
   within a board for workspace-path + memory-key isolation.
 
-User docs: https://cyberfox-agent.nousresearch.com/docs/user-guide/features/kanban
+User docs: https://github.com/Sarthak5-t/Cyberfox/user-guide/features/kanban
 
 ---
 
@@ -948,18 +948,18 @@ cyberfox config set auxiliary.vision.model <model_name>
 
 | Looking for... | Location |
 |----------------|----------|
-| Config options | `cyberfox config edit` or [Configuration docs](https://cyberfox-agent.nousresearch.com/docs/user-guide/configuration) |
-| Available tools | `cyberfox tools list` or [Tools reference](https://cyberfox-agent.nousresearch.com/docs/reference/tools-reference) |
-| Slash commands | `/help` in session or [Slash commands reference](https://cyberfox-agent.nousresearch.com/docs/reference/slash-commands) |
-| Skills catalog | `cyberfox skills browse` or [Skills catalog](https://cyberfox-agent.nousresearch.com/docs/reference/skills-catalog) |
-| Provider setup | `cyberfox model` or [Providers guide](https://cyberfox-agent.nousresearch.com/docs/integrations/providers) |
-| Platform setup | `cyberfox gateway setup` or [Messaging docs](https://cyberfox-agent.nousresearch.com/docs/user-guide/messaging/) |
-| MCP servers | `cyberfox mcp list` or [MCP guide](https://cyberfox-agent.nousresearch.com/docs/user-guide/features/mcp) |
-| Profiles | `cyberfox profile list` or [Profiles docs](https://cyberfox-agent.nousresearch.com/docs/user-guide/profiles) |
-| Cron jobs | `cyberfox cron list` or [Cron docs](https://cyberfox-agent.nousresearch.com/docs/user-guide/features/cron) |
-| Memory | `cyberfox memory status` or [Memory docs](https://cyberfox-agent.nousresearch.com/docs/user-guide/features/memory) |
-| Env variables | `cyberfox config env-path` or [Env vars reference](https://cyberfox-agent.nousresearch.com/docs/reference/environment-variables) |
-| CLI commands | `cyberfox --help` or [CLI reference](https://cyberfox-agent.nousresearch.com/docs/reference/cli-commands) |
+| Config options | `cyberfox config edit` or [Configuration docs](https://github.com/Sarthak5-t/Cyberfox/user-guide/configuration) |
+| Available tools | `cyberfox tools list` or [Tools reference](https://github.com/Sarthak5-t/Cyberfox/reference/tools-reference) |
+| Slash commands | `/help` in session or [Slash commands reference](https://github.com/Sarthak5-t/Cyberfox/reference/slash-commands) |
+| Skills catalog | `cyberfox skills browse` or [Skills catalog](https://github.com/Sarthak5-t/Cyberfox/reference/skills-catalog) |
+| Provider setup | `cyberfox model` or [Providers guide](https://github.com/Sarthak5-t/Cyberfox/integrations/providers) |
+| Platform setup | `cyberfox gateway setup` or [Messaging docs](https://github.com/Sarthak5-t/Cyberfox/user-guide/messaging/) |
+| MCP servers | `cyberfox mcp list` or [MCP guide](https://github.com/Sarthak5-t/Cyberfox/user-guide/features/mcp) |
+| Profiles | `cyberfox profile list` or [Profiles docs](https://github.com/Sarthak5-t/Cyberfox/user-guide/profiles) |
+| Cron jobs | `cyberfox cron list` or [Cron docs](https://github.com/Sarthak5-t/Cyberfox/user-guide/features/cron) |
+| Memory | `cyberfox memory status` or [Memory docs](https://github.com/Sarthak5-t/Cyberfox/user-guide/features/memory) |
+| Env variables | `cyberfox config env-path` or [Env vars reference](https://github.com/Sarthak5-t/Cyberfox/reference/environment-variables) |
+| CLI commands | `cyberfox --help` or [CLI reference](https://github.com/Sarthak5-t/Cyberfox/reference/cli-commands) |
 | Gateway logs | `~/.cyberfox/logs/gateway.log` |
 | Session files | `cyberfox sessions browse` (reads state.db) |
 | Source code | `~/.cyberfox/cyberfox-agent/` |
@@ -968,7 +968,7 @@ cyberfox config set auxiliary.vision.model <model_name>
 
 ## Contributor Quick Reference
 
-For occasional contributors and PR authors. Full developer docs: https://cyberfox-agent.nousresearch.com/docs/developer-guide/
+For occasional contributors and PR authors. Full developer docs: https://github.com/Sarthak5-t/Cyberfox/developer-guide/
 
 ### Project Layout
 

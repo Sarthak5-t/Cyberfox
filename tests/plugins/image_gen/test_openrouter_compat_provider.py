@@ -75,7 +75,7 @@ class TestProviderClass:
 
         by_name = {p.name: p for p in _build_providers()}
         assert by_name["openrouter"].display_name == "OpenRouter"
-        assert by_name["nous"].display_name == "Nous Portal"
+        assert by_name["nous"].display_name == "cyberfox portal"
 
     def test_capabilities_support_image_input(self):
         caps = _openrouter().capabilities()
@@ -126,7 +126,7 @@ class TestProviderClass:
         with patch("plugins.image_gen.openrouter._load_image_gen_config", return_value=cfg):
             assert _openrouter()._resolve_model_chain() == ["openai/gpt-image-2"]
 
-    def test_nous_honors_top_level_model(self):
+    def test_legacy_honors_top_level_model(self):
         from plugins.image_gen.openrouter import _build_providers
 
         cfg = {"model": "openai/gpt-image-2"}
@@ -338,7 +338,7 @@ class TestGenerate:
     def test_posts_to_resolved_base_url(self):
         """Nous routes to its own base URL — proves the same code serves both."""
         nous_runtime = _runtime_ok(
-            provider="nous", base_url="https://inference.nousresearch.com/v1", api_key="nous-tok"
+            provider="nous", base_url="https://api.openai.com/v1", api_key="nous-tok"
         )
         with patch(_RUNTIME, return_value=nous_runtime), \
              patch("requests.post", return_value=_mock_chat_response([_PNG_DATA_URI])) as mock_post, \
@@ -351,7 +351,7 @@ class TestGenerate:
         assert result["success"] is True
         assert result["provider"] == "nous"
         url = mock_post.call_args[0][0]
-        assert url == "https://inference.nousresearch.com/v1/chat/completions"
+        assert url == "https://api.openai.com/v1/chat/completions"
 
     def test_api_error(self):
         import requests as req_lib

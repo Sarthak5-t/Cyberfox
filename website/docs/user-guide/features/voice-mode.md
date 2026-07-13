@@ -22,8 +22,8 @@ Before using voice features, make sure you have:
 The `~/.cyberfox/` directory and default `config.yaml` are created automatically the first time you run `cyberfox`. You only need to create `~/.cyberfox/.env` manually for API keys.
 :::
 
-:::tip Nous Portal covers both
-A paid [Nous Portal](/user-guide/features/tool-gateway) subscription supplies the LLM (step 2) **and** OpenAI TTS via the Tool Gateway — no separate OpenAI key needed. On a fresh install, `cyberfox setup --portal` wires both up at once.
+:::tip the web dashboard covers both
+A paid [the web dashboard](/user-guide/features/tool-gateway) subscription supplies the LLM (step 2) **and** OpenAI TTS via the Tool Gateway — no separate OpenAI key needed. On a fresh install, `cyberfox setup --portal` wires both up at once.
 :::
 
 ## Overview

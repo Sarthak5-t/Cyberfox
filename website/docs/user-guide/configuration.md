@@ -9,7 +9,7 @@ description: "Configure Cyberfox Agent — config.yaml, providers, models, API k
 All settings are stored in the `~/.cyberfox/` directory for easy access.
 
 :::tip Easiest path to a working `config.yaml`
-Run `cyberfox setup --portal` — one OAuth gets you a model provider and all four Tool Gateway tools without hand-editing YAML. Portal subscribers also get 10% off token-billed providers. See [Nous Portal](/integrations/nous-portal).
+Run `cyberfox setup --portal` — one OAuth gets you a model provider and all four Tool Gateway tools without hand-editing YAML. Portal subscribers also get 10% off token-billed providers. See [the web dashboard](/integrations/nous-portal).
 :::
 
 ## Directory Structure
@@ -18,7 +18,7 @@ Run `cyberfox setup --portal` — one OAuth gets you a model provider and all fo
 ~/.cyberfox/
 ├── config.yaml     # Settings (model, terminal, TTS, compression, etc.)
 ├── .env            # API keys and secrets
-├── auth.json       # OAuth provider credentials (Nous Portal, etc.)
+├── auth.json       # OAuth provider credentials (the web dashboard, etc.)
 ├── SOUL.md         # Primary agent identity (slot #1 in system prompt)
 ├── memories/       # Persistent memory (MEMORY.md, USER.md)
 ├── skills/         # Agent-created skills (managed via skill_manage tool)
@@ -89,7 +89,7 @@ You can set `providers.<id>.request_timeout_seconds` for a provider-wide request
 
 You can also set `providers.<id>.stale_timeout_seconds` for the non-streaming stale-call detector, plus `providers.<id>.models.<model>.stale_timeout_seconds` for a model-specific override. This wins over the legacy `CYBERFOX_API_CALL_STALE_TIMEOUT` env var.
 
-Leaving these unset keeps the legacy defaults (`CYBERFOX_API_TIMEOUT=1800`s, `CYBERFOX_API_CALL_STALE_TIMEOUT=90`s, native Anthropic 900s). The non-streaming stale detector is auto-disabled for local endpoints when left implicit and can scale upward for very large contexts. Not currently wired for AWS Bedrock (both `bedrock_converse` and AnthropicBedrock SDK paths use boto3 with its own timeout configuration). See the commented example in [`cli-config.yaml.example`](https://github.com/NousResearch/cyberfox-agent/blob/main/cli-config.yaml.example).
+Leaving these unset keeps the legacy defaults (`CYBERFOX_API_TIMEOUT=1800`s, `CYBERFOX_API_CALL_STALE_TIMEOUT=90`s, native Anthropic 900s). The non-streaming stale detector is auto-disabled for local endpoints when left implicit and can scale upward for very large contexts. Not currently wired for AWS Bedrock (both `bedrock_converse` and AnthropicBedrock SDK paths use boto3 with its own timeout configuration). See the commented example in [`cli-config.yaml.example`](https://github.com/Sarthak5-t/Cyberfox/blob/main/cli-config.yaml.example).
 
 ## Update Behavior
 
@@ -908,7 +908,7 @@ Options: `fill_first` (default), `round_robin`, `least_used`, `random`. See [Cre
 
 Cyberfox turns on cross-session prompt caching automatically when the active provider supports it — no user config needed.
 
-For Claude on **native Anthropic**, **OpenRouter**, and **Nous Portal**, Cyberfox attaches `cache_control` breakpoints with the 1-hour TTL (`ttl: "1h"`) on the system prompt and skill blocks. The first send within a fresh hour pays full input rates; subsequent sends across any session within the same hour pull from the cache at the discounted cached-read rate. This means the system prompt, loaded skill content, and the early portion of any long-context include get reused across `cyberfox` sessions and across forked subagents for the first hour.
+For Claude on **native Anthropic**, **OpenRouter**, and **the web dashboard**, Cyberfox attaches `cache_control` breakpoints with the 1-hour TTL (`ttl: "1h"`) on the system prompt and skill blocks. The first send within a fresh hour pays full input rates; subsequent sends across any session within the same hour pull from the cache at the discounted cached-read rate. This means the system prompt, loaded skill content, and the early portion of any long-context include get reused across `cyberfox` sessions and across forked subagents for the first hour.
 
 The Qwen Cloud (Alibaba DashScope) upstream caps cache TTL at 5 minutes, so Cyberfox uses the 5-minute breakpoint TTL there instead. Other Claude-via-third-party paths (AWS Bedrock, Azure Foundry) fall back to the provider's own caching defaults. xAI Grok uses a separate session-pinned conversation-id mechanism — see [xAI prompt caching](/integrations/providers#xai-grok--responses-api--prompt-caching).
 
@@ -921,14 +921,14 @@ prompt_caching:
   cache_ttl: "5m"   # "5m" or "1h" (Anthropic-supported tiers); other values are ignored
 ```
 
-`cache_ttl` selects the breakpoint TTL Cyberfox attaches for Claude via the native Anthropic API, OpenRouter, and Nous Portal. Only the two Anthropic-supported tiers (`"5m"`, `"1h"`) are honored — any other value is ignored. Providers with their own caps (e.g. Qwen Cloud, which maxes at 5 minutes) still clamp to what the upstream allows.
+`cache_ttl` selects the breakpoint TTL Cyberfox attaches for Claude via the native Anthropic API, OpenRouter, and the web dashboard. Only the two Anthropic-supported tiers (`"5m"`, `"1h"`) are honored — any other value is ignored. Providers with their own caps (e.g. Qwen Cloud, which maxes at 5 minutes) still clamp to what the upstream allows.
 
 ## Auxiliary Models
 
 Cyberfox uses "auxiliary" models for side tasks like image analysis, web page summarization, browser screenshot analysis, session-title generation, and context compression. By default (`auxiliary.*.provider: "auto"`), Cyberfox routes every auxiliary task to your **main chat model** — the same provider/model you picked in `cyberfox model`. You don't need to configure anything to get started, but be aware that on expensive reasoning models (Opus, MiniMax M2.7, etc.) auxiliary tasks add meaningful cost. If you want cheap-and-fast side tasks regardless of your main model, set `auxiliary.<task>.provider` and `auxiliary.<task>.model` explicitly (for example, Gemini Flash on OpenRouter for vision and web extraction).
 
 :::note Why "auto" uses your main model
-Earlier builds split aggregator users (OpenRouter, Nous Portal) onto a cheap provider-side default. That was surprising — users who paid for an aggregator subscription would see a different model handling their auxiliary traffic. `auto` now uses the main model for everyone, and per-task overrides in `config.yaml` still win (see [Full auxiliary config reference](#full-auxiliary-config-reference) below).
+Earlier builds split aggregator users (OpenRouter, the web dashboard) onto a cheap provider-side default. That was surprising — users who paid for an aggregator subscription would see a different model handling their auxiliary traffic. `auto` now uses the main model for everyone, and per-task overrides in `config.yaml` still win (see [Full auxiliary config reference](#full-auxiliary-config-reference) below).
 :::
 
 ### Configuring auxiliary models interactively
@@ -1164,7 +1164,7 @@ These options apply to **auxiliary task configs** (`auxiliary:`, `compression:`)
 |----------|-------------|-------------|
 | `"auto"` | Best available (default). Vision tries OpenRouter → Nous → Codex. | — |
 | `"openrouter"` | Force OpenRouter — routes to any model (Gemini, GPT-4o, Claude, etc.) | `OPENROUTER_API_KEY` |
-| `"nous"` | Force Nous Portal | `cyberfox auth` |
+| `"nous"` | Force the web dashboard | `cyberfox auth` |
 | `"codex"` | Force Codex OAuth (ChatGPT account). Supports vision (gpt-5.3-codex). | `cyberfox model` → Codex |
 | `"minimax-oauth"` | Force MiniMax OAuth (browser login, no API key). Uses MiniMax-M2.7-highspeed for auxiliary tasks. | `cyberfox model` → MiniMax (OAuth) |
 | `"xai-oauth"` | Force xAI Grok OAuth (browser login for SuperGrok or X Premium+ subscribers, no API key). Same OAuth token covers chat, TTS, image, video, and transcription. | `cyberfox model` → xAI Grok OAuth (SuperGrok / Premium+) |

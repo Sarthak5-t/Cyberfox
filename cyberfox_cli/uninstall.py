@@ -838,7 +838,7 @@ def _perform_uninstall(
         print(f"  {cyberfox_home}/")
         print()
         print("To reinstall later with your existing settings:")
-        print(color("  curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash", Colors.DIM))
+        print(color("  curl -fsSL https://github.com/Sarthak5-t/Cyberfox/install.sh | bash", Colors.DIM))
         print()
 
     print(color("Reload your shell to complete the process:", Colors.YELLOW))

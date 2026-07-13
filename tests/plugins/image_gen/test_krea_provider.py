@@ -669,7 +669,7 @@ def _managed_cfg(
 
 
 class TestManagedGateway:
-    def test_managed_submit_uses_gateway_origin_and_nous_token(self, monkeypatch):
+    def test_managed_submit_uses_gateway_origin_and_legacy_token(self, monkeypatch):
         """Managed mode submits to the gateway origin with the Nous token."""
         import plugins.image_gen.krea as krea_mod
         from plugins.image_gen.krea import KreaImageGenProvider

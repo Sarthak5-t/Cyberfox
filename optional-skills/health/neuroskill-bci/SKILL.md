@@ -8,7 +8,7 @@ description: >
   running locally.
 platforms: [linux, macos, windows]
 version: 1.0.0
-author: Cyberfox Agent + Nous Research
+author: Sarthak Khatal
 license: MIT
 metadata:
   cyberfox:

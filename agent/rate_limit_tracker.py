@@ -2,8 +2,7 @@
 
 Captures x-ratelimit-* headers from provider responses and provides
 formatted display for the /usage slash command.  Currently supports
-the Nous Portal header format (also used by OpenRouter and OpenAI-compatible
-APIs that follow the same convention).
+the OpenRouter / OpenAI-compatible header format (APIs that follow the same convention).
 
 Header schema (12 headers total):
     x-ratelimit-limit-requests          RPM cap

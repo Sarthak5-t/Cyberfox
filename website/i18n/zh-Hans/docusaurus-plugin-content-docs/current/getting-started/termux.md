@@ -46,7 +46,7 @@ python -m pip install -e '.[termux]' -c constraints-termux.txt
 Cyberfox 现已内置 Termux 感知的安装路径：
 
 ```bash
-curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://github.com/Sarthak5-t/Cyberfox/install.sh | bash
 ```
 
 在 Termux 上，安装程序会自动：
@@ -80,7 +80,7 @@ pkg install -y git python clang rust make pkg-config libffi openssl nodejs ripgr
 ### 2. 克隆 Cyberfox
 
 ```bash
-git clone https://github.com/NousResearch/cyberfox-agent.git
+git clone https://github.com/Sarthak5-t/Cyberfox.git
 cd cyberfox-agent
 ```
 

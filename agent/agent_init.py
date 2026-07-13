@@ -651,7 +651,7 @@ def init_agent(
     agent._rate_limit_state: Optional["RateLimitState"] = None
 
     # Credits tracking (dev-only, L0 usage-aware-credits) — updated from
-    # x-nous-credits-* response headers after each API call.  Session-start
+    # provider credits response headers after each API call.  Session-start
     # remaining is latched the first time a header is ever seen so we can
     # report cumulative micros spent.  Surfaced behind CYBERFOX_DEV_CREDITS.
     agent._credits_state = None
@@ -1850,7 +1850,7 @@ def init_agent(
             f"(this must be at least {MINIMUM_CONTEXT_LENGTH // 1000}K)."
         )
 
-    # Nous Cyberfox 3/4 are chat models, not tool-call-tuned. The interactive
+    # Cyberfox 3/4 are chat models, not tool-call-tuned. The interactive
     # CLI already warns via cli.py show_banner() (richer output + /model hint),
     # so skip platform=="cli" here to avoid emitting the warning twice per
     # startup. (Gateway/TUI/cron construct with quiet_mode=True and are already

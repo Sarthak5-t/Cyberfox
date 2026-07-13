@@ -35,11 +35,11 @@ Cyberfox Agent 提供了一个 Nix flake，支持三个层级的集成：
 
 ```bash
 # 直接运行（首次使用时构建，之后使用缓存）
-nix run github:NousResearch/cyberfox-agent -- setup
-nix run github:NousResearch/cyberfox-agent -- chat
+nix run github:Sarthak5-t/Cyberfox -- setup
+nix run github:Sarthak5-t/Cyberfox -- chat
 
 # 或持久化安装
-nix profile install github:NousResearch/cyberfox-agent
+nix profile install github:Sarthak5-t/Cyberfox
 cyberfox setup
 cyberfox chat
 ```
@@ -50,7 +50,7 @@ cyberfox chat
 <summary><strong>从本地克隆构建</strong></summary>
 
 ```bash
-git clone https://github.com/NousResearch/cyberfox-agent.git
+git clone https://github.com/Sarthak5-t/Cyberfox.git
 cd cyberfox-agent
 nix build
 ./result/bin/cyberfox setup
@@ -75,7 +75,7 @@ nix build
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    cyberfox-agent.url = "github:NousResearch/cyberfox-agent";
+    cyberfox-agent.url = "github:Sarthak5-t/Cyberfox";
   };
 
   outputs = { nixpkgs, cyberfox-agent, ... }: {
@@ -685,7 +685,7 @@ services.cyberfox-agent = {
 
 ```nix
 {
-  inputs.cyberfox-agent.url = "github:NousResearch/cyberfox-agent";
+  inputs.cyberfox-agent.url = "github:Sarthak5-t/Cyberfox";
   outputs = { cyberfox-agent, nixpkgs, ... }: {
     nixpkgs.overlays = [ cyberfox-agent.overlays.default ];
     # 然后：

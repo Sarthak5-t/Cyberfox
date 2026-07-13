@@ -229,8 +229,8 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("restart", "Gracefully restart the gateway after draining active runs", "Session",
                gateway_only=True),
     CommandDef("usage", "Show token usage and rate limits for the current session", "Info"),
-    CommandDef("credits", "Show Nous credit balance and top up", "Info"),
-    CommandDef("billing", "Manage Nous terminal billing — buy credits, auto-reload, limits", "Info",
+    CommandDef("credits", "Show credit balance and top up", "Info"),
+    CommandDef("billing", "Manage terminal billing — buy credits, auto-reload, limits", "Info",
                cli_only=True),
     CommandDef("insights", "Show usage insights and analytics", "Info",
                args_hint="[days]"),
@@ -247,7 +247,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("update", "Update Cyberfox Agent to the latest version", "Info"),
     CommandDef("version", "Show Cyberfox Agent version", "Info", aliases=("v",)),
     CommandDef("debug", "Upload debug report (system info + logs) and get shareable links", "Info",
-               args_hint="[nous|local]"),
+               args_hint="[local]"),
 
     # Exit
     CommandDef("quit", "Exit the CLI (use --delete to also remove session history)", "Exit",

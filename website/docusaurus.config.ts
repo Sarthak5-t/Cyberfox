@@ -7,10 +7,10 @@ const config: Config = {
   tagline: 'The self-improving AI agent',
   favicon: 'img/favicon.ico',
 
-  url: 'https://cyberfox-agent.nousresearch.com',
+  url: 'https://github.com/Sarthak5-t/Cyberfox',
   baseUrl: '/docs/',
 
-  organizationName: 'NousResearch',
+  organizationName: 'Sarthak5-t',
   projectName: 'cyberfox-agent',
 
   onBrokenLinks: 'warn',
@@ -96,7 +96,7 @@ const config: Config = {
         docs: {
           routeBasePath: '/',  // Docs at the root of /docs/
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/NousResearch/cyberfox-agent/edit/main/website/',
+          editUrl: 'https://github.com/Sarthak5-t/Cyberfox/edit/main/website/',
         },
         blog: false,
         theme: {
@@ -137,7 +137,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://cyberfox-agent.nousresearch.com/',
+          href: 'https://github.com/Sarthak5-t/Cyberfox',
           label: 'Download',
           position: 'left',
         },
@@ -146,18 +146,13 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://cyberfox-agent.nousresearch.com',
+          href: 'https://github.com/Sarthak5-t/Cyberfox',
           label: 'Home',
           position: 'right',
         },
         {
-          href: 'https://github.com/NousResearch/cyberfox-agent',
+          href: 'https://github.com/Sarthak5-t/Cyberfox',
           label: 'GitHub',
-          position: 'right',
-        },
-        {
-          href: 'https://discord.gg/NousResearch',
-          label: 'Discord',
           position: 'right',
         },
       ],
@@ -177,21 +172,19 @@ const config: Config = {
         {
           title: 'Community',
           items: [
-            { label: 'Discord', href: 'https://discord.gg/NousResearch' },
-            { label: 'GitHub Issues', href: 'https://github.com/NousResearch/cyberfox-agent/issues' },
+            { label: 'GitHub Issues', href: 'https://github.com/Sarthak5-t/Cyberfox/issues' },
             { label: 'Skills Hub', href: 'https://agentskills.io' },
           ],
         },
         {
           title: 'More',
           items: [
-            { label: 'Desktop Download', href: 'https://cyberfox-agent.nousresearch.com/' },
-            { label: 'GitHub', href: 'https://github.com/NousResearch/cyberfox-agent' },
-            { label: 'Nous Research', href: 'https://nousresearch.com' },
+            { label: 'Desktop Download', href: 'https://github.com/Sarthak5-t/Cyberfox' },
+            { label: 'GitHub', href: 'https://github.com/Sarthak5-t/Cyberfox' },
           ],
         },
       ],
-      copyright: `Built by <a href="https://nousresearch.com">Nous Research</a> · MIT License · ${new Date().getFullYear()}`,
+      copyright: `Built by Cyberfox · MIT License · ${new Date().getFullYear()}`,
     },
     prism: {
       theme: prismThemes.github,

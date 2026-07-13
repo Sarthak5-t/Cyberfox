@@ -277,7 +277,7 @@ class TestClassifyApiError:
                 "status": 402,
                 "message": (
                     "Your API key has run out of funds. Please go visit the "
-                    "portal to sort that out: https://portal.nousresearch.com"
+                    "portal to sort that out: https://github.com/Sarthak5-t/Cyberfox"
                 ),
             },
         )
@@ -305,7 +305,7 @@ class TestClassifyApiError:
                 "status": 404,
                 "message": (
                     "Model 'gpt-5' is not available on the Free Tier. "
-                    "Upgrade at https://portal.nousresearch.com or pick a free model."
+                    "Upgrade at https://github.com/Sarthak5-t/Cyberfox or pick a free model."
                 ),
             },
         )

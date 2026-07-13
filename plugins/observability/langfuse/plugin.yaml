@@ -1,7 +1,7 @@
 name: langfuse
 version: "1.0.0"
 description: "Optional Langfuse observability for Cyberfox — traces conversations, LLM calls, and tool usage. Opt-in via `cyberfox plugins enable observability/langfuse` or `cyberfox tools → Langfuse Observability`."
-author: NousResearch
+author: Cyberfox
 requires_env:
   - CYBERFOX_LANGFUSE_PUBLIC_KEY
   - CYBERFOX_LANGFUSE_SECRET_KEY

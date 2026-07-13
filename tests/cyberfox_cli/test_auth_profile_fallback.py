@@ -283,7 +283,7 @@ def test_provider_auth_state_returns_none_when_neither_has_it(profile_env):
 # a profile-loaded auth store rather than going through
 # ``get_provider_auth_state``. Without the fallback wired into
 # ``_load_provider_state`` itself, those helpers raise ``"Cyberfox is not
-# logged into Nous Portal"`` even though the user has a valid global Nous
+# logged into cyberfox portal"`` even though the user has a valid global Nous
 # login. These tests pin the per-provider shadowing into the helper.
 # ---------------------------------------------------------------------------
 
@@ -293,14 +293,14 @@ def test_load_provider_state_falls_back_to_global(profile_env):
     from cyberfox_cli.auth import _load_auth_store, _load_provider_state
 
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "global-nous-token", "refresh_token": "rt"},
+        "nous": {"access_token": "global-test-token", "refresh_token": "rt"},
     }))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={}))
 
     auth_store = _load_auth_store()
     state = _load_provider_state(auth_store, "nous")
     assert state is not None
-    assert state["access_token"] == "global-nous-token"
+    assert state["access_token"] == "global-test-token"
 
 
 def test_load_provider_state_profile_wins_over_global(profile_env):

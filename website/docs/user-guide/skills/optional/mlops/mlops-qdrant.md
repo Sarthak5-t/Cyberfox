@@ -501,8 +501,8 @@ client = QdrantClient(
 
 ## References
 
-- **[Advanced Usage](https://github.com/NousResearch/cyberfox-agent/blob/main/optional-skills/mlops/qdrant/references/advanced-usage.md)** - Distributed mode, hybrid search, recommendations
-- **[Troubleshooting](https://github.com/NousResearch/cyberfox-agent/blob/main/optional-skills/mlops/qdrant/references/troubleshooting.md)** - Common issues, debugging, performance tuning
+- **[Advanced Usage](https://github.com/Sarthak5-t/Cyberfox/blob/main/optional-skills/mlops/qdrant/references/advanced-usage.md)** - Distributed mode, hybrid search, recommendations
+- **[Troubleshooting](https://github.com/Sarthak5-t/Cyberfox/blob/main/optional-skills/mlops/qdrant/references/troubleshooting.md)** - Common issues, debugging, performance tuning
 
 ## Resources
 

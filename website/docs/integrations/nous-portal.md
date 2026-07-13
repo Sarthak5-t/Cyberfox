@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
-title: "Nous Portal"
+title: "the web dashboard"
 description: "One subscription, 300+ frontier models, the Tool Gateway, and Nous Chat — the recommended way to run Cyberfox Agent"
 ---
 
-# Nous Portal
+# the web dashboard
 
-[Nous Portal](https://portal.nousresearch.com) is Nous Research's unified subscription gateway and **the recommended way to run Cyberfox Agent**. One OAuth login replaces the juggling act of separate accounts, API keys, and billing relationships across every model lab, search API, image generator, and browser provider you'd otherwise need to wire up by hand.
+[the web dashboard](https://github.com/Sarthak5-t/Cyberfox) is Cyberfox's unified subscription gateway and **the recommended way to run Cyberfox Agent**. One OAuth login replaces the juggling act of separate accounts, API keys, and billing relationships across every model lab, search API, image generator, and browser provider you'd otherwise need to wire up by hand.
 
 If you only have time to set up one thing, set up this. The fastest path:
 
@@ -16,7 +16,7 @@ cyberfox setup --portal
 
 That single command runs the Portal OAuth, lets you pick a Nous model, sets Nous as your inference provider in `config.yaml`, and turns on the Tool Gateway. You're ready to `cyberfox chat` immediately after.
 
-Don't have a subscription yet? [portal.nousresearch.com/manage-subscription](https://portal.nousresearch.com/manage-subscription) — sign up, then come back and run the command above.
+Don't have a subscription yet? [github.com/Sarthak5-t/Cyberfox/manage-subscription](https://github.com/Sarthak5-t/Cyberfox/manage-subscription) — sign up, then come back and run the command above.
 
 ## What's in the subscription
 
@@ -62,7 +62,7 @@ You can also enable just specific gateway tools (e.g. web search but not image g
 
 ### Nous Chat
 
-Your Portal account also covers [chat.nousresearch.com](https://chat.nousresearch.com) — Nous Research's web chat interface with the same model catalog. Useful when you're away from your terminal, or for non-agent conversation work.
+Your Portal account also covers [github.com/Sarthak5-t/Cyberfox](https://github.com/Sarthak5-t/Cyberfox) — Cyberfox's web chat interface with the same model catalog. Useful when you're away from your terminal, or for non-agent conversation work.
 
 ### No credentials in your dotfiles
 
@@ -74,9 +74,9 @@ Because everything routes through one OAuth-authenticated Portal session, you do
 
 ## A note on Cyberfox 4
 
-Nous Research's own **Cyberfox 4** family (Cyberfox-4-70B, Cyberfox-4-405B) is available through the Portal at heavily discounted rates. These are **frontier hybrid-reasoning chat models** — strong at math, science, instruction following, schema adherence, roleplay, and long-form writing.
+Cyberfox's own **Cyberfox 4** family (Cyberfox-4-70B, Cyberfox-4-405B) is available through the Portal at heavily discounted rates. These are **frontier hybrid-reasoning chat models** — strong at math, science, instruction following, schema adherence, roleplay, and long-form writing.
 
-They are **not recommended for use inside Cyberfox Agent**, however. Cyberfox 4 is tuned for chat and reasoning, not the rapid-fire tool-calling loop the agent relies on. Use them for [Nous Chat](https://chat.nousresearch.com), for research workflows, or via the [subscription proxy](/user-guide/features/subscription-proxy) from other tooling — but for agent work, pick a frontier agentic model from the catalog instead:
+They are **not recommended for use inside Cyberfox Agent**, however. Cyberfox 4 is tuned for chat and reasoning, not the rapid-fire tool-calling loop the agent relies on. Use them for [Nous Chat](https://github.com/Sarthak5-t/Cyberfox), for research workflows, or via the [subscription proxy](/user-guide/features/subscription-proxy) from other tooling — but for agent work, pick a frontier agentic model from the catalog instead:
 
 ```bash
 /model anthropic/claude-sonnet-4.6     # best general-purpose agentic model
@@ -85,7 +85,7 @@ They are **not recommended for use inside Cyberfox Agent**, however. Cyberfox 4 
 /model deepseek/deepseek-v4-pro        # cost-effective coder
 ```
 
-The Portal's own [model info page](https://portal.nousresearch.com/info) carries the same warning, so this isn't a Cyberfox-side opinion — it's the official guidance from Nous Research.
+The Portal's own [model info page](https://github.com/Sarthak5-t/Cyberfox/info) carries the same warning, so this isn't a Cyberfox-side opinion — it's the official guidance from Cyberfox.
 
 ## Setup
 
@@ -97,14 +97,14 @@ cyberfox setup --portal
 
 This runs the full setup in one shot:
 
-1. Opens your browser to portal.nousresearch.com for OAuth login
+1. Opens your browser to github.com/Sarthak5-t/Cyberfox for OAuth login
 2. Stores the refresh token at `~/.cyberfox/auth.json`
 3. Lets you pick a Nous model from the curated list (or skip to keep your current one)
 4. Sets Nous as your inference provider in `~/.cyberfox/config.yaml` (when you pick a model)
 5. Turns on the Tool Gateway (web, image, TTS, browser routing)
 6. Returns you to your terminal ready to `cyberfox chat`
 
-If you don't have a subscription yet, sign up at [portal.nousresearch.com/manage-subscription](https://portal.nousresearch.com/manage-subscription) first.
+If you don't have a subscription yet, sign up at [github.com/Sarthak5-t/Cyberfox/manage-subscription](https://github.com/Sarthak5-t/Cyberfox/manage-subscription) first.
 
 ### Existing install — add Portal alongside other providers
 
@@ -112,7 +112,7 @@ If you already have Cyberfox configured with OpenRouter, Anthropic, or any other
 
 ```bash
 cyberfox model
-# pick "Nous Portal" from the provider list
+# pick "the web dashboard" from the provider list
 # browser opens, sign in, done
 ```
 
@@ -131,7 +131,7 @@ If you use [Cyberfox profiles](/user-guide/profiles), the Portal refresh token i
 ### Inspecting what's wired up
 
 ```bash
-cyberfox portal            # log in to Nous Portal + set it up (one-shot onboarding)
+cyberfox portal            # log in OpenRouter + set it up (one-shot onboarding)
 cyberfox portal info       # login status, subscription info, model + gateway routing
 cyberfox portal status     # alias for `portal info`
 cyberfox portal tools      # detailed Tool Gateway catalog with per-tool routing
@@ -143,18 +143,18 @@ cyberfox portal open       # open the subscription management page in your brows
 `cyberfox portal info` gives you the high-level overview:
 
 ```
-  Nous Portal
+  the web dashboard
   ───────────
   Auth:    ✓ logged in
-  Portal:  https://portal.nousresearch.com
+  Portal:  https://github.com/Sarthak5-t/Cyberfox
   Model:   ✓ using Nous as inference provider
 
   Tool Gateway
   ────────────
-  Web search & extract  via Nous Portal
-  Image generation      via Nous Portal
-  Text-to-speech        via Nous Portal
-  Browser automation    via Nous Portal
+  Web search & extract  via the web dashboard
+  Image generation      via the web dashboard
+  Text-to-speech        via the web dashboard
+  Browser automation    via the web dashboard
   Cloud terminal        not configured
 ```
 
@@ -193,13 +193,13 @@ cyberfox tools
 # → TTS              → "Nous Subscription"
 ```
 
-The Tool Gateway is opt-in per tool, not all-or-nothing. The managed backends show up in `cyberfox tools` whether or not you're logged into Nous Portal — if you pick "Nous Subscription" before authenticating, Cyberfox runs the Portal login inline (it won't change your inference provider or touch your other tools). See the [Tool Gateway docs](/user-guide/features/tool-gateway) for the full per-tool configuration matrix.
+The Tool Gateway is opt-in per tool, not all-or-nothing. The managed backends show up in `cyberfox tools` whether or not you're logged into the web dashboard — if you pick "Nous Subscription" before authenticating, Cyberfox runs the Portal login inline (it won't change your inference provider or touch your other tools). See the [Tool Gateway docs](/user-guide/features/tool-gateway) for the full per-tool configuration matrix.
 
 ### Subscription management
 
 Manage your plan, view usage, or upgrade/cancel at any time:
 
-- **Web:** [portal.nousresearch.com/manage-subscription](https://portal.nousresearch.com/manage-subscription)
+- **Web:** [github.com/Sarthak5-t/Cyberfox/manage-subscription](https://github.com/Sarthak5-t/Cyberfox/manage-subscription)
 - **CLI shortcut:** `cyberfox portal open` (opens the same page in your default browser)
 
 ## Configuration reference
@@ -210,7 +210,7 @@ After `cyberfox setup --portal`, `~/.cyberfox/config.yaml` will look like:
 model:
   provider: nous
   default: anthropic/claude-sonnet-4.6     # or whatever model you picked
-  base_url: https://inference-api.nousresearch.com/v1
+  base_url: https://api.openai.com/v1
 ```
 
 The Tool Gateway settings live under their respective tool sections:
@@ -247,7 +247,7 @@ You haven't completed the OAuth flow, or your refresh token was wiped. Run:
 cyberfox portal
 ```
 
-or use `cyberfox model` and re-select Nous Portal.
+or use `cyberfox model` and re-select the web dashboard.
 
 ### Got a "re-authentication required" message mid-session
 
@@ -261,11 +261,11 @@ The Portal proxies through OpenRouter, so any model that OpenRouter supports is 
 /model anthropic/claude-opus-4.6
 ```
 
-If a model is genuinely missing, [open an issue](https://github.com/NousResearch/cyberfox-agent/issues) — we surface the Portal's catalog to Cyberfox and gaps usually mean a routing config we can update.
+If a model is genuinely missing, [open an issue](https://github.com/Sarthak5-t/Cyberfox/issues) — we surface the Portal's catalog to Cyberfox and gaps usually mean a routing config we can update.
 
 ### Bills not appearing on my Portal account
 
-Check `cyberfox portal info` first — if it shows you're using a different provider (`Model: currently openrouter` instead of `using Nous as inference provider`), your local config has drifted. Run `cyberfox model`, pick Nous Portal, and the next request will route through your subscription.
+Check `cyberfox portal info` first — if it shows you're using a different provider (`Model: currently openrouter` instead of `using Nous as inference provider`), your local config has drifted. Run `cyberfox model`, pick the web dashboard, and the next request will route through your subscription.
 
 ## See also
 

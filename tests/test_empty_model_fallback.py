@@ -30,8 +30,8 @@ class TestGetDefaultModelForProvider:
         # Custom providers don't have entries in _PROVIDER_MODELS
         assert get_default_model_for_provider("some-random-custom") == ""
 
-    def test_nous_silent_default_is_not_the_expensive_flagship(self):
-        """Nous Portal is a metered aggregator whose curated list is ordered
+    def test_legacy_silent_default_is_not_the_expensive_flagship(self):
+        """cyberfox portal is a metered aggregator whose curated list is ordered
         most-capable-first, so entry [0] is the priciest flagship
         (anthropic/claude-opus-4.8). The silent fallback (provider set, no model)
         must NOT escalate to it — otherwise an unconfigured profile silently

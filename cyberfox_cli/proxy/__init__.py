@@ -9,9 +9,6 @@ The proxy listens on ``127.0.0.1:<port>``, accepts any bearer (the client's
 upstream credential to the forwarded request. The credential is refreshed
 automatically when it approaches expiry.
 
-First-class adapter:
-  - ``nous`` — Nous Portal (https://inference-api.nousresearch.com/v1)
-
 Future adapters can plug in by implementing ``UpstreamAdapter``.
 """
 

@@ -186,7 +186,7 @@ class TestTencentTokenhubCanonicalProvider:
 
 
 # =============================================================================
-# OpenRouter / Nous Portal curated lists
+# OpenRouter / cyberfox portal curated lists
 # =============================================================================
 
 
@@ -204,7 +204,7 @@ class TestTencentInOpenRouterAndNous:
         ids = [mid for mid, _ in OPENROUTER_MODELS]
         assert "tencent/hy3-preview" in ids
 
-    def test_in_nous_provider_models(self):
+    def test_in_legacy_provider_models(self):
         from cyberfox_cli.models import _PROVIDER_MODELS
         assert "tencent/hy3-preview" in _PROVIDER_MODELS["nous"]
 

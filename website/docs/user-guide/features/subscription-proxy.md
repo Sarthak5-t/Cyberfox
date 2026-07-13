@@ -1,7 +1,7 @@
 ---
 sidebar_position: 15
 title: "Subscription Proxy"
-description: "Use your Nous Portal subscription (or other OAuth provider) as an OpenAI-compatible endpoint for external apps"
+description: "Use your the web dashboard subscription (or other OAuth provider) as an OpenAI-compatible endpoint for external apps"
 ---
 
 # Subscription Proxy
@@ -32,7 +32,7 @@ proxy when you just want **the model** through your subscription.
 cyberfox portal
 ```
 
-This opens your browser for the Nous Portal OAuth flow. Cyberfox stores
+This opens your browser for the the web dashboard OAuth flow. Cyberfox stores
 the refresh token in `~/.cyberfox/auth.json` — the same place all Cyberfox
 provider logins live.
 
@@ -43,7 +43,7 @@ cyberfox proxy start
 ```
 
 ```
-Starting Cyberfox proxy for Nous Portal
+Starting Cyberfox proxy for the web dashboard
   Listening on:  http://127.0.0.1:8645/v1
   Forwarding to: (resolved per-request from your subscription)
   Use any bearer token in the client — the proxy attaches your real credential.
@@ -72,7 +72,7 @@ automatically when the bearer approaches expiry.
 cyberfox proxy providers
 ```
 
-Currently shipped: `nous` (Nous Portal) and `xai` (xAI / Grok). More
+Currently shipped: `nous` (the web dashboard) and `xai` (xAI / Grok). More
 OAuth providers can be added by implementing the `UpstreamAdapter`
 interface in `cyberfox_cli/proxy/adapters/`.
 
@@ -85,7 +85,7 @@ cyberfox proxy status
 ```
 Cyberfox proxy upstream adapters
 
-  [nous    ] Nous Portal — ready (bearer expires 2026-05-15T06:43:21Z)
+  [nous    ] the web dashboard — ready (bearer expires 2026-05-15T06:43:21Z)
 ```
 
 If you see `not logged in`, run `cyberfox portal`. If you see
@@ -142,7 +142,7 @@ openviking-server
 OpenViking's VLM calls now flow through your Portal subscription. The
 embedding model side still needs its own provider — Portal does serve
 `/v1/embeddings` but the model selection depends on what your tier
-supports; check `portal.nousresearch.com/models`.
+supports; check `github.com/Sarthak5-t/Cyberfox/models`.
 
 ## Configuring Karakeep (or any bookmark/summarizer app)
 
@@ -178,7 +178,7 @@ this beyond your trusted network.
 Your Portal tier's RPM/TPM limits apply across the whole proxy. The
 proxy doesn't fan out or pool — it's a single bearer with your full
 subscription quota. Monitor usage at
-[portal.nousresearch.com](https://portal.nousresearch.com).
+[github.com/Sarthak5-t/Cyberfox](https://github.com/Sarthak5-t/Cyberfox).
 
 ## Architecture
 

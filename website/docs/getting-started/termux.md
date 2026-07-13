@@ -51,7 +51,7 @@ That does not stop Cyberfox from working well as a phone-native CLI agent — it
 Cyberfox now ships a Termux-aware installer path:
 
 ```bash
-curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://github.com/Sarthak5-t/Cyberfox/install.sh | bash
 ```
 
 On Termux, the installer automatically:
@@ -87,7 +87,7 @@ Why these packages?
 ### 2. Clone Cyberfox
 
 ```bash
-git clone https://github.com/NousResearch/cyberfox-agent.git
+git clone https://github.com/Sarthak5-t/Cyberfox.git
 cd cyberfox-agent
 ```
 

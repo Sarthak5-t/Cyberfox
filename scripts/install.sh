@@ -6,7 +6,7 @@
 # Uses uv for desktop/server installs and Python's stdlib venv + pip.
 #
 # Usage:
-#   curl -fsSL https://cyberfox-agent.nousresearch.com/install.sh | bash
+#   curl -fsSL https://sarthak5t.github.io/cyberfox-agent/install.sh | bash
 #
 # Or with options:
 #   curl -fsSL ... | bash -s -- --no-venv --skip-setup
@@ -43,8 +43,8 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Configuration
-REPO_URL_SSH="git@github.com:NousResearch/cyberfox-agent.git"
-REPO_URL_HTTPS="https://github.com/NousResearch/cyberfox-agent.git"
+REPO_URL_SSH="git@github.com:Sarthak5-t/Cyberfox.git"
+REPO_URL_HTTPS="https://github.com/Sarthak5-t/Cyberfox.git"
 CYBERFOX_HOME="${CYBERFOX_HOME:-$HOME/.cyberfox}"
 # INSTALL_DIR is resolved AFTER arg parsing and OS detection so we can pick an
 # FHS-style layout for root installs.  Track whether the user gave us an
@@ -212,7 +212,7 @@ print_banner() {
     echo "┌─────────────────────────────────────────────────────────┐"
     echo "│             ⚕ Cyberfox Agent Installer                    │"
     echo "├─────────────────────────────────────────────────────────┤"
-    echo "│  An open source AI agent by Nous Research.              │"
+    echo "│  An open source AI agent by Sarthak Khatal.              │"
     echo "└─────────────────────────────────────────────────────────┘"
     echo -e "${NC}"
 }
@@ -1796,7 +1796,7 @@ copy_config_templates() {
     # here is self-healing, but keep them in sync to avoid a churn on first run.
     if [ ! -f "$CYBERFOX_HOME/SOUL.md" ]; then
         cat > "$CYBERFOX_HOME/SOUL.md" << 'SOUL_EOF'
-You are Cyberfox Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.
+You are Cyberfox Agent, an intelligent AI assistant created by Sarthak Khatal. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.
 SOUL_EOF
         log_success "Created ~/.cyberfox/SOUL.md (edit to customize personality)"
     fi

@@ -81,7 +81,7 @@ python $CYBERFOX_HOME/skills/devops/watchers/scripts/watch_rss.py \
 
 ```bash
 python $CYBERFOX_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name cyberfox-issues --repo NousResearch/cyberfox-agent --scope issues
+  --name cyberfox-issues --repo Sarthak5-t/Cyberfox --scope issues
 ```
 
 轮询任意 JSON API：

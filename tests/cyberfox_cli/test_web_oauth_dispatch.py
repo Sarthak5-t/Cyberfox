@@ -41,13 +41,13 @@ def _make_profile_home(tmp_path, monkeypatch, profile="coder"):
     return profile_home
 
 
-def _fake_nous_device_data():
+def _fake_legacy_device_data():
     return {
         "device_code": "device-code",
         "user_code": "NOUS-1234",
-        "verification_uri": "https://portal.nousresearch.com/device",
+        "verification_uri": "https://github.com/Sarthak5-t/Cyberfox/device",
         "verification_uri_complete": (
-            "https://portal.nousresearch.com/device?user_code=NOUS-1234"
+            "https://github.com/Sarthak5-t/Cyberfox/device?user_code=NOUS-1234"
         ),
         "expires_in": 600,
         "interval": 5,
@@ -55,7 +55,7 @@ def _fake_nous_device_data():
 
 
 def _invoke_scope_refusal():
-    request = httpx.Request("POST", "https://portal.nousresearch.com/oauth/device/code")
+    request = httpx.Request("POST", "https://github.com/Sarthak5-t/Cyberfox/oauth/device/code")
     response = httpx.Response(
         400,
         json={
@@ -107,7 +107,7 @@ def test_minimax_login_does_not_launch_anthropic_flow():
     assert body["expires_in"] == 600
 
 
-def test_nous_dashboard_device_flow_ignores_legacy_scope_override(monkeypatch):
+def test_legacy_dashboard_device_flow_ignores_legacy_scope_override(monkeypatch):
     from cyberfox_cli import auth as auth_mod
     from cyberfox_cli import web_server as ws
 
@@ -115,7 +115,7 @@ def test_nous_dashboard_device_flow_ignores_legacy_scope_override(monkeypatch):
 
     def fake_request_device_code(**kwargs):
         requested_scopes.append(kwargs["scope"])
-        return _fake_nous_device_data()
+        return _fake_legacy_device_data()
 
     monkeypatch.setenv("CYBERFOX_AGENT_USE_LEGACY_SESSION_KEYS", "true")
     monkeypatch.setattr(auth_mod, "_request_device_code", fake_request_device_code)
@@ -195,7 +195,7 @@ def test_oauth_start_stores_profile_for_background_completion(tmp_path, monkeypa
         ws._oauth_sessions.pop(session_id, None)
 
 
-def test_nous_dashboard_device_flow_does_not_retry_legacy_scope_on_invoke_refusal(monkeypatch):
+def test_legacy_dashboard_device_flow_does_not_retry_legacy_scope_on_invoke_refusal(monkeypatch):
     from cyberfox_cli import auth as auth_mod
     from cyberfox_cli import web_server as ws
 
@@ -340,7 +340,7 @@ def test_codex_dashboard_worker_persists_inside_session_profile(tmp_path, monkey
         ws._oauth_sessions.pop(sid, None)
 
 
-def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(monkeypatch):
+def test_legacy_dashboard_poller_preserves_effective_scope_when_token_omits_scope(monkeypatch):
     from cyberfox_cli import auth as auth_mod
     from cyberfox_cli import web_server as ws
 
@@ -352,7 +352,7 @@ def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(
         "created_at": time.time(),
         "status": "pending",
         "error_message": None,
-        "portal_base_url": "https://portal.nousresearch.com",
+        "portal_base_url": "https://github.com/Sarthak5-t/Cyberfox",
         "client_id": "cyberfox-cli",
         "device_code": "device-code",
         "interval": 5,
@@ -361,7 +361,7 @@ def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(
     }
     captured_state = {}
 
-    def fake_refresh_nous_oauth_from_state(state, **kwargs):
+    def fake_refresh_legacy_oauth_from_state(state, **kwargs):
         captured_state.update(state)
         return {**state, "agent_key": "jwt-agent-key"}
 
@@ -378,7 +378,7 @@ def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(
     monkeypatch.setattr(
         auth_mod,
         "refresh_nous_oauth_from_state",
-        fake_refresh_nous_oauth_from_state,
+        fake_refresh_legacy_oauth_from_state,
     )
     monkeypatch.setattr(auth_mod, "persist_nous_credentials", lambda state: None)
 

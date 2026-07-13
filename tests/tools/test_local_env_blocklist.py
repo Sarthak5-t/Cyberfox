@@ -4,8 +4,8 @@ Verifies that Cyberfox-managed provider, tool, and gateway env vars are
 stripped from subprocess environments so external CLIs are not silently
 misrouted or handed Cyberfox secrets.
 
-See: https://github.com/NousResearch/cyberfox-agent/issues/1002
-See: https://github.com/NousResearch/cyberfox-agent/issues/1264
+See: https://github.com/Sarthak5-t/Cyberfox/issues/1002
+See: https://github.com/Sarthak5-t/Cyberfox/issues/1264
 """
 
 import os

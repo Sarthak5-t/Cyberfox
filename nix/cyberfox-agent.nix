@@ -229,7 +229,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   meta = with lib; {
     description = "AI agent with advanced tool-calling capabilities";
-    homepage = "https://github.com/NousResearch/cyberfox-agent";
+    homepage = "https://github.com/Sarthak5-t/Cyberfox";
     mainProgram = "cyberfox";
     license = licenses.mit;
     platforms = platforms.unix;

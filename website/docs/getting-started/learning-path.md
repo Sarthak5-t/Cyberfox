@@ -13,7 +13,7 @@ If you haven't installed Cyberfox Agent yet, begin with the [Installation guide]
 :::
 
 :::tip First-time provider setup
-First-time users almost always want `cyberfox setup --portal` — one OAuth covers a model plus the four Tool Gateway tools (search/image/TTS/browser). See [Nous Portal](/integrations/nous-portal).
+First-time users almost always want `cyberfox setup --portal` — one OAuth covers a model plus the four Tool Gateway tools (search/image/TTS/browser). See [the web dashboard](/integrations/nous-portal).
 :::
 
 ## How to Use This Page
@@ -100,11 +100,11 @@ page is for built-in Cyberfox core development, not the usual user/custom-tool p
 
 ### "I want to train models"
 
-Use reinforcement learning to fine-tune model behavior with Cyberfox Agent's RL training pipeline (powered by [Atropos](https://github.com/NousResearch/atropos)).
+Use reinforcement learning to fine-tune model behavior with Cyberfox Agent's RL training pipeline (powered by [Atropos](https://github.com/Sarthak5-t/Cyberfox/atropos)).
 
 1. [Quickstart](/getting-started/quickstart)
 2. [Configuration](/user-guide/configuration)
-3. [Atropos RL Environments](https://github.com/NousResearch/atropos) (external)
+3. [Atropos RL Environments](https://github.com/Sarthak5-t/Cyberfox/atropos) (external)
 4. [Provider Routing](/user-guide/features/provider-routing)
 5. [Architecture](/developer-guide/architecture)
 

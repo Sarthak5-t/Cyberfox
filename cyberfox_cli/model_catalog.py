@@ -1,8 +1,8 @@
 """Remote model catalog fetcher.
 
 The Cyberfox docs site hosts a JSON manifest of curated models for providers
-we want to update without shipping a release (currently OpenRouter and
-Nous Portal). This module fetches, validates, and caches that manifest,
+we want to update without shipping a release (currently OpenRouter).
+This module fetches, validates, and caches that manifest,
 falling back to the in-repo hardcoded lists when the network is unavailable.
 
 Pipeline
@@ -13,7 +13,7 @@ Pipeline
    - Fetches the master URL if disk cache is stale or missing.
    - On any fetch failure, keeps using the stale cache (or empty dict).
 
-2. ``get_curated_openrouter_models()`` / ``get_curated_nous_models()`` —
+2. ``get_curated_openrouter_models()`` —
    thin accessors returning the shapes existing callers expect. Each
    falls back to the in-repo hardcoded list on any lookup failure.
 
@@ -32,8 +32,7 @@ Schema (version 1)
             {"id": "vendor/model", "description": "recommended",
              "metadata": {...}}          # free-form, model-level
           ]
-        },
-        "nous": {...}
+        }
       }
     }
 
@@ -62,7 +61,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 DEFAULT_CATALOG_URL = (
-    "https://cyberfox-agent.nousresearch.com/docs/api/model-catalog.json"
+    "https://github.com/Sarthak5-t/Cyberfox/api/model-catalog.json"
 )
 # Fallback fetch chain. The Docusaurus site is served through Vercel, which
 # occasionally returns HTTP 403 + x-vercel-mitigated: challenge for non-
@@ -71,7 +70,7 @@ DEFAULT_CATALOG_URL = (
 # is the same manifest published from the same repo and is not bot-gated,
 # so we fall through to it whenever the primary URL fails.
 DEFAULT_CATALOG_FALLBACK_URLS: tuple[str, ...] = (
-    "https://raw.githubusercontent.com/NousResearch/cyberfox-agent/main/website/static/api/model-catalog.json",
+    "https://raw.githubusercontent.com/Sarthak5-t/Cyberfox/main/website/static/api/model-catalog.json",
 )
 DEFAULT_TTL_HOURS = 1
 DEFAULT_FETCH_TIMEOUT = 8.0
@@ -340,22 +339,6 @@ def get_curated_openrouter_models() -> list[tuple[str, str]] | None:
     return out or None
 
 
-def get_curated_nous_models() -> list[str] | None:
-    """Return Nous Portal's curated list of model ids from the manifest.
-
-    Returns ``None`` when the manifest is unavailable.
-    """
-    block = _get_provider_block("nous")
-    if not block:
-        return None
-    out: list[str] = []
-    for m in block.get("models", []):
-        mid = str(m.get("id") or "").strip()
-        if mid:
-            out.append(mid)
-    return out or None
-
-
 def seed_cache_from_checkout(project_root: "Path | str") -> bool:
     """Overwrite the disk cache with the catalog shipped in a local checkout.
 
@@ -363,7 +346,7 @@ def seed_cache_from_checkout(project_root: "Path | str") -> bool:
     ``website/static/api/model-catalog.json`` IS the newest catalog — no
     network round-trip needed. Copying it straight over the disk cache keeps
     the model picker current even when the remote manifest fetch is bot-gated
-    or the Portal hiccups.
+    or the manifest source hiccups.
 
     Reads the shipped manifest, validates it against the schema, and writes it
     to ``~/.cyberfox/cache/model_catalog.json`` via the same atomic writer the

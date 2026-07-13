@@ -45,7 +45,7 @@ def test_resolve_runtime_provider_uses_credential_pool(monkeypatch):
     assert resolved["source"] == "manual"
 
 
-def test_resolve_runtime_provider_nous_pool_uses_env_base_url_override(monkeypatch):
+def test_resolve_runtime_provider_legacy_pool_uses_env_base_url_override(monkeypatch):
     entry = SimpleNamespace(
         provider="nous",
         source="device_code",
@@ -53,7 +53,7 @@ def test_resolve_runtime_provider_nous_pool_uses_env_base_url_override(monkeypat
         agent_key="pool-token",
         agent_key_expires_at="2099-01-01T00:00:00+00:00",
         scope="inference:invoke",
-        runtime_base_url="https://inference-api.nousresearch.com/v1",
+        runtime_base_url="https://api.openai.com/v1",
     )
 
     class _Pool:
@@ -1098,7 +1098,7 @@ def test_named_custom_provider_does_not_shadow_builtin_provider(monkeypatch):
         rp,
         "resolve_nous_runtime_credentials",
         lambda **kwargs: {
-            "base_url": "https://inference-api.nousresearch.com/v1",
+            "base_url": "https://api.openai.com/v1",
             "api_key": "nous-runtime-key",
             "source": "portal",
             "expires_at": None,
@@ -1108,12 +1108,12 @@ def test_named_custom_provider_does_not_shadow_builtin_provider(monkeypatch):
     resolved = rp.resolve_runtime_provider(requested="nous")
 
     assert resolved["provider"] == "nous"
-    assert resolved["base_url"] == "https://inference-api.nousresearch.com/v1"
+    assert resolved["base_url"] == "https://api.openai.com/v1"
     assert resolved["api_key"] == "nous-runtime-key"
     assert resolved["requested_provider"] == "nous"
 
 
-def test_nous_pool_entry_refreshes_expired_agent_key(monkeypatch):
+def test_legacy_pool_entry_refreshes_expired_agent_key(monkeypatch):
     stale_token = _fake_invoke_jwt(ttl_seconds=-60)
     fresh_token = _fake_invoke_jwt(ttl_seconds=3600)
 
@@ -1838,7 +1838,7 @@ def test_custom_provider_no_key_gets_placeholder(monkeypatch):
     assert resolved["base_url"] == "http://localhost:8080/v1"
 
 
-def test_auto_detected_nous_auth_failure_falls_through_to_openrouter(monkeypatch):
+def test_auto_detected_legacy_auth_failure_falls_through_to_openrouter(monkeypatch):
     """When auto-detect picks Nous but credentials are revoked, fall through to OpenRouter."""
     from cyberfox_cli.auth import AuthError
 
@@ -1896,7 +1896,7 @@ def test_auto_detected_codex_auth_failure_falls_through_to_openrouter(monkeypatc
     assert resolved["api_key"] == "test-or-key"
 
 
-def test_explicit_nous_auth_failure_still_raises(monkeypatch):
+def test_explicit_legacy_auth_failure_still_raises(monkeypatch):
     """When user explicitly requests Nous and auth fails, the error should propagate."""
     from cyberfox_cli.auth import AuthError
     import pytest

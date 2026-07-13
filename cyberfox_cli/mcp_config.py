@@ -1066,7 +1066,7 @@ def mcp_command(args):
         run_picker()
         print(color("  Commands:", Colors.CYAN))
         _info("cyberfox mcp                                    Open the catalog picker (default)")
-        _info("cyberfox mcp catalog                            List Nous-approved MCPs")
+        _info("cyberfox mcp catalog                            List catalog MCPs")
         _info("cyberfox mcp install <name>                     Install a catalog MCP")
         _info("cyberfox mcp serve                              Run as MCP server")
         _info("cyberfox mcp add <name> --url <endpoint>        Add a custom MCP server")

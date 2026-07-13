@@ -13,7 +13,7 @@ import urllib.request
 
 DEFAULT_UA = (
     "cyberfox-osint-investigation/0.2 "
-    "(+https://github.com/NousResearch/cyberfox-agent; "
+    "(+https://github.com/Sarthak5-t/Cyberfox; "
     "set CYBERFOX_OSINT_UA env var to identify yourself per "
     "Wikimedia / SEC fair-use guidance)"
 )

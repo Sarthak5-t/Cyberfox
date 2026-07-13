@@ -1401,8 +1401,8 @@ class TestDelegationProviderIntegration(unittest.TestCase):
         }
         parent = _make_mock_parent(depth=0)
         parent.provider = "nous"
-        parent.base_url = "https://inference-api.nousresearch.com/v1"
-        parent.api_key = "nous-key-abc"
+        parent.base_url = "https://api.openai.com/v1"
+        parent.api_key = "test-key-abc"
 
         with patch("run_agent.AIAgent") as MockAgent:
             mock_child = MagicMock()

@@ -96,7 +96,7 @@ def test_setup_syncs_openrouter_from_disk(tmp_path, monkeypatch):
     assert reloaded["model"]["provider"] == "openrouter"
 
 
-def test_setup_syncs_nous_from_disk(tmp_path, monkeypatch):
+def test_setup_syncs_legacy_from_disk(tmp_path, monkeypatch):
     """Nous OAuth writes config to disk; wizard config dict must pick it up."""
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path))
     _clear_provider_env(monkeypatch)
@@ -408,7 +408,7 @@ def test_codex_setup_uses_runtime_access_token_for_live_model_list(tmp_path, mon
     assert reloaded["model"]["provider"] == "openai-codex"
 
 
-def test_modal_setup_can_use_nous_subscription_without_modal_creds(tmp_path, monkeypatch, capsys):
+def test_modal_setup_can_use_legacy_subscription_without_modal_creds(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("cyberfox_cli.setup.managed_nous_tools_enabled", lambda: True)
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path))
     config = load_config()

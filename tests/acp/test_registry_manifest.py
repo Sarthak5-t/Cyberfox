@@ -32,9 +32,9 @@ def test_agent_json_matches_official_registry_required_fields():
     assert re.fullmatch(r"[a-z][a-z0-9-]*", data["id"])
     assert data["name"] == "Cyberfox Agent"
     assert data["description"]
-    assert data["repository"] == "https://github.com/NousResearch/cyberfox-agent"
-    assert data["website"].startswith("https://cyberfox-agent.nousresearch.com/")
-    assert data["authors"] == ["Nous Research"]
+    assert data["repository"] == "https://github.com/Sarthak5-t/Cyberfox"
+    assert data["website"].startswith("https://github.com/Sarthak5-t/Cyberfox/")
+    assert data["authors"] == ["Cyberfox"]
     assert data["license"] == "MIT"
     assert set(data["distribution"]) <= ALLOWED_DISTRIBUTIONS
 

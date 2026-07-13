@@ -17,7 +17,7 @@ Migrate a user's OpenClaw customization footprint into Cyberfox Agent. Imports C
 | Source | Optional — install with `cyberfox skills install official/migration/openclaw-migration` |
 | Path | `optional-skills/migration/openclaw-migration` |
 | Version | `1.0.0` |
-| Author | Cyberfox Agent (Nous Research) |
+| Author | Cyberfox Agent (Cyberfox) |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Migration`, `OpenClaw`, `Cyberfox`, `Memory`, `Persona`, `Import` |

@@ -1294,11 +1294,6 @@ class TestBuildSystemPrompt:
         else:
             assert False, "Expected a 'Conversation started:' line in the system prompt"
 
-    def test_includes_nous_subscription_prompt(self, agent, monkeypatch):
-        monkeypatch.setattr(run_agent, "build_nous_subscription_prompt", lambda tool_names: "NOUS SUBSCRIPTION BLOCK")
-        prompt = agent._build_system_prompt()
-        assert "NOUS SUBSCRIPTION BLOCK" in prompt
-
     def test_skills_prompt_derives_available_toolsets_from_loaded_tools(self):
         tools = _make_tool_defs("web_search", "skills_list", "skill_view", "skill_manage")
         toolset_map = {
@@ -1871,14 +1866,6 @@ class TestBuildApiKwargs:
         agent.provider = "openrouter"
         agent.base_url = "https://openrouter.ai/api/v1"
         agent.model = "qwen/qwen3.5-plus-02-15"
-        messages = [{"role": "user", "content": "hi"}]
-        kwargs = agent._build_api_kwargs(messages)
-        assert kwargs["extra_body"]["reasoning"]["effort"] == "medium"
-
-    def test_reasoning_sent_for_nous_route(self, agent):
-        agent.provider = "nous"
-        agent.base_url = "https://inference-api.nousresearch.com/v1"
-        agent.model = "minimax/minimax-m2.5"
         messages = [{"role": "user", "content": "hi"}]
         kwargs = agent._build_api_kwargs(messages)
         assert kwargs["extra_body"]["reasoning"]["effort"] == "medium"
@@ -4530,47 +4517,6 @@ class TestRunConversation:
         assert result["final_response"].startswith(INTERRUPT_WAITING_FOR_MODEL_PREFIX)
         assert result["messages"][-1]["role"] == "user"
 
-    def test_nous_401_refreshes_after_remint_and_retries(self, agent):
-        self._setup_agent(agent)
-        agent.provider = "nous"
-        agent.api_mode = "chat_completions"
-
-        calls = {"api": 0, "refresh": 0}
-
-        class _UnauthorizedError(RuntimeError):
-            def __init__(self):
-                super().__init__("Error code: 401 - unauthorized")
-                self.status_code = 401
-
-        def _fake_api_call(api_kwargs):
-            calls["api"] += 1
-            if calls["api"] == 1:
-                raise _UnauthorizedError()
-            return _mock_response(
-                content="Recovered after remint", finish_reason="stop"
-            )
-
-        def _fake_refresh(*, force=True):
-            calls["refresh"] += 1
-            assert force is True
-            return True
-
-        with (
-            patch.object(agent, "_persist_session"),
-            patch.object(agent, "_save_trajectory"),
-            patch.object(agent, "_cleanup_task_resources"),
-            patch.object(agent, "_interruptible_api_call", side_effect=_fake_api_call),
-            patch.object(
-                agent, "_try_refresh_nous_client_credentials", side_effect=_fake_refresh
-            ),
-        ):
-            result = agent.run_conversation("hello")
-
-        assert calls["api"] == 2
-        assert calls["refresh"] == 1
-        assert result["completed"] is True
-        assert result["final_response"] == "Recovered after remint"
-
     def test_context_compression_triggered(self, agent):
         """When compressor says should_compress, compression runs."""
         self._setup_agent(agent)
@@ -5427,7 +5373,7 @@ class TestRetryExhaustion:
         content after retries".
 
         Regression: running a Claude refusal through an OpenAI-compatible
-        portal (Nous Portal fronting Anthropic) returns ``message.refusal``
+        portal (cyberfox portal fronting Anthropic) returns ``message.refusal``
         with empty content. The transport now promotes that to a
         ``content_filter`` finish reason and the loop surfaces it as a terminal
         ``content_policy_blocked`` result instead of retrying a deterministic
@@ -5543,56 +5489,6 @@ class TestConversationHistoryNotMutated:
 # ---------------------------------------------------------------------------
 # _max_tokens_param consistency
 # ---------------------------------------------------------------------------
-
-
-class TestNousCredentialRefresh:
-    """Verify Nous credential refresh rebuilds the runtime client."""
-
-    def test_try_refresh_nous_client_credentials_rebuilds_client(
-        self, agent, monkeypatch
-    ):
-        agent.provider = "nous"
-        agent.api_mode = "chat_completions"
-
-        closed = {"value": False}
-        rebuilt = {"kwargs": None}
-        captured = {}
-
-        class _ExistingClient:
-            def close(self):
-                closed["value"] = True
-
-        class _RebuiltClient:
-            pass
-
-        def _fake_resolve(**kwargs):
-            captured.update(kwargs)
-            return {
-                "api_key": "new-nous-key",
-                "base_url": "https://inference-api.nousresearch.com/v1",
-            }
-
-        def _fake_openai(**kwargs):
-            rebuilt["kwargs"] = kwargs
-            return _RebuiltClient()
-
-        monkeypatch.setattr(
-            "cyberfox_cli.auth.resolve_nous_runtime_credentials", _fake_resolve
-        )
-
-        agent.client = _ExistingClient()
-        with patch("run_agent.OpenAI", side_effect=_fake_openai):
-            ok = agent._try_refresh_nous_client_credentials(force=True)
-
-        assert ok is True
-        assert closed["value"] is True
-        assert captured["force_refresh"] is True
-        assert rebuilt["kwargs"]["api_key"] == "new-nous-key"
-        assert (
-            rebuilt["kwargs"]["base_url"] == "https://inference-api.nousresearch.com/v1"
-        )
-        assert "default_headers" not in rebuilt["kwargs"]
-        assert isinstance(agent.client, _RebuiltClient)
 
 
 class TestCredentialPoolRecovery:
@@ -6000,25 +5896,6 @@ class TestGpt5ApiModeRouting:
         ):
             agent.api_mode = "codex_responses"
         assert agent.api_mode == "codex_responses"
-
-    def test_nous_gpt5_stays_on_chat_completions(self, agent):
-        """Nous serves gpt-5.x on /chat/completions — must not upgrade to codex_responses."""
-        agent.provider = "nous"
-        agent.base_url = "https://inference-api.nousresearch.com/v1"
-        agent.api_mode = "chat_completions"
-        agent.model = "openai/gpt-5.5"
-        if (
-            agent.api_mode == "chat_completions"
-            and not agent._is_azure_openai_url()
-            and (
-                agent._is_direct_openai_url()
-                or agent._provider_model_requires_responses_api(
-                    agent.model, provider=agent.provider,
-                )
-            )
-        ):
-            agent.api_mode = "codex_responses"
-        assert agent.api_mode == "chat_completions"
 
     def test_is_azure_openai_url_detection(self, agent):
         assert agent._is_azure_openai_url("https://foo.openai.azure.com/openai/v1") is True

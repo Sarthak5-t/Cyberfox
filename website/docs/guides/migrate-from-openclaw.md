@@ -9,7 +9,7 @@ description: "Complete guide to migrating your OpenClaw / Clawdbot setup to Cybe
 `cyberfox claw migrate` imports your OpenClaw (or legacy Clawdbot/Moldbot) setup into Cyberfox. This guide covers exactly what gets migrated, the config key mappings, and what to verify after migration.
 
 :::tip
-If your OpenClaw setup was multi-provider, `cyberfox setup --portal` collapses it to one OAuth — 300+ models plus the Tool Gateway in a single login. See [Nous Portal](/integrations/nous-portal).
+If your OpenClaw setup was multi-provider, `cyberfox setup --portal` collapses it to one OAuth — 300+ models plus the Tool Gateway in a single login. See [the web dashboard](/integrations/nous-portal).
 :::
 
 ## Quick start

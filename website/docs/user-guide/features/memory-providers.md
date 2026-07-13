@@ -70,7 +70,7 @@ cyberfox memory setup        # select "honcho" — runs the Honcho-specific post
 
 The legacy `cyberfox honcho setup` command still works (it now redirects to `cyberfox memory setup`), but is only registered after Honcho is selected as the active memory provider.
 
-**Config:** `$CYBERFOX_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$CYBERFOX_HOME/honcho.json` > `~/.cyberfox/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/NousResearch/cyberfox-agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/cyberfox).
+**Config:** `$CYBERFOX_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$CYBERFOX_HOME/honcho.json` > `~/.cyberfox/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/Sarthak5-t/Cyberfox/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/cyberfox).
 
 <details>
 <summary>Full config reference</summary>
@@ -272,7 +272,7 @@ Off-gateway these keys do nothing. `cyberfox memory setup` only prompts for them
 
 </details>
 
-See the [config reference](https://github.com/NousResearch/cyberfox-agent/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/cyberfox).
+See the [config reference](https://github.com/Sarthak5-t/Cyberfox/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/cyberfox).
 
 
 ---
@@ -412,7 +412,7 @@ The setup wizard installs dependencies automatically and only installs what's ne
 | `retain_assistant_prefix` | `Assistant` | Label used before assistant turns in auto-retained transcripts |
 | `recall_tags` | — | Tags to filter on recall |
 
-See [plugin README](https://github.com/NousResearch/cyberfox-agent/blob/main/plugins/memory/hindsight/README.md) for the full configuration reference.
+See [plugin README](https://github.com/Sarthak5-t/Cyberfox/blob/main/plugins/memory/hindsight/README.md) for the full configuration reference.
 
 ---
 

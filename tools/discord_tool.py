@@ -100,7 +100,7 @@ def _discord_request(
         headers={
             "Authorization": f"Bot {token}",
             "Content-Type": "application/json",
-            "User-Agent": "Cyberfox-Agent (https://github.com/NousResearch/cyberfox-agent)",
+            "User-Agent": "Cyberfox-Agent (https://github.com/Sarthak5-t/Cyberfox)",
         },
     )
 

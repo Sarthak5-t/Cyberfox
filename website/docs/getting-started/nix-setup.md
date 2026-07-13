@@ -41,17 +41,17 @@ No clone needed. Nix fetches, builds, and runs everything:
 
 ```bash
 # Run the desktop app
-nix run github:NousResearch/cyberfox-agent#desktop
+nix run github:Sarthak5-t/Cyberfox#desktop
 
 # Or install persistently
-nix profile install github:NousResearch/cyberfox-agent#desktop
+nix profile install github:Sarthak5-t/Cyberfox#desktop
 
 # run the tui
-nix run github:NousResearch/cyberfox-agent -- setup
-nix run github:NousResearch/cyberfox-agent -- --tui
+nix run github:Sarthak5-t/Cyberfox -- setup
+nix run github:Sarthak5-t/Cyberfox -- --tui
 
 # or install it in your profile
-nix profile install github:NousResearch/cyberfox-agent
+nix profile install github:Sarthak5-t/Cyberfox
 cyberfox setup
 cyberfox --tui
 ```
@@ -69,7 +69,7 @@ The `default` package adds ~700 MB to the closure. If you only need messaging pl
 <summary><strong>Running from a local clone</strong></summary>
 
 ```bash
-git clone https://github.com/NousResearch/cyberfox-agent.git
+git clone https://github.com/Sarthak5-t/Cyberfox.git
 cd cyberfox-agent
 nix develop
 cyberfox setup
@@ -94,7 +94,7 @@ This module requires NixOS. For non-NixOS systems (macOS, other Linux distros), 
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    cyberfox-agent.url = "github:NousResearch/cyberfox-agent";
+    cyberfox-agent.url = "github:Sarthak5-t/Cyberfox";
   };
 
   outputs = { nixpkgs, cyberfox-agent, ... }: {
@@ -733,7 +733,7 @@ External flakes can override the package directly:
 
 ```nix
 {
-  inputs.cyberfox-agent.url = "github:NousResearch/cyberfox-agent";
+  inputs.cyberfox-agent.url = "github:Sarthak5-t/Cyberfox";
   outputs = { cyberfox-agent, nixpkgs, ... }: {
     nixpkgs.overlays = [ cyberfox-agent.overlays.default ];
     # Then:

@@ -406,7 +406,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     The supported installs self-identify via the code-scoped stamp:
       - the curl installer (scripts/install.sh, the README/website install
         command) git-clones the repo and stamps ``git`` next to the code;
-      - the published ``nousresearch/cyberfox-agent`` image bakes a ``docker``
+      - the published ``sarthak5t/cyberfox-agent`` image bakes a ``docker``
         stamp into ``/opt/cyberfox`` at build time.
     An unsupported manual install dropped into a container (no stamp) falls
     through to the ``.git``/pip checks and behaves like any off-path install.
@@ -512,7 +512,7 @@ def recommended_update_command_for_method(method: str) -> str:
     if method == "homebrew":
         return "brew upgrade cyberfox-agent"
     if method == "docker":
-        return "docker pull nousresearch/cyberfox-agent:latest"
+        return "docker pull sarthak5t/cyberfox-agent:latest"
     if method == "pip":
         if is_uv_tool_install():
             return "uv tool upgrade cyberfox-agent"
@@ -550,23 +550,23 @@ def recommended_update_command() -> str:
 _DOCKER_UPDATE_MESSAGE = """\
 ✗ ``cyberfox update`` doesn't apply inside the Docker container.
 
-Cyberfox Agent runs as a published image (nousresearch/cyberfox-agent), not a
+Cyberfox Agent runs as a published image (sarthak5t/cyberfox-agent), not a
 git checkout — the container has no working tree to pull into.  Update by
 pulling a fresh image and restarting your container instead:
 
-  docker pull nousresearch/cyberfox-agent:latest
+  docker pull sarthak5t/cyberfox-agent:latest
   # then restart whatever started the container, e.g.:
   docker compose up -d --force-recreate cyberfox-agent
   # or, for ad-hoc runs, exit the current container and `docker run` again
 
 Verify the new version after restart:
-  docker run --rm nousresearch/cyberfox-agent:latest --version
+  docker run --rm sarthak5t/cyberfox-agent:latest --version
 
 Notes:
   • If you pinned a specific tag (e.g. ``:v0.14.0``) the ``:latest`` tag
     won't move your container — pull the newer tag you actually want, or
     switch to ``:latest`` / ``:main`` for rolling updates.  See available
-    tags at https://hub.docker.com/r/nousresearch/cyberfox-agent/tags
+    tags at https://hub.docker.com/r/sarthak5t/cyberfox-agent/tags
   • Your config and session history live under ``$CYBERFOX_HOME`` (``/opt/data``
     in the container, typically bind-mounted from the host) and persist
     across image upgrades — re-pulling doesn't lose any state.
@@ -1498,7 +1498,7 @@ DEFAULT_CONFIG = {
         # call.
         "transient_retries": 2,
         "vision": {
-            "provider": "auto",    # auto | openrouter | nous | codex | custom
+            "provider": "auto",    # auto | openrouter | codex | custom
             "model": "",           # e.g. "google/gemini-2.5-flash", "gpt-4o"
             "base_url": "",        # direct OpenAI-compatible endpoint (takes precedence over provider)
             "api_key": "",         # API key for base_url (falls back to OPENAI_API_KEY)
@@ -1745,11 +1745,6 @@ DEFAULT_CONFIG = {
         # class of over-claim that otherwise forces users to run
         # `git status` to verify edits landed.  Set false to suppress.
         "file_mutation_verifier": True,
-        # Nous credits status-bar notices (usage bands, grant-spent, depleted /
-        # restored).  When false, no credits notices are emitted — balance data
-        # is still captured and /usage keeps working.  Off switch for sub +
-        # top-up users who find the gauge noisy.
-        "credits_notices": True,
         # Turn-completion explainer.  When true (default), the agent appends a
         # one-line explanation to its final response whenever a turn ends
         # abnormally with no usable reply — empty content after retries, a
@@ -1893,7 +1888,7 @@ DEFAULT_CONFIG = {
         # that the numbers are a local lower-bound estimate, not billing.
         "show_token_analytics": False,
         # OAuth gate configuration (engaged when ``--host`` is set and
-        # ``--insecure`` is not). The bundled Nous Portal plugin reads
+        # ``--insecure`` is not). The bundled dashboard-auth plugin reads
         # both keys at startup; they are the canonical surface for these
         # settings. Each can be overridden by an environment variable —
         # ``CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID`` and
@@ -1904,7 +1899,7 @@ DEFAULT_CONFIG = {
         # touch config.yaml. Local dev / non-Fly deploys can set either
         # surface; missing values fall through to the plugin's defaults
         # (no provider registered when ``client_id`` is empty;
-        # ``portal_url`` defaults to https://portal.nousresearch.com).
+        # ``portal_url`` defaults to https://github.com/Sarthak5-t/Cyberfox).
         "oauth": {
             "client_id": "",  # agent:{instance_id} — Portal provisions this
             "portal_url": "",  # blank → use plugin default (production Portal)
@@ -1941,7 +1936,7 @@ DEFAULT_CONFIG = {
         # bundled ``dashboard_auth/drain`` plugin (the first consumer of the
         # generic non-interactive token-auth capability). The SECRET itself
         # is a credential and is NOT configured here: it is provisioned by
-        # nous-account-service at deploy time via the
+        # the account service at deploy time via the
         # ``CYBERFOX_DASHBOARD_DRAIN_SECRET`` env var (the .env-is-for-secrets
         # rule). These are the behavioural knobs only. The plugin is a no-op
         # unless that env var is set to a >=256-bit secret; a weak secret is
@@ -2124,7 +2119,7 @@ DEFAULT_CONFIG = {
     # Subagent delegation — override the provider:model used by delegate_task
     # so child agents can run on a different (cheaper/faster) provider and model.
     # Uses the same runtime provider resolution as CLI/gateway startup, so all
-    # configured providers (OpenRouter, Nous, Z.ai, Kimi, etc.) are supported.
+    # configured providers (OpenRouter, Z.ai, Kimi, etc.) are supported.
     "delegation": {
         "model": "",       # e.g. "google/gemini-3-flash-preview" (empty = inherit parent model)
         "provider": "",    # e.g. "openrouter" (empty = inherit parent provider + credentials)
@@ -2564,11 +2559,11 @@ DEFAULT_CONFIG = {
         # provider == "chronos". All non-secret (URLs + the JWT audience): the
         # agent holds NO external-scheduler credentials. For hosted agents, NAS
         # sets these at provision time. The outbound provision call reuses the
-        # agent's existing Nous Portal token — there is no token key here.
+        # agent's existing portal token — there is no token key here.
         "chronos": {
             # NAS / portal base URL the agent calls to arm/cancel one-shots
             # and that mints the inbound fire JWT (used as the expected issuer).
-            "portal_url": "https://portal.nousresearch.com",
+            "portal_url": "https://github.com/Sarthak5-t/Cyberfox",
             # The agent's OWN publicly-reachable base URL for NAS→agent fires
             # (NAS POSTs {callback_url}/api/cron/fire). Empty → Chronos is
             # unavailable and the resolver falls back to the built-in ticker.
@@ -2730,13 +2725,13 @@ DEFAULT_CONFIG = {
     },
 
     # Remotely-hosted model catalog manifest.  When enabled, the CLI fetches
-    # curated model lists for OpenRouter and Nous Portal from this URL,
+    # curated model lists for OpenRouter from this URL,
     # falling back to the in-repo snapshot on network failure.  Lets us
     # update model picker lists without shipping a cyberfox-agent release.
     # The default URL is served by the docs site GitHub Pages deploy.
     "model_catalog": {
         "enabled": True,
-        "url": "https://cyberfox-agent.nousresearch.com/docs/api/model-catalog.json",
+        "url": "https://github.com/Sarthak5-t/Cyberfox/api/model-catalog.json",
         # Disk cache TTL in hours.  Beyond this, the CLI refetches on the
         # next /model or `cyberfox model` invocation; network failures
         # silently fall back to the stale cache.
@@ -3241,21 +3236,13 @@ ENV_VARS_BY_VERSION: Dict[int, List[str]] = {
 
 # Required environment variables with metadata for migration prompts.
 # LLM provider is required but handled in the setup wizard's provider
-# selection step (Nous Portal / OpenRouter / Custom endpoint), so this
+# selection step (OpenRouter / Custom endpoint), so this
 # dict is intentionally empty — no single env var is universally required.
 REQUIRED_ENV_VARS = {}
 
 # Optional environment variables that enhance functionality
 OPTIONAL_ENV_VARS = {
     # ── Provider (handled in provider selection, not shown in checklists) ──
-    "NOUS_BASE_URL": {
-        "description": "Nous Portal base URL override",
-        "prompt": "Nous Portal base URL (leave empty for default)",
-        "url": None,
-        "password": False,
-        "category": "provider",
-        "advanced": True,
-    },
     "OPENROUTER_API_KEY": {
         "description": "OpenRouter API key (for vision, web scraping helpers, and MoA)",
         "prompt": "OpenRouter API key",
@@ -3666,7 +3653,7 @@ OPTIONAL_ENV_VARS = {
         "advanced": True,
     },
     "FIRECRAWL_GATEWAY_URL": {
-        "description": "Exact Firecrawl tool-gateway origin override for Nous Subscribers only (optional)",
+        "description": "Exact Firecrawl tool-gateway origin override (optional)",
         "prompt": "Firecrawl gateway URL (leave empty to derive from domain)",
         "url": None,
         "password": False,
@@ -3674,7 +3661,7 @@ OPTIONAL_ENV_VARS = {
         "advanced": True,
     },
     "TOOL_GATEWAY_DOMAIN": {
-        "description": "Shared tool-gateway domain suffix for Nous Subscribers only, used to derive vendor hosts, e.g. nousresearch.com -> firecrawl-gateway.nousresearch.com",
+        "description": "Shared tool-gateway domain suffix, used to derive vendor hosts.",
         "prompt": "Tool-gateway domain suffix",
         "url": None,
         "password": False,
@@ -3682,7 +3669,7 @@ OPTIONAL_ENV_VARS = {
         "advanced": True,
     },
     "TOOL_GATEWAY_SCHEME": {
-        "description": "Shared tool-gateway URL scheme for Nous Subscribers only, used to derive vendor hosts (`https` by default, set `http` for local gateway testing)",
+        "description": "Shared tool-gateway URL scheme, used to derive vendor hosts (`https` by default, set `http` for local gateway testing)",
         "prompt": "Tool-gateway URL scheme",
         "url": None,
         "password": False,
@@ -3690,7 +3677,7 @@ OPTIONAL_ENV_VARS = {
         "advanced": True,
     },
     "TOOL_GATEWAY_USER_TOKEN": {
-        "description": "Explicit Nous Subscriber access token for tool-gateway requests (optional; otherwise read from the Cyberfox auth store)",
+        "description": "Explicit access token for tool-gateway requests (optional; otherwise read from the Cyberfox auth store)",
         "prompt": "Tool-gateway user token",
         "url": None,
         "password": True,
@@ -6938,7 +6925,6 @@ _FALLBACK_COMMENT = """
 # Supported providers:
 #   openrouter   (OPENROUTER_API_KEY)  — routes to any model
 #   openai-codex (OAuth — cyberfox auth) — OpenAI Codex
-#   nous         (OAuth — cyberfox auth) — Nous Portal
 #   zai          (ZAI_API_KEY)         — Z.AI / GLM
 #   kimi-coding  (KIMI_API_KEY)        — Kimi / Moonshot
 #   kimi-coding-cn (KIMI_CN_API_KEY)   — Kimi / Moonshot (China)
@@ -6970,7 +6956,6 @@ _COMMENTED_SECTIONS = """
 # Supported providers:
 #   openrouter   (OPENROUTER_API_KEY)  — routes to any model
 #   openai-codex (OAuth — cyberfox auth) — OpenAI Codex
-#   nous         (OAuth — cyberfox auth) — Nous Portal
 #   zai          (ZAI_API_KEY)         — Z.AI / GLM
 #   kimi-coding  (KIMI_API_KEY)        — Kimi / Moonshot
 #   kimi-coding-cn (KIMI_CN_API_KEY)   — Kimi / Moonshot (China)

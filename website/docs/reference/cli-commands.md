@@ -77,7 +77,7 @@ cyberfox [global-options] <command> [subcommand/options]
 | `cyberfox acp` | Run Cyberfox as an ACP server for editor integration. |
 | `cyberfox mcp` | Manage MCP server configurations and run Cyberfox as an MCP server. |
 | `cyberfox plugins` | Manage Cyberfox Agent plugins (install, enable, disable, remove). |
-| `cyberfox portal` | Nous Portal status, subscription link, and Tool Gateway routing. See [Tool Gateway](../user-guide/features/tool-gateway.md). |
+| `cyberfox portal` | the web dashboard status, subscription link, and Tool Gateway routing. See [Tool Gateway](../user-guide/features/tool-gateway.md). |
 | `cyberfox tools` | Configure enabled tools per platform. |
 | `cyberfox computer-use` | Install or check the cua-driver backend (macOS Computer Use). |
 | `cyberfox pets` | Browse, install, and select [petdex](../user-guide/features/pets.md) animated pets shown across the CLI, TUI, and desktop app. Subcommands: `list`, `install`, `select`, `show`, `off`, `scale`, `remove`, `doctor`. |
@@ -171,7 +171,7 @@ cyberfox model
 
 Use this when you want to:
 - **add a new provider** (OpenRouter, Anthropic, Copilot, DeepSeek, custom, etc.)
-- log into OAuth-backed providers (Anthropic, Copilot, Codex, Nous Portal)
+- log into OAuth-backed providers (Anthropic, Copilot, Codex, the web dashboard)
 - enter or update API keys
 - pick from provider-specific model lists
 - configure a custom/self-hosted endpoint
@@ -279,7 +279,7 @@ the full guide, supported languages, and configuration knobs.
 cyberfox setup [model|tts|terminal|gateway|tools|agent] [--non-interactive] [--reset] [--quick] [--reconfigure] [--portal]
 ```
 
-**Easiest path:** `cyberfox setup --portal` — OAuth into Nous Portal and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md) in one shot.
+**Easiest path:** `cyberfox setup --portal` — OAuth into the web dashboard and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md) in one shot.
 
 **First run:** launches the first-time wizard.
 
@@ -303,7 +303,7 @@ Options:
 | `--non-interactive` | Use defaults / environment values without prompts. |
 | `--reset` | Reset configuration to defaults before setup. |
 | `--reconfigure` | Backwards-compat alias — bare `cyberfox setup` on an existing install now does this by default. |
-| `--portal` | One-shot Nous Portal setup: log in via OAuth, set Nous as the inference provider, and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md). Skips the rest of the wizard. |
+| `--portal` | One-shot the web dashboard setup: log in via OAuth, set Nous as the inference provider, and opt into the [Tool Gateway](../user-guide/features/tool-gateway.md). Skips the rest of the wizard. |
 
 ## `cyberfox portal`
 
@@ -311,12 +311,12 @@ Options:
 cyberfox portal [status|open|tools]
 ```
 
-Inspect Nous Portal auth, Tool Gateway routing, and reach the subscription page. Subcommand-less invocation runs `status`.
+Inspect the web dashboard auth, Tool Gateway routing, and reach the subscription page. Subcommand-less invocation runs `status`.
 
 | Subcommand | Description |
 |------------|-------------|
 | `status` (default) | Portal auth state + per-tool Tool Gateway routing summary. Also shown when no subcommand is given. |
-| `open` | Open `portal.nousresearch.com/manage-subscription` in your default browser. |
+| `open` | Open `github.com/Sarthak5-t/Cyberfox/manage-subscription` in your default browser. |
 | `tools` | List every Tool Gateway partner (Firecrawl, FAL, OpenAI TTS, Browser Use, Modal) and which are routed via Nous. |
 
 For configuration of the gateway itself, see [Tool Gateway](../user-guide/features/tool-gateway.md). For the one-shot setup path, see `cyberfox setup --portal` above.
@@ -456,7 +456,7 @@ Common flags for migration subcommands:
 cyberfox proxy <subcommand>
 ```
 
-Run a local OpenAI-compatible HTTP server that forwards requests to an OAuth-authenticated upstream provider (e.g. Nous Portal, xAI). External apps can point at the proxy with any bearer token; the proxy attaches your real OAuth credentials on the way out. See [Subscription Proxy](../user-guide/features/subscription-proxy.md) for the full guide.
+Run a local OpenAI-compatible HTTP server that forwards requests to an OAuth-authenticated upstream provider (e.g. the web dashboard, xAI). External apps can point at the proxy with any bearer token; the proxy attaches your real OAuth credentials on the way out. See [Subscription Proxy](../user-guide/features/subscription-proxy.md) for the full guide.
 
 | Subcommand | Description |
 |------------|-------------|
@@ -1460,13 +1460,13 @@ Launch the web dashboard — a browser-based UI for managing configuration, API 
 
 ### `cyberfox dashboard register`
 
-Register this install as a self-hosted dashboard with your Nous Portal account. Creates an OAuth client, writes `CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID` into `~/.cyberfox/.env`, and prints how to engage the login gate. Requires being logged in (`cyberfox setup`).
+Register this install as a self-hosted dashboard with your the web dashboard account. Creates an OAuth client, writes `CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID` into `~/.cyberfox/.env`, and prints how to engage the login gate. Requires being logged in (`cyberfox setup`).
 
 | Option | Description |
 |--------|-------------|
 | `--name` | Human-readable label for the dashboard (default: auto-generated). |
 | `--redirect-uri` | Public HTTPS OAuth redirect URI (e.g. `https://cyberfox.example.com/auth/callback`). Omit for localhost-only use. |
-| `--portal-url` | Override the Nous Portal base URL for registration (default: the portal you logged into). Also settable via `CYBERFOX_DASHBOARD_PORTAL_URL`. |
+| `--portal-url` | Override the the web dashboard base URL for registration (default: the portal you logged into). Also settable via `CYBERFOX_DASHBOARD_PORTAL_URL`. |
 
 ```bash
 # Default — opens browser to http://127.0.0.1:9119

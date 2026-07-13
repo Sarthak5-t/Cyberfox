@@ -81,7 +81,7 @@ Watch a GitHub repo (set `GITHUB_TOKEN` in `${CYBERFOX_HOME:-~/.cyberfox}/.env` 
 
 ```bash
 python $CYBERFOX_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name cyberfox-issues --repo NousResearch/cyberfox-agent --scope issues
+  --name cyberfox-issues --repo Sarthak5-t/Cyberfox --scope issues
 ```
 
 Poll an arbitrary JSON API:

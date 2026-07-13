@@ -1,8 +1,7 @@
 """BasicAuthProvider — username/password dashboard auth (no OAuth IDP).
 
 A self-hosted "just put a password on my dashboard" provider. It plugs
-into the same ``DashboardAuthProvider`` framework as the Nous OAuth
-provider, but authenticates with a username + password instead of an
+into the same ``DashboardAuthProvider`` framework, but authenticates with a username + password instead of an
 OAuth redirect: it sets ``supports_password = True`` and implements
 ``complete_password_login``. The login page renders a credential form for
 it; everything downstream of login (session cookies, verify, refresh,
@@ -14,8 +13,7 @@ configured up front; sessions are stateless HMAC-signed tokens this
 provider mints and verifies itself. That keeps it zero-infrastructure —
 appropriate for a single-box self-hosted dashboard.
 
-Configuration surfaces (env wins over config.yaml when set non-empty),
-mirroring the Nous provider's precedence convention:
+Configuration surfaces (env wins over config.yaml when set non-empty):
 
   ``config.yaml`` — canonical surface::
 
@@ -50,7 +48,7 @@ comparison and always performs a hash even for an unknown username, so
 the endpoint is not a username-enumeration timing oracle.
 
 Skip reasons:
-  Like the Nous provider, this exposes a module-level ``LAST_SKIP_REASON``
+  This exposes a module-level ``LAST_SKIP_REASON``
   the gate's fail-closed branch can surface when the plugin loads but
   declines to register (no username/password configured).
 """

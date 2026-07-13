@@ -123,7 +123,7 @@ tail -f ~/.cyberfox/logs/update.log
 cyberfox version
 ```
 
-与 [GitHub releases 页面](https://github.com/NousResearch/cyberfox-agent/releases) 上的最新版本进行比较。
+与 [GitHub releases 页面](https://github.com/Sarthak5-t/Cyberfox/releases) 上的最新版本进行比较。
 
 ### 从消息平台更新
 

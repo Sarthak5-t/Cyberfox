@@ -25,7 +25,7 @@ cyberfox chat -q "Hello"
 cyberfox chat --model "anthropic/claude-sonnet-4"
 
 # 使用指定提供商
-cyberfox chat --provider nous        # 使用 Nous Portal
+cyberfox chat --provider nous        # 使用 the web dashboard
 cyberfox chat --provider openrouter  # 强制使用 OpenRouter
 
 # 使用指定工具集

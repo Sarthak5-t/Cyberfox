@@ -720,7 +720,6 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
         base_url_host_matches(agent._base_url_lower, "models.github.ai")
         or base_url_host_matches(agent._base_url_lower, "githubcopilot.com")
     )
-    _is_nous = "nousresearch" in agent._base_url_lower
     _is_nvidia = "integrate.api.nvidia.com" in agent._base_url_lower
     _is_kimi = (
         base_url_host_matches(agent.base_url, "api.kimi.com")
@@ -764,8 +763,9 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
     # Anthropic Messages API treats it as mandatory and proxies that omit it
     # (AWS Bedrock, NVIDIA, LiteLLM, vLLM, corporate gateways) default as low
     # as 4096 output tokens — easily exhausted by thinking + large tool calls
-    # like write_file/patch.  OpenRouter/Nous were the only routes covered
-    # before; gating on _ANTHROPIC_OUTPUT_LIMITS membership covers them all.
+    # like write_file/patch.  Gating on _ANTHROPIC_OUTPUT_LIMITS membership
+    # covers all such proxies (AWS Bedrock, NVIDIA, LiteLLM, vLLM, corporate
+    # gateways).
     _ant_max = None
     try:
         from agent.anthropic_adapter import (
@@ -851,7 +851,6 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
         session_id=getattr(agent, "session_id", None),
         model_lower=(agent.model or "").lower(),
         is_openrouter=_is_or,
-        is_nous=_is_nous,
         is_qwen_portal=_is_qwen,
         is_github_models=_is_gh,
         is_nvidia_nim=_is_nvidia,
@@ -1148,26 +1147,6 @@ def _fallback_entry_key(fb: dict) -> tuple[str, str, str]:
     )
 
 
-def _fallback_entry_unavailable_without_network(agent, fb: dict) -> Optional[str]:
-    """Return a skip reason for fallback entries known to be unusable locally."""
-    fb_provider = (fb.get("provider") or "").strip().lower()
-    if fb_provider != "nous":
-        return None
-    try:
-        from cyberfox_cli.auth import get_provider_auth_state
-
-        state = get_provider_auth_state("nous") or {}
-    except Exception as exc:
-        return f"nous_auth_unreadable:{type(exc).__name__}"
-    access_value = state.get("access_token")
-    refresh_value = state.get("refresh_token")
-    has_access = isinstance(access_value, str) and bool(access_value.strip())
-    has_refresh = isinstance(refresh_value, str) and bool(refresh_value.strip())
-    if not (has_access or has_refresh):
-        return "nous_token_missing"
-    return None
-
-
 
 def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool:
     """Switch to the next fallback model/provider in the chain.
@@ -1221,17 +1200,6 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool
     fb_model = (fb.get("model") or "").strip()
     if not fb_provider or not fb_model:
         return agent._try_activate_fallback(reason)  # skip invalid, try next
-
-    local_skip_reason = _fallback_entry_unavailable_without_network(agent, fb)
-    if local_skip_reason:
-        unavailable.add(fb_key)
-        logger.warning(
-            "Fallback skip: %s/%s is not locally usable (%s); suppressing for this session",
-            fb_provider,
-            fb_model,
-            local_skip_reason,
-        )
-        return agent._try_activate_fallback(reason)
 
     # Skip entries that resolve to the current (provider, model) — falling
     # back to the same backend that just failed loops the failure. Compare
@@ -1490,8 +1458,6 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool
         )
         return True
     except Exception as e:
-        if fb_provider == "nous":
-            unavailable.add(fb_key)
         logger.error("Failed to activate fallback %s: %s", fb_model, e)
         return agent._try_activate_fallback(reason)  # try next in chain
 
@@ -1570,7 +1536,6 @@ def handle_max_iterations(agent, messages: list, api_call_count: int) -> str:
         )
         _omit_summary_temperature = _raw_summary_temp is _OMIT_TEMP
         _summary_temperature = None if _omit_summary_temperature else _raw_summary_temp
-        _is_nous = "nousresearch" in agent._base_url_lower
         # LM Studio uses top-level `reasoning_effort` (not extra_body.reasoning).
         # Mirror ChatCompletionsTransport.build_kwargs() so the summary path
         # — which calls chat.completions.create() directly without going
@@ -1591,9 +1556,6 @@ def handle_max_iterations(agent, messages: list, api_call_count: int) -> str:
                     "enabled": True,
                     "effort": "medium"
                 }
-        if _is_nous:
-            from agent.portal_tags import nous_portal_tags as _portal_tags
-            summary_extra_body["tags"] = _portal_tags()
 
         if agent.api_mode == "codex_responses":
             codex_kwargs = agent._build_api_kwargs(api_messages)
@@ -2327,8 +2289,8 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
         #      the opening "{" with no terminator and no [DONE]) → the
         #      upstream dropped/stalled the connection mid tool-call.  This
         #      is NOT an output cap — the model never reported hitting one.
-        #      Some dedicated endpoints (e.g. NVIDIA Nemotron Ultra on the
-        #      Nous dedicated endpoint) stall for minutes during large
+        #      Some dedicated endpoints (e.g. NVIDIA Nemotron Ultra) stall for
+        #      minutes during large
         #      tool-arg generation, then close the stream cleanly without a
         #      finish_reason.  Stamping "length" here sends it down the
         #      max_tokens-boost truncation path, which retries 3× to no

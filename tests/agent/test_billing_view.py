@@ -1,15 +1,12 @@
-"""Unit tests for the Phase 2b terminal-billing core + HTTP client.
+"""Unit tests for the Phase 2b terminal-billing core.
 
 Covers:
 - Decimal money parsing/formatting (server emits decimal strings, not 2dp).
 - BillingState payload parsing (role tiering, presets, bounds, sub-structs).
-- Error-code → typed-exception mapping (the live-verified contract matrix).
-- Fail-open builder behavior.
 - Idempotency key generation.
 - Custom-amount validation against bounds + multipleOf 0.01.
 
-No network: HTTP-layer tests drive _raise_for_error directly and monkeypatch the
-request function for the builder.
+No network: pure parsing/validation logic.
 """
 
 from __future__ import annotations
@@ -18,27 +15,16 @@ from decimal import Decimal
 
 import pytest
 
-import agent.billing_view as bv
 from agent.billing_view import (
     AutoReload,
     BillingState,
     CardInfo,
     MonthlyCap,
     billing_state_from_payload,
-    build_billing_state,
     format_money,
     new_idempotency_key,
     parse_money,
     validate_charge_amount,
-)
-import cyberfox_cli.nous_billing as nb
-from cyberfox_cli.nous_billing import (
-    BillingAuthError,
-    BillingError,
-    BillingRateLimited,
-    BillingScopeRequired,
-    _raise_for_error,
-    resolve_portal_base_url,
 )
 
 
@@ -162,176 +148,6 @@ def test_state_handles_garbage_substructs():
     s = billing_state_from_payload(p)
     assert s.card is None and s.monthly_cap is None
     assert s.charge_presets == (Decimal("100"), Decimal("250"))
-
-
-# ---------------------------------------------------------------------------
-# Error-code → typed-exception mapping (live-verified contract)
-# ---------------------------------------------------------------------------
-
-
-class _Headers:
-    def __init__(self, d):
-        self._d = d
-
-    def get(self, k):
-        return self._d.get(k)
-
-
-def test_401_maps_to_auth_error():
-    with pytest.raises(BillingAuthError) as ei:
-        _raise_for_error(401, {"error": "invalid_token"})
-    assert ei.value.status == 401
-
-
-def test_403_insufficient_scope_maps_to_scope_required():
-    with pytest.raises(BillingScopeRequired) as ei:
-        _raise_for_error(403, {"error": "insufficient_scope", "portalUrl": "/billing"})
-    assert ei.value.error == "insufficient_scope"
-    # portalUrl is resolved to an absolute URL (relative-by-design from the server).
-    assert (ei.value.portal_url or "").startswith("http")
-    assert (ei.value.portal_url or "").endswith("/billing")
-
-
-@pytest.mark.parametrize("status", [429, 503])
-def test_rate_limited_maps_with_retry_after(status):
-    with pytest.raises(BillingRateLimited) as ei:
-        _raise_for_error(
-            status,
-            {"error": "rate_limited"},
-            _Headers({"Retry-After": "60"}),
-        )
-    assert ei.value.retry_after == 60
-    # Critically: a rate limit is NOT a generic BillingError-only — surfaces branch on type.
-    assert isinstance(ei.value, BillingRateLimited)
-
-
-@pytest.mark.parametrize(
-    "error",
-    [
-        "no_payment_method",
-        "cli_billing_disabled",
-        "role_required",
-        "monthly_cap_exceeded",
-        "org_access_denied",
-    ],
-)
-def test_other_403s_map_to_base_error_with_portal_url(error):
-    with pytest.raises(BillingError) as ei:
-        _raise_for_error(403, {"error": error, "portalUrl": "/billing?topup=open"})
-    # Not a scope/auth/rate subclass — the generic gate-denial path.
-    assert not isinstance(ei.value, (BillingScopeRequired, BillingAuthError, BillingRateLimited))
-    assert ei.value.error == error
-    # portalUrl resolved to an absolute deep-link (server sends it relative).
-    assert (ei.value.portal_url or "").startswith("http")
-    assert (ei.value.portal_url or "").endswith("/billing?topup=open")
-
-
-def test_monthly_cap_exceeded_carries_remaining_in_payload():
-    with pytest.raises(BillingError) as ei:
-        _raise_for_error(
-            403,
-            {
-                "error": "monthly_cap_exceeded",
-                "remainingUsd": "12.50",
-                "isDefaultCeiling": True,
-                "portalUrl": "/billing",
-            },
-        )
-    assert ei.value.payload["remainingUsd"] == "12.50"
-    assert ei.value.payload["isDefaultCeiling"] is True
-
-
-def test_400_amount_out_of_bounds_is_base_error():
-    with pytest.raises(BillingError) as ei:
-        _raise_for_error(400, {"error": "amount_out_of_bounds", "message": "too big"})
-    assert ei.value.status == 400
-    assert "too big" in str(ei.value)
-
-
-# ---------------------------------------------------------------------------
-# post_charge requires idempotency key (client-side guard)
-# ---------------------------------------------------------------------------
-
-
-def test_post_charge_requires_idempotency_key():
-    with pytest.raises(BillingError) as ei:
-        nb.post_charge(amount_usd=50, idempotency_key="")
-    assert ei.value.error == "idempotency_key_required"
-
-
-def test_get_charge_status_requires_id():
-    with pytest.raises(BillingError) as ei:
-        nb.get_charge_status("")
-    assert ei.value.error == "invalid_charge_id"
-
-
-# ---------------------------------------------------------------------------
-# Base-URL resolution precedence
-# ---------------------------------------------------------------------------
-
-
-def test_portal_base_url_env_override(monkeypatch):
-    monkeypatch.setenv("CYBERFOX_PORTAL_BASE_URL", "https://preview.example.com/")
-    assert resolve_portal_base_url() == "https://preview.example.com"
-
-
-def test_portal_base_url_falls_back_to_state(monkeypatch):
-    monkeypatch.delenv("CYBERFOX_PORTAL_BASE_URL", raising=False)
-    monkeypatch.delenv("NOUS_PORTAL_BASE_URL", raising=False)
-    assert (
-        resolve_portal_base_url({"portal_base_url": "https://stored.example.com/"})
-        == "https://stored.example.com"
-    )
-
-
-def test_portal_base_url_default(monkeypatch):
-    monkeypatch.delenv("CYBERFOX_PORTAL_BASE_URL", raising=False)
-    monkeypatch.delenv("NOUS_PORTAL_BASE_URL", raising=False)
-    assert resolve_portal_base_url() == nb.DEFAULT_PORTAL_BASE_URL
-
-
-# ---------------------------------------------------------------------------
-# Fail-open builder
-# ---------------------------------------------------------------------------
-
-
-def test_build_billing_state_logged_out_on_auth_error(monkeypatch):
-    def _auth(*a, **kw):
-        raise BillingAuthError("nope", status=401)
-
-    monkeypatch.setattr(nb, "get_billing_state", _auth)
-    s = build_billing_state()
-    assert s.logged_in is False
-    assert s.error is None  # cleanly logged out, not an error
-
-
-def test_build_billing_state_fail_open_on_http_error(monkeypatch):
-    def _boom(*a, **kw):
-        raise BillingError("portal exploded", status=500)
-
-    monkeypatch.setattr(nb, "get_billing_state", _boom)
-    s = build_billing_state()
-    assert s.logged_in is False
-    assert "portal exploded" in (s.error or "")
-
-
-def test_build_billing_state_parses_and_prefers_server_portal_url(monkeypatch):
-    payload = _owner_payload()
-    payload["portalUrl"] = "https://portal.example.com/billing?topup=open"
-    monkeypatch.setattr(nb, "get_billing_state", lambda *a, **kw: payload)
-    s = build_billing_state()
-    assert s.logged_in is True
-    assert s.portal_url == "https://portal.example.com/billing?topup=open"
-    assert s.balance_usd == Decimal("142.5")
-
-
-def test_build_billing_state_builds_fallback_portal_url(monkeypatch):
-    payload = _member_payload()  # no portalUrl key
-    monkeypatch.setattr(nb, "get_billing_state", lambda *a, **kw: payload)
-    monkeypatch.setattr(bv, "_fallback_portal_url", lambda base: "FALLBACK")
-    # resolve_portal_base_url is imported into bv via local import; patch nb's.
-    s = build_billing_state()
-    assert s.portal_url == "FALLBACK"
 
 
 # ---------------------------------------------------------------------------

@@ -9,8 +9,8 @@ Outputs:
                                     comments separating files.
 
 Both publish at:
-  https://cyberfox-agent.nousresearch.com/docs/llms.txt
-  https://cyberfox-agent.nousresearch.com/docs/llms-full.txt
+  https://github.com/Sarthak5-t/Cyberfox/llms.txt
+  https://github.com/Sarthak5-t/Cyberfox/llms-full.txt
 
 The `/docs/` prefix is not a mistake — Docusaurus serves `website/static/`
 at the `docs/` base path. Clients and IDE plugins that probe the classic
@@ -31,7 +31,7 @@ WEBSITE = SCRIPT_DIR.parent
 DOCS = WEBSITE / "docs"
 STATIC = WEBSITE / "static"
 
-SITE_BASE = "https://cyberfox-agent.nousresearch.com/docs"
+SITE_BASE = "https://github.com/Sarthak5-t/Cyberfox"
 
 # Curated sections for llms.txt — mirrors the product story, not the filesystem.
 # Each entry: (docs-relative path without .md, display title, optional short desc).
@@ -205,17 +205,17 @@ def emit_llms_index() -> str:
         "and a messaging gateway that lives on 21+ messaging platforms — 19 native to "
         "the gateway plus IRC and Microsoft Teams via plugins (Telegram, Discord, Slack, "
         "SMS, Matrix, ...). Runs on local, Docker, SSH, Daytona, Modal, or Singularity "
-        "backends. Works with Nous Portal, OpenRouter, OpenAI, Anthropic, Google, or any "
+        "backends. Works with OpenRouter, OpenAI, Anthropic, Google, or any "
         "OpenAI-compatible endpoint."
     )
     lines.append("")
     lines.append(
-        "Install: `curl -fsSL https://raw.githubusercontent.com/NousResearch/"
-        "cyberfox-agent/main/scripts/install.sh | bash`  "
+        "Install: `curl -fsSL https://raw.githubusercontent.com/Sarthak5-t/"
+        "Cyberfox/main/scripts/install.sh | bash`  "
         "(Linux, macOS, WSL2, Termux)"
     )
     lines.append("")
-    lines.append("Repo: https://github.com/NousResearch/cyberfox-agent")
+    lines.append("Repo: https://github.com/Sarthak5-t/Cyberfox")
     lines.append("")
 
     for section, items in SECTIONS:
@@ -248,8 +248,8 @@ def emit_llms_full() -> str:
             "Started, Using Cyberfox, Features, Messaging, Integrations, Guides, "
             "Developer Guide, Reference, then everything else.\n"
         ),
-        "Canonical site: https://cyberfox-agent.nousresearch.com/docs\n",
-        "Short index: https://cyberfox-agent.nousresearch.com/docs/llms.txt\n",
+        "Canonical site: https://github.com/Sarthak5-t/Cyberfox\n",
+        "Short index: https://github.com/Sarthak5-t/Cyberfox/llms.txt\n",
         "\n---\n\n",
     ]
 

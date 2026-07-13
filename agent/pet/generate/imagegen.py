@@ -21,15 +21,14 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Providers that can ground generation on a reference image, in preference order
-# (Nous Portal → OpenAI → OpenRouter → …). OpenRouter/Nous run a quality-first
-# model chain and may fall back depending on account access and endpoint behavior,
-# so fidelity can vary by configured backend + model availability.
-_REF_CAPABLE = ("nous", "openai", "openai-codex", "openrouter", "krea")
+# (OpenAI → OpenRouter → …). OpenRouter runs a quality-first model chain and may
+# fall back depending on account access and endpoint behavior, so fidelity can
+# vary by configured backend + model availability.
+_REF_CAPABLE = ("openai", "openai-codex", "openrouter", "krea")
 
 # Friendly display label per reference-capable provider, surfaced in the desktop
 # pet-gen picker.
 _PROVIDER_LABELS: dict[str, str] = {
-    "nous": "Nous Portal",
     "openrouter": "OpenRouter",
     "openai": "OpenAI",
     "openai-codex": "OpenAI (Codex)",
@@ -121,7 +120,7 @@ def resolve_provider(*, require_references: bool = True, prefer: str | None = No
 
     raise GenerationError(
         "Pet generation needs an image backend that supports reference images. "
-        "Open `cyberfox tools` → Image Generation and configure Nous Portal, "
+        "Open `cyberfox tools` → Image Generation and configure "
         "OpenRouter, or OpenAI (gpt-image-2) with an API key."
     )
 
@@ -211,7 +210,7 @@ def generate(
     def _run(extra: dict) -> tuple[Path | None, str]:
         kwargs: dict = {"aspect_ratio": aspect_ratio, **extra}
         if refs:
-            # Providers disagree on the ref kwarg name: our OpenRouter/Nous
+            # Providers disagree on the ref kwarg name: our OpenRouter
             # backends read ``reference_images``, OpenAI's gpt-image-2 reads
             # ``reference_image_urls``. Send both; each ignores the other.
             kwargs["reference_images"] = refs

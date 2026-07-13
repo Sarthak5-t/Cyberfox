@@ -6,8 +6,8 @@ scope for vulnerability reports.
 
 ## 1. Reporting a Vulnerability
 
-Report privately via [GitHub Security Advisories](https://github.com/NousResearch/cyberfox-agent/security/advisories/new)
-or **security@nousresearch.com**. Do not open public issues for
+Report privately via [GitHub Security Advisories](https://github.com/Sarthak5-t/Cyberfox/security/advisories/new)
+or **security@sarthak5t.github.io**. Do not open public issues for
 security vulnerabilities. **Cyberfox Agent does not operate a bug
 bounty program.**
 
@@ -327,7 +327,7 @@ that:
 - **Coordinated disclosure window:** 90 days from report, or until a
   fix is released, whichever comes first.
 - **Channel:** the GHSA thread or email correspondence with
-  security@nousresearch.com.
+  security@sarthak5t.github.io.
 - **Credit:** reporters are credited in release notes unless
   anonymity is requested.
 

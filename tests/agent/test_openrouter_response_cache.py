@@ -18,7 +18,7 @@ class TestBuildOrHeaders:
         from agent.auxiliary_client import build_or_headers
 
         headers = build_or_headers(or_config={"response_cache": False})
-        assert headers["HTTP-Referer"] == "https://cyberfox-agent.nousresearch.com"
+        assert headers["HTTP-Referer"] == "https://github.com/Sarthak5-t/Cyberfox"
         assert headers["X-Title"] == "Cyberfox Agent"
         assert headers["X-OpenRouter-Categories"] == "productivity,cli-agent"
 

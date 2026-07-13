@@ -9,7 +9,7 @@ description: "Master the Cyberfox Agent terminal interface — commands, keybind
 Cyberfox Agent's CLI is a full terminal user interface (TUI) — not a web UI. It features multiline editing, slash-command autocomplete, conversation history, interrupt-and-redirect, and streaming tool output. Built for people who live in the terminal.
 
 :::tip First-time setup
-One command — `cyberfox setup --portal` — and you're ready to `cyberfox chat`. See [Nous Portal](/integrations/nous-portal).
+One command — `cyberfox setup --portal` — and you're ready to `cyberfox chat`. See [the web dashboard](/integrations/nous-portal).
 :::
 
 :::tip
@@ -29,7 +29,7 @@ cyberfox chat -q "Hello"
 cyberfox chat --model "anthropic/claude-sonnet-4"
 
 # With a specific provider
-cyberfox chat --provider nous        # Use Nous Portal
+cyberfox chat --provider nous        # Use the web dashboard
 cyberfox chat --provider openrouter  # Force OpenRouter
 
 # With specific toolsets

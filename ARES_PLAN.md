@@ -1,6 +1,6 @@
 # Ares — Cybersecurity AI Agent on Cyberfox
 
-A modular plugin-based personal AI agent for **VAPT, SOC, and red teaming** built on top of [Cyberfox Agent](https://github.com/NousResearch/cyberfox-agent) using the **big-pickle** LLM.
+A modular plugin-based personal AI agent for **VAPT, SOC, and red teaming** built on top of [Cyberfox Agent](https://github.com/Sarthak5-t/Cyberfox) using the **big-pickle** LLM.
 
 ## Architecture
 

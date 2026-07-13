@@ -192,14 +192,14 @@ class TestFreshInstall:
         with ExitStack() as stack:
             m = _enter_fresh_install_patches(
                 stack,
-                prompt=("cyberfox_cli.setup.prompt_choice", {"return_value": 0}),
-                first="cyberfox_cli.setup._run_first_time_quick_setup",
+                prompt=("cyberfox_cli.setup.prompt_choice", {"return_value": 1}),
+                blank="cyberfox_cli.setup._run_blank_slate_setup",
             )
             from cyberfox_cli.setup import run_setup_wizard
             run_setup_wizard(args)
 
-        m["prompt"].assert_called_once()  # quick-vs-full prompt
-        m["first"].assert_called_once()
+        m["prompt"].assert_called_once()  # setup-mode prompt
+        m["blank"].assert_called_once()
 
     def test_reconfigure_on_fresh_install_falls_through(self, fresh_install):
         args = _make_setup_args(reconfigure=True)
@@ -207,14 +207,14 @@ class TestFreshInstall:
         with ExitStack() as stack:
             m = _enter_fresh_install_patches(
                 stack,
-                prompt=("cyberfox_cli.setup.prompt_choice", {"return_value": 0}),
-                first="cyberfox_cli.setup._run_first_time_quick_setup",
+                prompt=("cyberfox_cli.setup.prompt_choice", {"return_value": 1}),
+                blank="cyberfox_cli.setup._run_blank_slate_setup",
             )
             from cyberfox_cli.setup import run_setup_wizard
             run_setup_wizard(args)
 
         m["prompt"].assert_called_once()
-        m["first"].assert_called_once()
+        m["blank"].assert_called_once()
 
     def test_quick_on_fresh_install_falls_through(self, fresh_install):
         args = _make_setup_args(quick=True)
@@ -222,14 +222,14 @@ class TestFreshInstall:
         with ExitStack() as stack:
             m = _enter_fresh_install_patches(
                 stack,
-                prompt=("cyberfox_cli.setup.prompt_choice", {"return_value": 0}),
-                first="cyberfox_cli.setup._run_first_time_quick_setup",
+                prompt=("cyberfox_cli.setup.prompt_choice", {"return_value": 1}),
+                blank="cyberfox_cli.setup._run_blank_slate_setup",
             )
             from cyberfox_cli.setup import run_setup_wizard
             run_setup_wizard(args)
 
         m["prompt"].assert_called_once()
-        m["first"].assert_called_once()
+        m["blank"].assert_called_once()
 
 
 class TestArgparse:

@@ -140,8 +140,8 @@ def _send_imap_id(imap: "imaplib.IMAP4") -> None:
         imap.xatom(
             "ID",
             f'("name" "cyberfox-agent" "version" "{_cyberfox_version}" '
-            '"vendor" "NousResearch" '
-            '"support-email" "noreply@nousresearch.com")',
+            '"vendor" "Sarthak5-t" '
+            '"support-email" "sarthak59t@gmail.com")',
         )
     except Exception as e:  # noqa: BLE001 — best-effort, never fatal
         logger.debug("[Email] IMAP ID command not accepted: %s", e)
