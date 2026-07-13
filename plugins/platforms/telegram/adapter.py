@@ -656,6 +656,9 @@ class TelegramAdapter(BasePlatformAdapter):
         # Tracks status bubbles owned by this adapter so subsequent calls with the
         # same key edit the same message instead of appending new ones (#30045).
         self._status_message_ids: Dict[tuple, str] = {}
+        # Track all bot-sent message IDs per chat for /reset cleanup.
+        # {chat_id: [message_id, ...]} — cleared when chat is reset.
+        self._chat_message_ids: Dict[str, List[str]] = {}
         # Last truncated mid-stream preview delivered per (chat_id, message_id).
         # Once an oversized streaming edit saturates at the 4096 preview cap,
         # every subsequent progressive edit truncates to the SAME text; sending
@@ -3815,6 +3818,12 @@ class TelegramAdapter(BasePlatformAdapter):
                         raise
                 message_ids.append(str(msg.message_id))
 
+            # Track all sent message IDs for /reset cleanup
+            if message_ids:
+                if chat_id not in self._chat_message_ids:
+                    self._chat_message_ids[chat_id] = []
+                self._chat_message_ids[chat_id].extend(message_ids)
+
             # Re-trigger typing indicator after sending a message.
             # Telegram clears the typing state when a new message is delivered,
             # so without this the "...typing" bubble disappears mid-response
@@ -4348,6 +4357,33 @@ class TelegramAdapter(BasePlatformAdapter):
                 self.name, message_id, e,
             )
             return False
+
+    async def delete_chat_messages(self, chat_id: str) -> int:
+        """Delete all tracked bot-sent messages in a chat.
+
+        Called by /reset to clear the Telegram conversation.
+        Returns the number of messages successfully deleted.
+        """
+        if not self._bot:
+            return 0
+        message_ids = self._chat_message_ids.pop(chat_id, [])
+        if not message_ids:
+            return 0
+        deleted = 0
+        for mid in message_ids:
+            try:
+                await self._bot.delete_message(
+                    chat_id=normalize_telegram_chat_id(chat_id),
+                    message_id=int(mid),
+                )
+                deleted += 1
+                await asyncio.sleep(0.05)  # Rate limit: 20 msgs/sec
+            except Exception as e:
+                logger.debug(
+                    "[%s] Failed to delete tracked message %s: %s",
+                    self.name, mid, e,
+                )
+        return deleted
 
     def supports_draft_streaming(
         self,

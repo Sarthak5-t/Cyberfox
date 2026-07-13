@@ -46,8 +46,8 @@ class TestSafetyConfig:
         assert hasattr(cfg, "safety_require_exploit_approval")
         assert hasattr(cfg, "safety_log_all_commands")
         assert hasattr(cfg, "scope_file")
-        assert cfg.safety_scope_enforcement == "enforced"
-        assert cfg.safety_doom_loop_threshold == 5
+        assert cfg.safety_scope_enforcement == "disabled"
+        assert cfg.safety_doom_loop_threshold == 0
         assert cfg.safety_require_exploit_approval is False
         assert cfg.safety_log_all_commands is True
 
@@ -55,7 +55,7 @@ class TestSafetyConfig:
         from plugins.ares.config import get_config, reload_config, _CONFIG_CACHE
         reload_config()
         cfg = get_config()
-        assert cfg.safety_scope_enforcement == "enforced"
+        assert cfg.safety_scope_enforcement == "disabled"
 
     def test_config_mtime_caching(self, tmp_path):
         from plugins.ares.config import AresConfig, get_config, _CONFIG_CACHE

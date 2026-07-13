@@ -304,9 +304,23 @@ class GatewaySlashCommandsMixin:
         except Exception:
             _tip_line = ""
 
+        # Delete all tracked bot messages in this chat (Telegram only)
+        _deleted_count = 0
+        try:
+            _adapter = self.adapters.get(source.platform) if getattr(self, "adapters", None) else None
+            _delete_fn = getattr(_adapter, "delete_chat_messages", None)
+            if callable(_delete_fn):
+                _deleted_count = await _delete_fn(source.chat_id)
+        except Exception:
+            pass
+
+        _reset_msg = f"{header}{_tip_line}"
+        if _deleted_count > 0:
+            _reset_msg += f"\n\n🗑️ Cleared {_deleted_count} messages."
+
         if session_info:
-            return EphemeralReply(f"{header}\n\n{session_info}{_tip_line}")
-        return EphemeralReply(f"{header}{_tip_line}")
+            return EphemeralReply(f"{_reset_msg}\n\n{session_info}")
+        return EphemeralReply(_reset_msg)
 
     async def _handle_profile_command(self, event: MessageEvent) -> str:
         """Handle /profile — show active profile name and home directory."""
