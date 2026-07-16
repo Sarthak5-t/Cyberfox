@@ -12738,8 +12738,11 @@ def main():
     # =========================================================================
     # portal command — dashboard/portal status + Tool Gateway routing
     # =========================================================================
-    from cyberfox_cli.portal_cli import add_parser as _add_portal_parser
-    _add_portal_parser(subparsers)
+    try:
+        from cyberfox_cli.portal_cli import add_parser as _add_portal_parser
+        _add_portal_parser(subparsers)
+    except ImportError:
+        pass
 
     # =========================================================================
     # kanban command — multi-profile collaboration board
