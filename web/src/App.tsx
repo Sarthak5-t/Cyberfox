@@ -33,6 +33,7 @@ import {
   Globe,
   Heart,
   KeyRound,
+  ChevronDown,
   Menu,
   MessageSquare,
   Package,
@@ -68,8 +69,6 @@ import { AuthWidget } from "@/components/AuthWidget";
 import { PageHeaderProvider } from "@/contexts/PageHeaderProvider";
 import { ProfileProvider } from "@/contexts/ProfileProvider";
 import { useProfileScope } from "@/contexts/useProfileScope";
-import { ProfileSwitcher } from "@/components/ProfileSwitcher";
-import { ProfileScopeBanner } from "@/components/ProfileScopeBanner";
 import { useSystemActions } from "@/contexts/useSystemActions";
 import type { SystemAction } from "@/contexts/system-actions-context";
 import ConfigPage from "@/pages/ConfigPage";
@@ -81,8 +80,7 @@ import LogsPage from "@/pages/LogsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import ModelsPage from "@/pages/ModelsPage";
 import CronPage from "@/pages/CronPage";
-import ProfilesPage from "@/pages/ProfilesPage";
-import ProfileBuilderPage from "@/pages/ProfileBuilderPage";
+
 import SkillsPage from "@/pages/SkillsPage";
 import PluginsPage from "@/pages/PluginsPage";
 import McpPage from "@/pages/McpPage";
@@ -145,8 +143,7 @@ const BUILTIN_ROUTES_CORE: Record<string, ComponentType> = {
   "/channels": ChannelsPage,
   "/webhooks": WebhooksPage,
   "/system": SystemPage,
-  "/profiles": ProfilesPage,
-  "/profiles/new": ProfileBuilderPage,
+
   "/config": ConfigPage,
   "/env": EnvPage,
   "/docs": DocsPage,
@@ -160,49 +157,79 @@ function ChatRouteSink() {
   return null;
 }
 
-const BUILTIN_NAV_REST: NavItem[] = [
+interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    path: "/sessions",
-    labelKey: "sessions",
-    label: "Sessions",
-    icon: MessageSquare,
+    id: "core",
+    label: "Core",
+    items: [
+      {
+        path: "/sessions",
+        labelKey: "sessions",
+        label: "Sessions",
+        icon: MessageSquare,
+      },
+      { path: "/files", label: "Files", icon: FolderOpen },
+      {
+        path: "/analytics",
+        labelKey: "analytics",
+        label: "Analytics",
+        icon: BarChart3,
+      },
+      { path: "/logs", labelKey: "logs", label: "Logs", icon: FileText },
+      {
+        path: "/docs",
+        labelKey: "documentation",
+        label: "Documentation",
+        icon: BookOpen,
+      },
+    ],
   },
-  { path: "/files", label: "Files", icon: FolderOpen },
   {
-    path: "/analytics",
-    labelKey: "analytics",
-    label: "Analytics",
-    icon: BarChart3,
+    id: "intelligence",
+    label: "Intelligence",
+    items: [
+      {
+        path: "/models",
+        labelKey: "models",
+        label: "Models",
+        icon: Cpu,
+      },
+      { path: "/skills", labelKey: "skills", label: "Skills", icon: Package },
+      { path: "/cron", labelKey: "cron", label: "Cron", icon: Clock },
+    ],
   },
   {
-    path: "/models",
-    labelKey: "models",
-    label: "Models",
-    icon: Cpu,
+    id: "integrations",
+    label: "Integrations",
+    items: [
+      { path: "/plugins", labelKey: "plugins", label: "Plugins", icon: Puzzle },
+      { path: "/mcp", label: "MCP", icon: Plug },
+      { path: "/channels", label: "Channels", icon: Radio },
+      { path: "/webhooks", label: "Webhooks", icon: Webhook },
+      { path: "/pairing", label: "Pairing", icon: ShieldCheck },
+    ],
   },
-  { path: "/logs", labelKey: "logs", label: "Logs", icon: FileText },
-  { path: "/cron", labelKey: "cron", label: "Cron", icon: Clock },
-  { path: "/skills", labelKey: "skills", label: "Skills", icon: Package },
-  { path: "/plugins", labelKey: "plugins", label: "Plugins", icon: Puzzle },
-  { path: "/mcp", label: "MCP", icon: Plug },
-  { path: "/channels", label: "Channels", icon: Radio },
-  { path: "/webhooks", label: "Webhooks", icon: Webhook },
-  { path: "/pairing", label: "Pairing", icon: ShieldCheck },
-  { path: "/profiles", labelKey: "profiles", label: "Profiles", icon: Users },
-  { path: "/config", labelKey: "config", label: "Config", icon: Settings },
-  { path: "/env", labelKey: "keys", label: "Keys", icon: KeyRound },
-  { path: "/system", label: "System", icon: Wrench },
   {
-    path: "/docs",
-    labelKey: "documentation",
-    label: "Documentation",
-    icon: BookOpen,
+    id: "admin",
+    label: "Admin",
+    items: [
+      { path: "/config", labelKey: "config", label: "Config", icon: Settings },
+      { path: "/env", labelKey: "keys", label: "Keys", icon: KeyRound },
+      { path: "/system", label: "System", icon: Wrench },
+    ],
   },
 ];
 
 const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   Activity,
   BarChart3,
+  ChevronDown,
   Clock,
   Cpu,
   FileText,
@@ -228,57 +255,6 @@ const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
 
 function resolveIcon(name: string): ComponentType<{ className?: string }> {
   return ICON_MAP[name] ?? Puzzle;
-}
-
-function buildNavItems(
-  builtIn: NavItem[],
-  manifests: PluginManifest[],
-): NavItem[] {
-  const items = [...builtIn];
-
-  for (const manifest of manifests) {
-    if (manifest.tab.override) continue;
-    if (manifest.tab.hidden) continue;
-
-    const pluginItem: NavItem = {
-      path: manifest.tab.path,
-      label: manifest.label,
-      icon: resolveIcon(manifest.icon),
-    };
-
-    const pos = manifest.tab.position ?? "end";
-    if (pos === "end") {
-      items.push(pluginItem);
-    } else if (pos.startsWith("after:")) {
-      const target = "/" + pos.slice(6);
-      const idx = items.findIndex((i) => i.path === target);
-      items.splice(idx >= 0 ? idx + 1 : items.length, 0, pluginItem);
-    } else if (pos.startsWith("before:")) {
-      const target = "/" + pos.slice(7);
-      const idx = items.findIndex((i) => i.path === target);
-      items.splice(idx >= 0 ? idx : items.length, 0, pluginItem);
-    } else {
-      items.push(pluginItem);
-    }
-  }
-
-  return items;
-}
-
-/** Split merged nav into built-in sidebar entries vs plugin tabs, preserving plugin order hints. */
-function partitionSidebarNav(
-  builtIn: NavItem[],
-  manifests: PluginManifest[],
-): { coreItems: NavItem[]; pluginItems: NavItem[] } {
-  const merged = buildNavItems(builtIn, manifests);
-  const builtinPaths = new Set(builtIn.map((i) => i.path));
-  const coreItems: NavItem[] = [];
-  const pluginItems: NavItem[] = [];
-  for (const item of merged) {
-    if (builtinPaths.has(item.path)) coreItems.push(item);
-    else pluginItems.push(item);
-  }
-  return { coreItems, pluginItems };
 }
 
 function buildRoutes(
@@ -361,6 +337,25 @@ export default function App() {
       return false;
     }
   });
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem("cyberfox-sidebar-collapsed-groups");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const toggleGroup = useCallback((groupId: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      try {
+        localStorage.setItem("cyberfox-sidebar-collapsed-groups", JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  }, []);
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev;
@@ -427,18 +422,31 @@ export default function App() {
   );
 
   const builtinNav = useMemo(() => {
-    const base = embeddedChat
-      ? [CHAT_NAV_ITEM, ...BUILTIN_NAV_REST]
-      : BUILTIN_NAV_REST;
-    return showTokenAnalytics
-      ? base
-      : base.filter((n) => n.path !== "/analytics");
+    const chatItem = embeddedChat ? CHAT_NAV_ITEM : null;
+    const filteredGroups = NAV_GROUPS.map((group) => ({
+      ...group,
+      items: showTokenAnalytics
+        ? group.items
+        : group.items.filter((n) => n.path !== "/analytics"),
+    })).filter((group) => group.items.length > 0);
+    return { chatItem, groups: filteredGroups };
   }, [embeddedChat, showTokenAnalytics]);
 
-  const sidebarNav = useMemo(
-    () => partitionSidebarNav(builtinNav, manifests),
-    [builtinNav, manifests],
-  );
+  const sidebarNav = useMemo(() => {
+    const allCoreItems = builtinNav.groups.flatMap((g) => g.items);
+    if (builtinNav.chatItem) allCoreItems.unshift(builtinNav.chatItem);
+    const builtinPaths = new Set(allCoreItems.map((i) => i.path));
+    const pluginItems: NavItem[] = [];
+    for (const manifest of manifests) {
+      if (manifest.tab.override || manifest.tab.hidden) continue;
+      pluginItems.push({
+        path: manifest.tab.path,
+        label: manifest.label,
+        icon: resolveIcon(manifest.icon),
+      });
+    }
+    return { groups: builtinNav.groups, chatItem: builtinNav.chatItem, pluginItems };
+  }, [builtinNav, manifests]);
   const routes = useMemo(
     () => buildRoutes(builtinRoutes, manifests),
     [builtinRoutes, manifests],
@@ -537,7 +545,6 @@ export default function App() {
       )}
 
       <PluginSlot name="header-banner" />
-      <ProfileScopeBanner />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
         <div className="flex min-h-0 min-w-0 flex-1">
@@ -609,24 +616,65 @@ export default function App() {
               </Button>
             </div>
 
-            <ProfileSwitcher collapsed={isDesktopCollapsed} />
-
             <nav
               className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden border-t border-current/10 py-2"
               aria-label={t.app.navigation}
             >
-              <ul className="flex flex-col">
-                {sidebarNav.coreItems.map((item) => (
+              {sidebarNav.chatItem && (
+                <ul className="flex flex-col">
                   <SidebarNavLink
                     closeMobile={closeMobile}
                     collapsed={isDesktopCollapsed}
-                    item={item}
-                    key={item.path}
+                    item={sidebarNav.chatItem}
+                    key={sidebarNav.chatItem.path}
                     t={t}
                     tooltipWarmRef={tooltipWarmRef}
                   />
-                ))}
-              </ul>
+                </ul>
+              )}
+
+              {sidebarNav.groups.map((group) => {
+                const isCollapsed = collapsedGroups.has(group.id);
+                return (
+                  <div key={group.id} className="flex flex-col">
+                    <button
+                      onClick={() => toggleGroup(group.id)}
+                      className={cn(
+                        "flex w-full items-center gap-1 cursor-pointer",
+                        "px-5 pt-2.5 pb-1",
+                        "font-sans text-display text-xs tracking-[0.12em] text-text-tertiary",
+                        "hover:text-midground transition-colors",
+                        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-midground",
+                        isDesktopCollapsed && "lg:hidden",
+                      )}
+                      aria-expanded={!isCollapsed}
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "h-3 w-3 shrink-0 transition-transform duration-200",
+                          isCollapsed && "-rotate-90",
+                        )}
+                      />
+                      {group.label}
+                    </button>
+
+                    {!isCollapsed && (
+                      <ul className="flex flex-col">
+                        {group.items.map((item) => (
+                          <SidebarNavLink
+                            closeMobile={closeMobile}
+                            collapsed={isDesktopCollapsed}
+                            item={item}
+                            key={item.path}
+                            t={t}
+                            tooltipWarmRef={tooltipWarmRef}
+                          />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
 
               {sidebarNav.pluginItems.length > 0 && (
                 <div

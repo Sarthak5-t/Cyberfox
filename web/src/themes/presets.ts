@@ -22,16 +22,18 @@ const SYSTEM_MONO =
   'ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace';
 
 const DEFAULT_TYPOGRAPHY: ThemeTypography = {
-  fontSans: SYSTEM_SANS,
-  fontMono: SYSTEM_MONO,
-  baseSize: "15px",
-  lineHeight: "1.55",
-  letterSpacing: "0",
+  fontSans: `"Share Tech Mono", "JetBrains Mono", ${SYSTEM_MONO}`,
+  fontMono: `"Share Tech Mono", "JetBrains Mono", ${SYSTEM_MONO}`,
+  fontUrl:
+    "https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700&display=swap",
+  baseSize: "14px",
+  lineHeight: "1.5",
+  letterSpacing: "0.02em",
 };
 
 const DEFAULT_LAYOUT: ThemeLayout = {
-  radius: "0.5rem",
-  density: "comfortable",
+  radius: "0",
+  density: "compact",
 };
 
 // ---------------------------------------------------------------------------
@@ -40,18 +42,29 @@ const DEFAULT_LAYOUT: ThemeLayout = {
 
 export const defaultTheme: DashboardTheme = {
   name: "default",
-  label: "Cyberfox Teal",
-  description: "Classic dark teal — the canonical Cyberfox look",
+  label: "Cyberpunk",
+  description: "Cyan neon on deep black — hacker terminal aesthetic",
   palette: {
-    background: { hex: "#041c1c", alpha: 1 },
-    midground: { hex: "#ffe6cb", alpha: 1 },
+    background: { hex: "#0a0a0f", alpha: 1 },
+    midground: { hex: "#00ffcc", alpha: 1 },
     foreground: { hex: "#ffffff", alpha: 0 },
-    warmGlow: "rgba(255, 189, 56, 0.35)",
-    noiseOpacity: 1,
+    warmGlow: "rgba(0, 255, 204, 0.15)",
+    noiseOpacity: 0.8,
   },
   typography: DEFAULT_TYPOGRAPHY,
   layout: DEFAULT_LAYOUT,
-  terminalBackground: "#000000",
+  terminalBackground: "#0a0a0f",
+  terminalForeground: "#00ffcc",
+  seriesColors: {
+    inputTokenAccent: "#00ffcc",
+    outputTokenAccent: "#ff6b6b",
+  },
+  colorOverrides: {
+    success: "#00ff88",
+    warning: "#ffd700",
+    destructive: "#ff3366",
+  },
+  swatchColors: ["#0a0a0f", "#00ffcc", "#1a1a2e"],
 };
 
 export const midnightTheme: DashboardTheme = {
@@ -214,17 +227,17 @@ export const nousBlueTheme: DashboardTheme = {
  */
 export const defaultLargeTheme: DashboardTheme = {
   name: "default-large",
-  label: "Cyberfox Teal (Large)",
-  description: "Cyberfox Teal with bigger fonts and roomier spacing",
+  label: "Cyberpunk (Large)",
+  description: "Cyberpunk with bigger fonts and roomier spacing",
   palette: defaultTheme.palette,
   typography: {
     ...DEFAULT_TYPOGRAPHY,
-    baseSize: "18px",
-    lineHeight: "1.65",
+    baseSize: "17px",
+    lineHeight: "1.6",
   },
   layout: {
     ...DEFAULT_LAYOUT,
-    density: "spacious",
+    density: "comfortable",
   },
 };
 

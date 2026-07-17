@@ -190,6 +190,13 @@ export interface Translations {
     newChat: string;
     previousPage: string;
     nextPage: string;
+    statsTotal: string;
+    statsActive: string;
+    statsArchived: string;
+    statsMessages: string;
+    resume: string;
+    rename: string;
+    exportSession: string;
     roles: {
       user: string;
       assistant: string;

@@ -28,6 +28,8 @@ import {
   Pencil,
   Check,
   Archive,
+  Cpu,
+  Wrench,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { shouldRefreshSessions } from "@/lib/session-refresh";
@@ -429,14 +431,14 @@ function SessionRow({
 
   const actionButtons = (
     <>
-      <Badge tone="outline" className="text-xs">
+      <Badge tone="outline" className={`text-xs ${sourceInfo.color}`}>
         {session.source ?? "local"}
       </Badge>
 
       {resumeInChatEnabled && (
         <Button
           ghost
-          size="icon"
+          size="sm"
           className="text-muted-foreground hover:text-success"
           aria-label={t.sessions.resumeInChat}
           title={t.sessions.resumeInChat}
@@ -445,16 +447,17 @@ function SessionRow({
             navigate(`/chat?resume=${encodeURIComponent(session.id)}`);
           }}
         >
-          <Play />
+          <Play className="h-3.5 w-3.5" />
+          <span className="hidden lg:inline">{t.sessions.resume}</span>
         </Button>
       )}
 
       <Button
         ghost
-        size="icon"
+        size="sm"
         className="text-muted-foreground hover:text-foreground"
-        aria-label="Rename session"
-        title="Rename session"
+        aria-label={t.sessions.rename}
+        title={t.sessions.rename}
         onClick={(e) => {
           e.stopPropagation();
           setRenameValue(
@@ -465,21 +468,23 @@ function SessionRow({
           setRenaming(true);
         }}
       >
-        <Pencil />
+        <Pencil className="h-3.5 w-3.5" />
+        <span className="hidden lg:inline">{t.sessions.rename}</span>
       </Button>
 
       <Button
         ghost
-        size="icon"
+        size="sm"
         className="text-muted-foreground hover:text-foreground"
-        aria-label="Export session"
-        title="Export session JSON"
+        aria-label={t.sessions.exportSession}
+        title={t.sessions.exportSession}
         onClick={(e) => {
           e.stopPropagation();
           onExport(session.id);
         }}
       >
-        <Download />
+        <Download className="h-3.5 w-3.5" />
+        <span className="hidden lg:inline">{t.sessions.exportSession}</span>
       </Button>
 
       <Button
@@ -588,7 +593,7 @@ function SessionRow({
                   </div>
                 ) : (
                   <span
-                    className={`font-mondwest normal-case min-w-0 flex-1 truncate text-sm ${hasTitle ? "font-medium" : "text-muted-foreground italic"}`}
+                    className={`font-mondwest normal-case min-w-0 flex-1 truncate text-base ${hasTitle ? "font-medium" : "text-muted-foreground italic"}`}
                   >
                     {hasTitle
                       ? session.title
@@ -604,24 +609,30 @@ function SessionRow({
                   </Badge>
                 )}
               </div>
-              <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
-                <span className="max-w-[min(100%,12rem)] truncate sm:max-w-[180px]">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 max-w-[min(100%,12rem)] truncate sm:max-w-[180px]">
+                  <Cpu className="h-3 w-3 shrink-0" />
                   {(session.model ?? t.common.unknown).split("/").pop()}
                 </span>
                 <span className="text-border">&#183;</span>
-                <span className="shrink-0">
+                <span className="flex shrink-0 items-center gap-1">
+                  <MessageSquare className="h-3 w-3" />
                   {session.message_count} {t.common.msgs}
                 </span>
                 {session.tool_call_count > 0 && (
                   <>
                     <span className="text-border">&#183;</span>
-                    <span className="shrink-0">
+                    <span className="flex shrink-0 items-center gap-1">
+                      <Wrench className="h-3 w-3" />
                       {session.tool_call_count} {t.common.tools}
                     </span>
                   </>
                 )}
                 <span className="text-border">&#183;</span>
-                <span className="shrink-0">{timeAgo(session.last_active)}</span>
+                <span className="flex shrink-0 items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {timeAgo(session.last_active)}
+                </span>
               </div>
               {snippet && <SnippetHighlight snippet={snippet} />}
             </div>
@@ -759,6 +770,7 @@ export default function SessionsPage() {
   const [pruning, setPruning] = useState(false);
   const { toast, showToast } = useToast();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { setAfterTitle, setEnd } = usePageHeader();
   const { activeAction, actionStatus, dismissLog } = useSystemActions();
   const resumeInChatEnabled = isDashboardEmbeddedChatEnabled();
@@ -1346,29 +1358,41 @@ export default function SessionsPage() {
 
       {stats && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border border-border bg-background-base/40 px-4 py-3">
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold tabular-nums leading-none">
-              {stats.total}
-            </span>
-            <span className="text-xs text-muted-foreground">Total</span>
+          <div className="flex items-center gap-2">
+            <Database className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold tabular-nums leading-none">
+                {stats.total}
+              </span>
+              <span className="text-xs text-muted-foreground">{t.sessions.statsTotal}</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold tabular-nums leading-none text-success">
-              {stats.active_store}
-            </span>
-            <span className="text-xs text-muted-foreground">Active in store</span>
+          <div className="flex items-center gap-2">
+            <Play className="h-4 w-4 text-success" />
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold tabular-nums leading-none text-success">
+                {stats.active_store}
+              </span>
+              <span className="text-xs text-muted-foreground">{t.sessions.statsActive}</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold tabular-nums leading-none">
-              {stats.archived}
-            </span>
-            <span className="text-xs text-muted-foreground">Archived</span>
+          <div className="flex items-center gap-2">
+            <Archive className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold tabular-nums leading-none">
+                {stats.archived}
+              </span>
+              <span className="text-xs text-muted-foreground">{t.sessions.statsArchived}</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold tabular-nums leading-none">
-              {stats.messages}
-            </span>
-            <span className="text-xs text-muted-foreground">Messages</span>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold tabular-nums leading-none">
+                {stats.messages}
+              </span>
+              <span className="text-xs text-muted-foreground">{t.sessions.statsMessages}</span>
+            </div>
           </div>
           {Object.keys(stats.by_source).length > 0 && (
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -1469,8 +1493,8 @@ export default function SessionsPage() {
       )}
 
       {(showOverviewTab && !isSearching) || showList ? (
-        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:gap-3">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap sm:gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap sm:gap-3">
             {showOverviewTab && !isSearching && (
               <Segmented
                 className="w-fit shrink-0"
@@ -1482,6 +1506,10 @@ export default function SessionsPage() {
                   { value: "list", label: t.sessions.history },
                 ]}
               />
+            )}
+
+            {showOverviewTab && !isSearching && showList && (
+              <div className="hidden h-5 w-px bg-border sm:block" />
             )}
 
             {showList && (
@@ -1671,40 +1699,70 @@ export default function SessionsPage() {
               </CardHeader>
 
               <CardContent className="grid min-w-0 gap-3">
-                {recentSessions.map((s) => (
-                  <div
-                    key={s.id}
-                    className="flex min-w-0 max-w-full flex-col gap-2 border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="font-mondwest normal-case min-w-0 truncate text-sm font-medium">
-                        {s.title ?? t.common.untitled}
-                      </span>
+                {recentSessions.map((s) => {
+                  const srcInfo = (s.source
+                    ? SOURCE_CONFIG[s.source]
+                    : null) ?? { icon: Globe, color: "text-muted-foreground" };
+                  const SrcIcon = srcInfo.icon;
+                  return (
+                    <div
+                      key={s.id}
+                      className={`flex min-w-0 max-w-full flex-col gap-2 border p-3 transition-colors hover:bg-secondary/20 sm:flex-row sm:items-center sm:justify-between ${
+                        s.is_active ? "border-success/30" : "border-border"
+                      }`}
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <span className="font-mondwest normal-case min-w-0 truncate text-sm font-medium">
+                          {s.title ?? t.common.untitled}
+                        </span>
 
-                      <span className="min-w-0 break-words text-xs text-muted-foreground">
-                        <span className="font-mono-ui">
-                          {(s.model ?? t.common.unknown).split("/").pop()}
-                        </span>{" "}
-                        · {s.message_count} {t.common.msgs} ·{" "}
-                        {timeAgo(s.last_active)}
-                      </span>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+                          <span className="flex shrink-0 items-center gap-1">
+                            <SrcIcon className={`h-3 w-3 ${srcInfo.color}`} />
+                            {s.source ?? "local"}
+                          </span>
+                          <span className="text-border">&#183;</span>
+                          <span className="flex shrink-0 items-center gap-1">
+                            <Cpu className="h-3 w-3" />
+                            <span className="font-mono-ui">
+                              {(s.model ?? t.common.unknown).split("/").pop()}
+                            </span>
+                          </span>
+                          <span className="text-border">&#183;</span>
+                          <span className="flex shrink-0 items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {s.message_count} {t.common.msgs}
+                          </span>
+                          <span className="text-border">&#183;</span>
+                          <span className="flex shrink-0 items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {timeAgo(s.last_active)}
+                          </span>
+                        </div>
 
-                      {s.preview && (
-                        <p className="font-mondwest normal-case min-w-0 max-w-full text-xs leading-snug text-text-tertiary [overflow-wrap:anywhere]">
-                          {s.preview}
-                        </p>
+                        {s.preview && (
+                          <p className="font-mondwest normal-case min-w-0 max-w-full text-xs leading-snug text-text-tertiary [overflow-wrap:anywhere] line-clamp-2">
+                            {s.preview}
+                          </p>
+                        )}
+                      </div>
+
+                      {resumeInChatEnabled && (
+                        <Button
+                          ghost
+                          size="sm"
+                          className="shrink-0 self-start text-muted-foreground hover:text-success sm:self-center"
+                          onClick={() =>
+                            navigate(`/chat?resume=${encodeURIComponent(s.id)}`)
+                          }
+                        >
+                          <Play className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{t.sessions.resume}</span>
+                        </Button>
                       )}
                     </div>
-
-                    <Badge
-                      tone="outline"
-                      className="shrink-0 self-start text-xs sm:self-center"
-                    >
-                      <Database className="mr-1 h-3 w-3" />
-                      {s.source ?? "local"}
-                    </Badge>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           )}

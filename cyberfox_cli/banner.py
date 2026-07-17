@@ -646,15 +646,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     text = _skin_color("banner_text", "#FFF8DC")
     session_color = _skin_color("session_border", "#8B8682")
 
-    # Use skin's custom caduceus art if provided
-    try:
-        from cyberfox_cli.skin_engine import get_active_skin
-        _bskin = get_active_skin()
-        _hero = _bskin.banner_hero if hasattr(_bskin, 'banner_hero') and _bskin.banner_hero else CYBERFOX_CADUCEUS
-    except Exception:
-        _bskin = None
-        _hero = CYBERFOX_CADUCEUS
-    left_lines = ["", _hero, ""]
+    left_lines = [""]
     if (provider or "").strip().lower() == "moa":
         # MoA virtual provider: ``model`` is a preset name. Show the preset and
         # its aggregator so the banner is meaningful instead of a bare slug.

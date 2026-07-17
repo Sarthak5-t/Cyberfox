@@ -3215,6 +3215,11 @@ DEFAULT_CONFIG = {
         "region": "global",
     },
 
+    # Plugin allow-list. Bundled standalone plugins must appear here to load.
+    "plugins": {
+        "enabled": ["ares"],
+    },
+
     # Config schema version - bump this when adding new required fields
     "_config_version": 33,
 }

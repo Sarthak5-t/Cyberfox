@@ -43,49 +43,42 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Cyberfox Agent — Nous DS with the LENS_0 (Cyberfox teal) palette applied
-   statically as the default dashboard theme. */
+/* Cyberpunk Agent — Cyan neon on deep black hacker terminal aesthetic  */
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* LENS_0 — from design-language/src/ui/components/overlays/index.tsx.
-     These are the defaults for the `default` (Cyberfox Teal) dashboard theme;
-     ThemeProvider rewrites them as inline styles when a user switches themes. */
+  /* Cyberpunk palette — cyan neon accents on near-black canvas */
   --foreground: color-mix(in srgb, #ffffff 0%, transparent);
   --foreground-base: #ffffff;
   --foreground-alpha: 0;
-  --midground: color-mix(in srgb, #ffe6cb 100%, transparent);
-  --midground-base: #ffe6cb;
+  --midground: color-mix(in srgb, #00ffcc 100%, transparent);
+  --midground-base: #00ffcc;
   --midground-alpha: 1;
-  --background: color-mix(in srgb, #041c1c 100%, transparent);
-  --background-base: #041c1c;
+  --background: color-mix(in srgb, #0a0a0f 100%, transparent);
+  --background-base: #0a0a0f;
   --background-alpha: 1;
 
-  /* Typography tokens — rewritten by ThemeProvider. Defaults match the
-     system stack so themes that don't override look native. */
-  --theme-font-sans: system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --theme-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo,
-    Consolas, monospace;
+  /* Typography tokens — monospace-first for the hacker aesthetic */
+  --theme-font-sans: "Share Tech Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --theme-font-mono: "Share Tech Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --theme-font-display: var(--theme-font-sans);
-  --theme-base-size: 15px;
-  --theme-line-height: 1.55;
-  --theme-letter-spacing: 0;
+  --theme-base-size: 14px;
+  --theme-line-height: 1.5;
+  --theme-letter-spacing: 0.02em;
 
-  /* Layout tokens. */
-  --radius: 0.5rem;
-  --theme-radius: 0.5rem;
+  /* Layout tokens — sharp corners, compact spacing */
+  --radius: 0;
+  --theme-radius: 0;
   --theme-spacing-mul: 1;
-  --theme-density: comfortable;
+  --theme-density: compact;
 
-  /* Data-series accents — consumed by Analytics + Models pages for the
-     input-vs-output token visualisations (chart bars, table values,
-     legend swatches). Defaults are tuned for the Cyberfox-teal LENS_0
-     look: cream input + emerald-400 output read as warm/cool against
-     the dark canvas. Themes override via ThemeProvider, which emits
-     these as `--series-input-token` / `--series-output-token`. */
-  --series-input-token: #ffe6cb;
-  --series-output-token: #34d399;
+  /* Data-series accents — neon cyan input, coral output */
+  --series-input-token: #00ffcc;
+  --series-output-token: #ff6b6b;
+
+  /* Cyberpunk glow effects */
+  --glow-color: rgba(0, 255, 204, 0.3);
+  --glow-strong: rgba(0, 255, 204, 0.6);
 }
 
 /* Theme tokens cascade into the document root so every descendant inherits
@@ -146,44 +139,34 @@ code, kbd, pre, samp, .font-mono, .font-mono-ui {
 small { font-size: 1.0625rem; }
 code { font-size: 0.875rem; }
 
-/* Shadcn-compat tokens.
-   The dashboard's page code predates the Nous DS and uses shadcn-style
-   utility classes (bg-card, text-muted-foreground, border-border, etc.)
-   extensively. Rather than rewrite every call site, we expose those
-   tokens on top of the Nous palette so classes continue to resolve. */
+/* Shadcn-compat tokens — cyberpunk palette */
 @theme inline {
-  /* Remap foreground to midground so `text-foreground` / `bg-foreground`
-     stay visible — in LENS_0, `--foreground` itself has alpha 0. */
   --color-foreground: var(--midground);
 
-  --color-card: color-mix(in srgb, var(--midground-base) 4%, var(--background-base));
+  --color-card: color-mix(in srgb, var(--midground-base) 3%, var(--background-base));
   --color-card-foreground: var(--midground);
   --color-primary: var(--midground);
   --color-primary-foreground: var(--background-base);
-  --color-secondary: color-mix(in srgb, var(--midground-base) 6%, var(--background-base));
+  --color-secondary: color-mix(in srgb, var(--midground-base) 5%, var(--background-base));
   --color-secondary-foreground: var(--midground);
-  --color-muted: color-mix(in srgb, var(--midground-base) 8%, var(--background-base));
-  /* Routes the shadcn `muted-foreground` slot through the DS semantic
-     text-secondary token (defaults to midground 80%) so legacy call
-     sites that use `text-muted-foreground` get a readable color
-     instead of the old 55%-transparent default. */
+  --color-muted: color-mix(in srgb, var(--midground-base) 6%, var(--background-base));
   --color-muted-foreground: var(--color-text-secondary);
-  --color-accent: color-mix(in srgb, var(--midground-base) 10%, var(--background-base));
+  --color-accent: color-mix(in srgb, var(--midground-base) 8%, var(--background-base));
   --color-accent-foreground: var(--midground);
-  --color-destructive: #fb2c36;
+  --color-destructive: #ff3366;
   --color-destructive-foreground: #ffffff;
-  --color-success: #4ade80;
-  --color-warning: #ffbd38;
-  --color-border: color-mix(in srgb, var(--midground-base) 15%, transparent);
-  --color-input: color-mix(in srgb, var(--midground-base) 15%, transparent);
+  --color-success: #00ff88;
+  --color-warning: #ffd700;
+  --color-border: color-mix(in srgb, var(--midground-base) 12%, transparent);
+  --color-input: color-mix(in srgb, var(--midground-base) 12%, transparent);
   --color-ring: var(--midground);
   --color-popover: color-mix(in srgb, var(--midground-base) 4%, var(--background-base));
   --color-popover-foreground: var(--midground);
 
-  --radius-sm: calc(var(--theme-radius) - 4px);
-  --radius-md: calc(var(--theme-radius) - 2px);
-  --radius-lg: var(--theme-radius);
-  --radius-xl: calc(var(--theme-radius) + 4px);
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
 }
 
 
@@ -243,5 +226,45 @@ code { font-size: 0.875rem; }
   pointer-events: none;
   background: repeating-conic-gradient(currentColor 0% 25%, #0000 0% 50%) 0 0 /
     2px 2px;
+}
+
+/* ── Cyberpunk glow utilities ─────────────────────────────────────── */
+
+.glow {
+  text-shadow: 0 0 8px var(--glow-color, rgba(0, 255, 204, 0.3)),
+               0 0 16px var(--glow-color, rgba(0, 255, 204, 0.15));
+}
+
+.glow-strong {
+  text-shadow: 0 0 10px var(--glow-strong, rgba(0, 255, 204, 0.6)),
+               0 0 20px var(--glow-color, rgba(0, 255, 204, 0.3)),
+               0 0 40px var(--glow-color, rgba(0, 255, 204, 0.15));
+}
+
+.glow-border {
+  box-shadow: 0 0 6px var(--glow-color, rgba(0, 255, 204, 0.2)),
+              inset 0 0 6px var(--glow-color, rgba(0, 255, 204, 0.05));
+}
+
+/* Thin cyan scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--midground-base) 20%, transparent);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--midground-base) 35%, transparent);
+}
+
+/* Selection highlight — cyan on dark */
+::selection {
+  background: color-mix(in srgb, var(--midground-base) 25%, transparent);
+  color: var(--foreground-base);
 }
 
