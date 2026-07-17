@@ -9,8 +9,8 @@ Telegram, Matrix, Signal, ... without per-platform branching.
 
 EXPERIMENTAL: this schema MAY CHANGE without a deprecation cycle until at least
 two real Class-1 platforms have validated it. Evolution during the experimental
-phase is additive-only, gated by ``contract_version`` (see
-docs/relay-connector-contract.md).
+phase is additive-only, gated by ``contract_version`` (see the
+relay connector contract doc).
 
 Field origins (most are a wire-serializable projection of ``PlatformEntry`` plus
 the per-instance capability methods on ``BasePlatformAdapter``):

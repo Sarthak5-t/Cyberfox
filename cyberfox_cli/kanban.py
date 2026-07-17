@@ -1,8 +1,7 @@
 """CLI for the Cyberfox Kanban board — ``cyberfox kanban …`` subcommand.
 
-Exposes the full Kanban command surface documented in the design spec
-(``docs/cyberfox-kanban-v1-spec.pdf``).  All DB work is delegated to
-``kanban_db``.  This module adds:
+Exposes the full Kanban command surface documented in the design spec.
+All DB work is delegated to ``kanban_db``.  This module adds:
 
   * Argparse subcommand construction (``build_parser``).
   * Argument dispatch (``kanban_command``).
@@ -203,7 +202,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
             "Tasks are claimed atomically, can depend on other tasks, and "
             "are executed by a named profile in an isolated workspace. "
             "See https://github.com/Sarthak5-t/Cyberfox/user-guide/features/kanban "
-            "or docs/cyberfox-kanban-v1-spec.pdf for the full design."
+            "for the full design."
         ),
     )
     # --- global --board flag ---

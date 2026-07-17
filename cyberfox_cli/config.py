@@ -6868,7 +6868,7 @@ def _load_config_impl(*, want_deepcopy: bool) -> Dict[str, Any]:
         # ${VAR} cannot shadow a managed literal: managed values are expanded only
         # against the process environment, never against user-config-defined refs.
         # This deliberately inverts the usual env-over-config precedence for the
-        # keys the managed layer pins — see docs/design/managed-scope.md §4.1.
+        # keys the managed layer pins — see the managed-scope design doc §4.1.
         managed_config = managed_scope.load_managed_config()
         if managed_config:
             managed_expanded = _expand_env_vars(managed_config)

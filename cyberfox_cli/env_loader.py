@@ -277,8 +277,8 @@ def _apply_managed_env() -> None:
     enforcement is "applied last with override=True" — at the end of startup load
     ``os.environ`` holds the managed value for every managed key, beating both the
     user ``.env`` and any pre-existing shell export. This deliberately inverts the
-    usual env-over-config precedence for the pinned keys (see
-    ``docs/design/managed-scope.md`` §4.1).
+    usual env-over-config precedence for the pinned keys (see the
+    managed-scope design doc §4.1).
 
     This does NOT prevent the agent from later mutating ``os.environ`` in-process
     or ``export``-ing in a subprocess shell; that hard boundary is a documented

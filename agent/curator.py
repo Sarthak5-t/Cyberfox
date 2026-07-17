@@ -1845,7 +1845,7 @@ def _run_llm_review(prompt: str) -> Dict[str, Any]:
     # `_resolve_review_runtime()` honors `auxiliary.curator.{provider,model,...}`
     # (canonical aux-task slot, wired through `cyberfox model` → auxiliary
     # picker and the dashboard Models tab), with a legacy fallback to
-    # `curator.auxiliary.{provider,model,...}`. See docs/user-guide/features/curator.md.
+    # `curator.auxiliary.{provider,model,...}`. See the curator feature docs.
     _api_key = None
     _base_url = None
     _api_mode = None

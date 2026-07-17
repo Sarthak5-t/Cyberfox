@@ -486,7 +486,7 @@ def managed_scope_check() -> None:
     Silent when no managed scope is present. When the managed directory was
     resolved from the CYBERFOX_MANAGED_DIR override (rather than the system
     default), that is surfaced too — a redirected scope is the documented
-    foot-gun (see docs/design/managed-scope.md §7) and an operator should see it.
+    foot-gun (see the managed-scope design doc §7) and an operator should see it.
     """
     try:
         from cyberfox_cli import managed_scope

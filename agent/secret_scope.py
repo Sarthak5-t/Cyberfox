@@ -18,7 +18,7 @@ This module provides a fail-closed, context-local secret scope:
   **off** (the default), it transparently reads ``os.environ`` so the
   single-profile gateway and every non-gateway caller behave exactly as before.
 
-Design rationale lives in ``docs/design/multiplexing-gateway.md`` (Workstream A).
+Design rationale lives in the multiplexing-gateway design doc (Workstream A).
 """
 from __future__ import annotations
 
@@ -152,7 +152,7 @@ def get_secret(name: str, default: Optional[str] = None) -> Optional[str]:
             f"while multiplexing is on. This credential read must run inside a "
             f"set_secret_scope(...) block (the per-turn / per-adapter profile "
             f"scope). Reading os.environ here would risk leaking another "
-            f"profile's value. See docs/design/multiplexing-gateway.md "
+            f"profile's value. See the multiplexing-gateway design doc "
             f"(Workstream A)."
         )
 

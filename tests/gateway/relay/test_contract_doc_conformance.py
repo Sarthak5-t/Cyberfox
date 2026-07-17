@@ -1,4 +1,4 @@
-"""Cross-repo contract conformance: docs/relay-connector-contract.md ⟷ Python.
+"""Cross-repo contract conformance: relay connector contract doc ⟷ Python.
 
 The contract doc is the formal interface the connector repo
 (cyberfox/gateway-gateway) implements against. The connector's TypeScript
@@ -158,7 +158,7 @@ def test_internal_only_session_fields_stay_off_the_wire():
     wire_keys = _session_source_wire_keys()
     assert "is_bot" not in wire_keys, (
         "is_bot is now serialized by SessionSource.to_dict(). If this is "
-        "intentional, add it to docs/relay-connector-contract.md §3 and the "
+        "intentional, add it to the relay connector contract doc §3 and the "
         "connector's SessionSource interface, then update this guard."
     )
 

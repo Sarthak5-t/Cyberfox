@@ -904,7 +904,7 @@ def _run_cua_driver_installer(label: str = "Installing", verbose: bool = True) -
         # (unpredictable name, 0600) rather than a fixed /tmp path — avoiding
         # both the shell-injection surface and a symlink/TOCTOU race on
         # multi-user machines. The manual hint stays the upstream one-liner
-        # since that's what the docs/README teach.
+        # since that's what the upstream README teaches.
         import tempfile as _tempfile
 
         install_url = (

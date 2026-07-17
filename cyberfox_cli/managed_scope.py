@@ -9,8 +9,8 @@ which is a coarse package-manager write-lock (declarative-distro / formula
 installs). That lock blocks all mutation; this layer injects specific immutable
 values. The two are independent and may coexist.
 
-v1 enforcement is filesystem permissions only — see
-``docs/design/managed-scope.md`` §7. v1 is Linux/POSIX-first; ``get_managed_dir()``
+v1 enforcement is filesystem permissions only — see the managed-scope
+design doc §7. v1 is Linux/POSIX-first; ``get_managed_dir()``
 is the single seam for adding macOS / Windows native locations later.
 
 Attribution: do not reference any third-party product by name in this file.

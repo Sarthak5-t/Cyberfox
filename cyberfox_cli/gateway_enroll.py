@@ -3,7 +3,7 @@
 The connector⇄gateway channel is authenticated (the gateway may be
 customer-managed and internet-exposed). This command is the gateway half of the
 zero-touch enrollment in the connector repo's
-``docs/connector-gateway-auth-design.md``:
+auth design doc:
 
    1. POST ``{enrollmentToken, gatewayId}`` to the connector's ``/relay/enroll``
       over TLS.

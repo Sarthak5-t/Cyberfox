@@ -2,7 +2,7 @@
 
 The connector⇄gateway channel is authenticated because a gateway may be
 customer-managed and internet-exposed (see the connector repo
-``docs/connector-gateway-auth-design.md``). This module is the **gateway half**
+auth design doc). This module is the **gateway half**
 of two HMAC schemes whose wire bytes must match the connector's TypeScript
 exactly:
 
