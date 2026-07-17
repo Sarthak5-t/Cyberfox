@@ -42,8 +42,63 @@ cyberfox/
 │   └── ares/           # Cybersecurity plugin
 ├── skills/             # Agent skills
 ├── tests/              # Test suite
-└── docs/               # Documentation
+├── website/            # Documentation site (Docusaurus)
+└── web/                # Web dashboard frontend
 ```
+
+---
+
+## Team Workflow (Fork & Pull Request)
+
+This repository uses a **fork-and-PR** model. The `main` branch is
+**protected** — no one (including the owner) can push directly to it. All
+changes land via Pull Requests that require at least one approving review.
+
+### For team members
+
+1. **Fork** the repo on GitHub (button at `https://github.com/Sarthak5-t/Cyberfox`).
+2. **Clone your fork:**
+   ```bash
+   git clone https://github.com/<your-username>/Cyberfox.git
+   cd Cyberfox
+   ```
+3. **Link the upstream repo** so you can stay in sync:
+   ```bash
+   git remote add upstream https://github.com/Sarthak5-t/Cyberfox.git
+   ```
+4. **Create a feature branch** off `main`:
+   ```bash
+   git checkout -b feature/my-change
+   ```
+5. **Make your changes**, then sync with upstream before pushing:
+   ```bash
+   git fetch upstream
+   git rebase upstream/main
+   ```
+6. **Commit** (see Commit Messages below) and **push to your fork:**
+   ```bash
+   git push origin feature/my-change
+   ```
+7. **Open a Pull Request** on GitHub:
+   - base = `Sarthak5-t/Cyberfox:main`
+   - compare = `<your-username>:feature/my-change`
+   - Fill in the PR template.
+8. **Address review comments**, then the maintainer merges.
+
+### Staying in sync
+
+```bash
+git fetch upstream
+git rebase upstream/main        # or: git merge upstream/main
+```
+
+### Notes
+
+- Keep PRs small and focused (one logical change per PR).
+- Rebase onto the latest `main` before requesting review to avoid conflicts.
+- The maintainer (`Sarthak5-t`) is the only one who can merge to `main`.
+- Never commit to `main` on your fork and open a PR from it — always use a
+  feature branch.
 
 ---
 
