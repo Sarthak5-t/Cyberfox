@@ -48,6 +48,21 @@ cyberfox/
 
 ---
 
+## Domain Guides (`project_info/`)
+
+The project is divided into three contribution domains, each with a detailed
+implementation guide under [`project_info/`](./project_info/):
+
+| Domain | Guide | What it covers |
+|---|---|---|
+| **Web Development** | [`project_info/web_development.md`](./project_info/web_development.md) | `web/` SPA, `ui-tui/`, `cyberfox_cli/web_server.py`, themes, i18n, dashboard auth |
+| **AI / ML** | [`project_info/ai_ml.md`](./project_info/ai_ml.md) | `run_agent.py`, `agent/` runtime, `plugins/model-providers/`, tool-use, context/memory, delegation |
+| **Cybersecurity** | [`project_info/cybersec.md`](./project_info/cybersec.md) | `plugins/ares/` (Ares pentest plugin), safety layer, gateway adapters, MCP server |
+
+Pick the guide that matches the area you are working in before you start.
+
+---
+
 ## Team Workflow (Fork & Pull Request)
 
 This repository uses a **fork-and-PR** model. The `main` branch is
