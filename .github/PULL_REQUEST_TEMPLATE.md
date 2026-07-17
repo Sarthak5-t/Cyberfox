@@ -1,3 +1,5 @@
+> **For reviewers:** Before approving, confirm the **Checks tab is green** (CI runs `pytest`, ruff, and web lint+build on every PR). Then verify the change against the relevant domain guide in [`project_info/`](https://github.com/Sarthak5-t/Cyberfox/tree/main/project_info): web → `web_development.md`, AI/ML → `ai_ml.md`, cybersec → `cybersec.md`. Pull the branch locally for manual testing if needed (e.g. `venv/bin/python -m cyberfox_cli.main dashboard --skip-build --no-open`).
+
 ## What does this PR do?
 
 <!-- Describe the change clearly. What problem does it solve? Why is this approach the right one? -->
