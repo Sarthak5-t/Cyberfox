@@ -379,15 +379,31 @@ class ToolSandbox:
                         shutil.copy2(binary, link)
                     self._log_audit("chroot_copy", binary, link)
 
-            # Copy /etc essentials for basic shell functionality
-            for subdir in ("etc", "lib", "lib64", "usr/lib", "usr/lib64"):
-                src = f"/{subdir}"
-                dst = os.path.join(jail_dir, subdir)
-                if os.path.isdir(src) and not os.path.isdir(dst):
+            # Copy only essential /etc files for basic shell functionality
+            etc_essentials = ("resolv.conf", "hosts", "passwd", "group", "nsswitch.conf")
+            for fname in etc_essentials:
+                src = os.path.join("/etc", fname)
+                dst = os.path.join(jail_dir, "etc", fname)
+                if os.path.isfile(src):
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
                     try:
-                        shutil.copytree(src, dst, symlinks=True, dirs_exist_ok=True)
+                        shutil.copy2(src, dst)
                     except (OSError, shutil.Error) as exc:
                         self._log_audit("chroot_copy_warn", src, str(exc))
+
+            # Copy only the specific symlinks needed for shared libs
+            lib_basenames = ("libc.so", "libm.so", "libpthread.so", "libdl.so",
+                             "ld-linux-x86-64.so", "libstdc++.so", "libresolv.so")
+            for basename in lib_basenames:
+                for lib_dir in ("/lib", "/lib64", "/usr/lib", "/usr/lib64"):
+                    src = os.path.join(lib_dir, basename)
+                    if os.path.exists(src) or os.path.islink(src):
+                        link = os.path.join(jail_dir, lib_dir, basename)
+                        os.makedirs(os.path.dirname(link), exist_ok=True)
+                        try:
+                            shutil.copy2(src, link, follow_symlinks=False)
+                        except (OSError, shutil.Error) as exc:
+                            self._log_audit("chroot_copy_warn", src, str(exc))
 
             self._log_audit("chroot_setup", jail_dir, "ok")
             logger.info("chroot: jail prepared at %s", jail_dir)
