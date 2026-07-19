@@ -14,15 +14,17 @@
 
 ---
 
-## What's New (v4.0.0)
+## What's New (v4.1.0)
 
+- **Tool Governance** — 5-tier permission system (NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS) for all 51 tools
+- **TokenJuice Compressor** — Content-aware output compression (JSON 80%, HTML 96%, Logs 81% smaller)
+- **Sandbox** — Landlock/Docker/chroot jail confinement for tool subprocesses
+- **Model Router** — Auto-selects best AI model per task type (scan, exploit, report, code, chat)
+- **Encrypted Secrets** — Fernet (AES-CBC) encrypted API keys with PBKDF2 key derivation
+- **Model Council** — Multi-model deliberation with weighted voting for critical decisions
+- **Memory Tree** — Hierarchical summary tree for large tool outputs
 - **Agent Intelligence Layer** — Structured plan, act, reflect, adapt loop
-- **Knowledge Graph** — SQLite-backed entities + relationships (hosts, ports, services, technologies, vulnerabilities, credentials)
-- **13 Orchestration Tools** — `engage_init`, `plan_create`, `plan_next`, `entity_save`, `decide`, and more
-- **Post-Tool Reflection** — Auto-extracts entities from nmap, whatweb, nuclei, hydra, sqlmap output
-- **Dynamic Plan Expansion** — Plans evolve as discoveries are made (found WordPress -> add WPScan task)
-- **Decision Logging** — Records reasoning for every approach change
-- **Stealth Browsing** — Anti-bot-detection browser with Cloudflare bypass
+- **Knowledge Graph** — SQLite-backed entities + relationships
 - **65 Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
 
 ---
@@ -96,10 +98,69 @@ Credential (admin:pass) -- authenticated_with --> Service (Apache)
 | **Reconnaissance** | 8 tools | Nmap, DNSRecon, Subfinder, Masscan, Amass, Whois, TheHarvester, WhatWeb |
 | **Scanning** | 17 tools | Nuclei, Gobuster, Feroxbuster, FFUF, Nikto, WPScan, Burp Suite, and more |
 | **Exploitation** | 13 tools | SQLMap, Hydra, Metasploit, Responder, Impacket, custom exploit chains |
-| **Active Directory** | 4 tools | BloodHound, Certipy, CrackMapExec, Kerbrute |
+| **Active Directory** | 6 tools | BloodHound, Certipy, CrackMapExec, Kerbrute, Impacket |
 | **Browsing** | 1 tool | Stealth web browsing with anti-bot-detection |
 | **Orchestration** | 13 tools | Engagement, planning, knowledge graph, decisions |
 | **Utility** | 9 tools | Findings, journal, reporting, delegation |
+
+### Tool Governance
+
+Every tool has a formal permission level and metadata:
+
+```python
+from plugins.ares.tools import PermissionLevel, get_tool_permission, ToolCategory
+
+# 5-tier permission system
+# NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS
+
+perm, ext, cat, timeout = get_tool_permission("nmap_scan")
+# PermissionLevel.EXECUTE, False, ToolCategory.RECON, 600
+
+perm, ext, cat, timeout = get_tool_permission("sqlmap_scan")
+# PermissionLevel.DANGEROUS, True, ToolCategory.EXPLOITATION, 900
+```
+
+| Permission | Tools | What It Means |
+|-----------|-------|---------------|
+| `READ_ONLY` | whois, wafw00f, msf_search, findings_query | No side effects |
+| `WRITE` | findings_save, findings_update, journal_* | Writes to local DB/files |
+| `EXECUTE` | nmap, nuclei, gobuster, feroxbuster | Runs system commands |
+| `DANGEROUS` | sqlmap, hydra, msf_exec, bloodhound, crackmapexec | Exploitation, credential attacks |
+
+### Token Compression (TokenJuice)
+
+Content-aware compression before output hits the AI context window:
+
+| Content Type | Rule | Savings |
+|-------------|------|---------|
+| JSON | Strip nulls/empties, compact whitespace, collapse arrays | ~80% |
+| HTML | Strip tags/scripts, keep text content | ~96% |
+| Logs | Collapse repeated lines into count summary | ~81% |
+| Code | Remove common indentation, leading blanks | ~20% |
+| XML | Remove comments, collapse empty elements | ~30% |
+
+### Sandbox Confinement
+
+Tool subprocesses run in a jail with filesystem restrictions:
+
+| Method | When Used | Security |
+|--------|-----------|----------|
+| Landlock LSM | Linux 5.13+ kernels | Kernel-enforced, least privilege |
+| Docker | Docker daemon running | Container isolation, no network |
+| chroot | Fallback | Basic filesystem isolation |
+| none | Last resort | Logs warning, runs unconfined |
+
+### Model Routing
+
+Auto-selects the best AI model based on task type:
+
+| Task | Preferred Capabilities | Example Models |
+|------|----------------------|----------------|
+| Scan | TOOL_USE + FAST | qwen-local, gpt-4o-mini |
+| Exploit | TOOL_USE + REASONING | claude-sonnet, gpt-4o |
+| Report | CHAT + CHEAP | gpt-4o-mini, local |
+| Code | CODE + TOOL_USE | claude-sonnet, gpt-4o |
+| Chat | CHAT + FAST + CHEAP | qwen-local, gpt-4o-mini |
 
 ### Stealth Browsing
 
@@ -230,26 +291,33 @@ cyberfox/
 ├── agent/                  # Core agent logic
 ├── cyberfox_cli/           # CLI interface
 ├── plugins/
-│   └── ares/               # Cybersecurity plugin (v4.0.0)
+│   └── ares/               # Cybersecurity plugin (v4.1.0)
 │       ├── state/          # Engagement state + knowledge graph
 │       │   ├── models.py       # Entity, Relationship, PlanTask dataclasses
 │       │   └── engagement_store.py  # SQLite CRUD
 │       ├── hooks/          # Auto-reflection + event bus
 │       │   └── reflection.py   # Post-tool entity extraction
 │       ├── tools/
+│       │   ├── permission.py   # 5-tier permission system + tool governance
+│       │   ├── tokenjuice.py   # Content-aware token compressor
+│       │   ├── sandbox.py      # Landlock/Docker/chroot jail
+│       │   ├── router.py       # Task-based model routing
+│       │   ├── secrets.py      # Fernet-encrypted secrets store
+│       │   ├── council.py      # Multi-model deliberation
+│       │   ├── memory_tree.py  # Hierarchical output summaries
 │       │   ├── orchestration/  # 13 orchestration tools
 │       │   ├── recon/          # 8 recon tools
 │       │   ├── scanning/       # 17 scanning tools
 │       │   ├── exploitation/   # 13 exploit tools
-│       │   ├── ad/             # 4 AD tools
+│       │   ├── ad/             # 6 AD tools
 │       │   ├── browsing/       # Stealth browsing
 │       │   └── utility/        # Findings, journal, reports
 │       ├── agents/         # 12 specialist roles
 │       ├── references/     # 14 security reference files
-│       └── safety/         # Scope validation, audit trail
+│       └── safety/         # Permission gating, scope validation, audit trail
 ├── skills/
 │   └── ares/               # 11 expert skills
-└── docs/                   # Documentation
+└── project_info/           # Domain documentation
 ```
 
 ---
@@ -291,10 +359,14 @@ cyberfox/
 
 ## Safety Features
 
+- **Permission Levels** — 5-tier tool governance (NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS)
 - **Scope Validation** — Only targets within authorized scope
-- **Approval Gates** — User confirmation for dangerous operations
-- **Audit Trail** — Complete logging of all actions
+- **Approval Gates** — Dangerous tools require explicit user confirmation
+- **Sandbox Confinement** — Landlock/Docker/chroot jail for tool subprocesses
+- **Encrypted Secrets** — Fernet-encrypted API keys with PBKDF2 derivation
+- **Audit Trail** — Complete logging of all actions with sanitized arguments
 - **Doom Loop Detection** — Prevents infinite retry loops
+- **Token Compression** — Reduces API costs while preserving signal
 - **OPSEC Guidelines** — Phase-appropriate noise levels
 
 ---
