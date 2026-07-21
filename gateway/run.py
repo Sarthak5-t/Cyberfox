@@ -2419,17 +2419,7 @@ def _channel_override_lookup_keys(
     Matches ``resolve_channel_prompt`` semantics: exact thread/channel id first,
     then parent channel/forum id (Discord threads inherit parent overrides).
     """
-    keys: list[str] = []
-    seen: set[str] = set()
-    for key in (chat_id, thread_id, parent_id):
-        if not key:
-            continue
-        sk = str(key)
-        if sk in seen:
-            continue
-        seen.add(sk)
-        keys.append(sk)
-    return keys
+    return list(dict.fromkeys(str(k) for k in (chat_id, thread_id, parent_id) if k))
 
 
 def _get_channel_override(
@@ -14877,72 +14867,6 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                 return f"{prefix}\n\n{user_text}", successful_transcripts
             return prefix, successful_transcripts
         return user_text, successful_transcripts
-
-    async def _dequeue_pending_with_transcription(
-        self,
-        adapter,
-        session_key: str,
-        source,
-    ) -> str | None:
-        """Dequeue a pending queued message, auto-transcribing audio media.
-
-        When a voice/audio message arrives during an active agent run, the
-        adapter stores the event in its pending queue and signals an interrupt
-        (see base.BaseAdapter.handle_message). The adapter path bypasses
-        _handle_message entirely, so the normal STT pipeline at message-receive
-        time never runs.
-
-        This helper fills that gap: when the dequeued event has audio media,
-        we transcribe inline, echo the raw transcript back to the user (same
-        "🎙️" format as the fresh-message path), and return enriched text.
-        Non-audio events fall back to _build_media_placeholder, matching the
-        original _dequeue_pending_text behavior.
-        """
-        event = adapter.get_pending_message(session_key)
-        if not event:
-            return None
-
-        text = event.text or ""
-
-        audio_paths: List[str] = []
-        media_urls = getattr(event, "media_urls", None) or []
-        media_types = getattr(event, "media_types", None) or []
-        for i, path in enumerate(media_urls):
-            mtype = media_types[i] if i < len(media_types) else ""
-            is_audio = (
-                mtype.startswith("audio/")
-                or getattr(event, "message_type", None) in (MessageType.VOICE, MessageType.AUDIO)
-            )
-            if is_audio:
-                audio_paths.append(path)
-
-        if audio_paths:
-            enriched_text, successful_transcripts = await self._enrich_message_with_transcription(
-                text, audio_paths,
-            )
-            # Echo raw transcripts back to the user when configured so voice
-            # interrupts feel identical to fresh voice messages.
-            if successful_transcripts and self._should_echo_stt_transcripts():
-                echo_adapter = self._adapter_for_source(source)
-                echo_meta = {"thread_id": source.thread_id} if source.thread_id else None
-                if echo_adapter:
-                    for tx in successful_transcripts:
-                        try:
-                            await echo_adapter.send(
-                                source.chat_id,
-                                f'🎙️ "{tx}"',
-                                metadata=echo_meta,
-                            )
-                        except Exception as echo_exc:
-                            logger.debug(
-                                "Transcript echo failed (non-fatal): %s", echo_exc,
-                            )
-            return enriched_text or None
-
-        # Non-audio fallback: preserve original _dequeue_pending_text semantics.
-        if not text and media_urls:
-            text = _build_media_placeholder(event)
-        return text or None
 
     def _build_process_event_source(self, evt: dict):
         """Resolve the canonical source for a synthetic background-process event.

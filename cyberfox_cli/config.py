@@ -4539,16 +4539,7 @@ def get_missing_skill_config_vars() -> List[Dict[str, Any]]:
     for var in all_vars:
         # Skill config is stored under skills.config.<logical_key>
         storage_key = f"{SKILL_CONFIG_PREFIX}.{var['key']}"
-        parts = storage_key.split(".")
-        current = config
-        value = None
-        for part in parts:
-            if isinstance(current, dict) and part in current:
-                current = current[part]
-                value = current
-            else:
-                value = None
-                break
+        value = cfg_get(config, *storage_key.split('.'))
         # Missing = key doesn't exist or is empty string
         if value is None or (isinstance(value, str) and not value.strip()):
             missing.append(var)
@@ -4873,6 +4864,24 @@ def _coerce_ssl_verify(value: Any) -> Optional[bool]:
     return None
 
 
+def _match_custom_provider_by_base_url(
+    base_url: str,
+    custom_providers: List[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """Return the first custom_providers entry whose base_url matches, or ``None``.
+
+    Case-insensitive and trailing-slash-insensitive comparison.
+    """
+    target_url = (base_url or "").rstrip("/").lower()
+    for entry in custom_providers:
+        if not isinstance(entry, dict):
+            continue
+        entry_url = (entry.get("base_url") or "").rstrip("/").lower()
+        if entry_url and entry_url == target_url:
+            return entry
+    return None
+
+
 def get_custom_provider_tls_settings(
     base_url: str,
     custom_providers: Optional[List[Dict[str, Any]]] = None,
@@ -4887,27 +4896,17 @@ def get_custom_provider_tls_settings(
     if not base_url or not isinstance(custom_providers, list):
         return {}
 
-    # Case-insensitive compare: elsewhere custom_providers are keyed on a
-    # lowercased base_url (see get_compatible_custom_providers dedup), and
-    # scheme/host are case-insensitive anyway — so a config entry written as
-    # https://Ollama.Example.com/v1 must still match a lowercased runtime
-    # base_url. Exact match after rstrip('/') + lower() (no prefix/substring).
-    target_url = (base_url or "").rstrip("/").lower()
-    for entry in custom_providers:
-        if not isinstance(entry, dict):
-            continue
-        entry_url = (entry.get("base_url") or "").rstrip("/").lower()
-        if not entry_url or entry_url != target_url:
-            continue
-        out: Dict[str, Any] = {}
-        ca = entry.get("ssl_ca_cert")
-        if isinstance(ca, str) and ca.strip():
-            out["ssl_ca_cert"] = ca.strip()
-        verify = _coerce_ssl_verify(entry.get("ssl_verify"))
-        if verify is not None:
-            out["ssl_verify"] = verify
-        return out
-    return {}
+    entry = _match_custom_provider_by_base_url(base_url, custom_providers)
+    if entry is None:
+        return {}
+    out: Dict[str, Any] = {}
+    ca = entry.get("ssl_ca_cert")
+    if isinstance(ca, str) and ca.strip():
+        out["ssl_ca_cert"] = ca.strip()
+    verify = _coerce_ssl_verify(entry.get("ssl_verify"))
+    if verify is not None:
+        out["ssl_verify"] = verify
+    return out
 
 
 def apply_custom_provider_tls_to_client_kwargs(
@@ -4965,15 +4964,10 @@ def get_custom_provider_extra_headers(
     if not base_url or not isinstance(custom_providers, list):
         return {}
 
-    target_url = (base_url or "").rstrip("/").lower()
-    for entry in custom_providers:
-        if not isinstance(entry, dict):
-            continue
-        entry_url = (entry.get("base_url") or "").rstrip("/").lower()
-        if not entry_url or entry_url != target_url:
-            continue
-        return normalize_extra_headers(entry.get("extra_headers"))
-    return {}
+    entry = _match_custom_provider_by_base_url(base_url, custom_providers)
+    if entry is None:
+        return {}
+    return normalize_extra_headers(entry.get("extra_headers"))
 
 
 def apply_custom_provider_extra_headers_to_client_kwargs(
