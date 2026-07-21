@@ -300,15 +300,20 @@ def _normalize_aux_provider(provider: Optional[str]) -> str:
 OMIT_TEMPERATURE: object = object()
 
 
+def _bare_model(model: Optional[str]) -> str:
+    """Strip provider prefix and normalize to lowercase bare model slug."""
+    return (model or "").strip().lower().rsplit("/", 1)[-1]
+
+
 def _is_kimi_model(model: Optional[str]) -> bool:
     """True for any Kimi / Moonshot model that manages temperature server-side."""
-    bare = (model or "").strip().lower().rsplit("/", 1)[-1]
+    bare = _bare_model(model)
     return bare.startswith("kimi-") or bare == "kimi"
 
 
 def _is_arcee_trinity_thinking(model: Optional[str]) -> bool:
     """True for Arcee Trinity Large Thinking (direct or via OpenRouter)."""
-    bare = (model or "").strip().lower().rsplit("/", 1)[-1]
+    bare = _bare_model(model)
     return bare == "trinity-large-thinking"
 
 
@@ -346,7 +351,7 @@ def _is_codex_gpt54_or_gpt55(model: Optional[str], provider: Optional[str] = Non
     prov = (provider or "").strip().lower()
     if prov != "openai-codex":
         return False
-    bare = (model or "").strip().lower().rsplit("/", 1)[-1]
+    bare = _bare_model(model)
     return (
         bare == "gpt-5.4"
         or bare.startswith("gpt-5.4-")
@@ -368,7 +373,7 @@ def _is_codex_spark(model: Optional[str], provider: Optional[str] = None) -> boo
     prov = (provider or "").strip().lower()
     if prov != "openai-codex":
         return False
-    bare = (model or "").strip().lower().rsplit("/", 1)[-1]
+    bare = _bare_model(model)
     return bare == "gpt-5.3-codex-spark"
 
 
@@ -1727,6 +1732,23 @@ def _read_main_provider() -> str:
     return ""
 
 
+def _read_main_model_field(override_global: str, config_key: str) -> str:
+    """Read a field from the main model config, preferring the runtime override."""
+    if isinstance(override_global, str) and override_global.strip():
+        return override_global.strip()
+    try:
+        from cyberfox_cli.config import load_config
+        cfg = load_config()
+        model_cfg = cfg.get("model", {})
+        if isinstance(model_cfg, dict):
+            val = model_cfg.get(config_key, "")
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+    except Exception:
+        pass
+    return ""
+
+
 def _read_main_api_key() -> str:
     """Read the user's main model API key from the runtime override or config.
 
@@ -1740,20 +1762,7 @@ def _read_main_api_key() -> str:
     the main model's credentials instead of falling to ``no-key-required``
     (issue #9318).
     """
-    override = _RUNTIME_MAIN_API_KEY
-    if isinstance(override, str) and override.strip():
-        return override.strip()
-    try:
-        from cyberfox_cli.config import load_config
-        cfg = load_config()
-        model_cfg = cfg.get("model", {})
-        if isinstance(model_cfg, dict):
-            key = model_cfg.get("api_key", "")
-            if isinstance(key, str) and key.strip():
-                return key.strip()
-    except Exception:
-        pass
-    return ""
+    return _read_main_model_field(_RUNTIME_MAIN_API_KEY, "api_key")
 
 
 def _read_main_base_url() -> str:
@@ -1761,20 +1770,7 @@ def _read_main_base_url() -> str:
 
     Same override-then-config pattern as ``_read_main_api_key``.
     """
-    override = _RUNTIME_MAIN_BASE_URL
-    if isinstance(override, str) and override.strip():
-        return override.strip()
-    try:
-        from cyberfox_cli.config import load_config
-        cfg = load_config()
-        model_cfg = cfg.get("model", {})
-        if isinstance(model_cfg, dict):
-            base = model_cfg.get("base_url", "")
-            if isinstance(base, str) and base.strip():
-                return base.strip()
-    except Exception:
-        pass
-    return ""
+    return _read_main_model_field(_RUNTIME_MAIN_BASE_URL, "base_url")
 
 
 def _read_main_api_key_if_same_host(aux_base_url: str) -> str:
@@ -5553,6 +5549,23 @@ def _is_anthropic_compat_endpoint(provider: str, base_url: str) -> bool:
     return "/anthropic" in url_lower
 
 
+def _anthropic_media_block(url_val: str, kind: str, default_media_type: str) -> dict:
+    """Build an Anthropic media block (image/video) from a URL or data URI."""
+    if url_val.startswith("data:"):
+        header, _, b64data = url_val.partition(",")
+        media_type = default_media_type
+        if ":" in header and ";" in header:
+            media_type = header.split(":", 1)[1].split(";", 1)[0]
+        return {
+            "type": kind,
+            "source": {"type": "base64", "media_type": media_type, "data": b64data},
+        }
+    return {
+        "type": kind,
+        "source": {"type": "url", "url": url_val},
+    }
+
+
 def _convert_openai_images_to_anthropic(messages: list) -> list:
     """Convert OpenAI ``image_url``/``video_url`` blocks to Anthropic format.
 
@@ -5573,63 +5586,12 @@ def _convert_openai_images_to_anthropic(messages: list) -> list:
         changed = False
         for block in content:
             if block.get("type") == "image_url":
-                image_url_val = (block.get("image_url") or {}).get("url", "")
-                if image_url_val.startswith("data:"):
-                    # Parse data URI: data:<media_type>;base64,<data>
-                    header, _, b64data = image_url_val.partition(",")
-                    media_type = "image/png"
-                    if ":" in header and ";" in header:
-                        media_type = header.split(":", 1)[1].split(";", 1)[0]
-                    new_content.append({
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": b64data,
-                        },
-                    })
-                else:
-                    # URL-based image
-                    new_content.append({
-                        "type": "image",
-                        "source": {
-                            "type": "url",
-                            "url": image_url_val,
-                        },
-                    })
+                url_val = (block.get("image_url") or {}).get("url", "")
+                new_content.append(_anthropic_media_block(url_val, "image", "image/png"))
                 changed = True
             elif block.get("type") == "video_url":
-                # MiniMax's Anthropic-compatible endpoint expects a "video"
-                # block (not OpenAI's "video_url", and not "input_video").
-                # See https://platform.minimax.io/docs/api-reference/text-anthropic-api
-                # — the Messages-field table lists type="video" (M3 only,
-                # URL/base64/mm_file://). The source shape mirrors the "image"
-                # block: base64 → {type:"base64", media_type, data}, URL →
-                # {type:"url", url}.
-                video_url_val = (block.get("video_url") or {}).get("url", "")
-                if video_url_val.startswith("data:"):
-                    # Parse data URI: data:<media_type>;base64,<data>
-                    header, _, b64data = video_url_val.partition(",")
-                    media_type = "video/mp4"
-                    if ":" in header and ";" in header:
-                        media_type = header.split(":", 1)[1].split(";", 1)[0]
-                    new_content.append({
-                        "type": "video",
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": b64data,
-                        },
-                    })
-                else:
-                    # URL-based video
-                    new_content.append({
-                        "type": "video",
-                        "source": {
-                            "type": "url",
-                            "url": video_url_val,
-                        },
-                    })
+                url_val = (block.get("video_url") or {}).get("url", "")
+                new_content.append(_anthropic_media_block(url_val, "video", "video/mp4"))
                 changed = True
             else:
                 new_content.append(block)

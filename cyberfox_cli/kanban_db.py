@@ -5320,10 +5320,11 @@ def _git_branch_exists(repo_root: Path, branch_name: str) -> bool:
     return result.returncode == 0
 
 
-def _git_common_dir(path: Path) -> Optional[Path]:
+def _git_rev_parse_path(path: Path, flag: str) -> Optional[Path]:
+    """Run ``git rev-parse`` with *flag* and return the resolved path, or ``None``."""
     try:
         result = subprocess.run(
-            ["git", "-C", str(path), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            ["git", "-C", str(path), "rev-parse", "--path-format=absolute", flag],
             capture_output=True,
             text=True,
             timeout=30,
@@ -5337,25 +5338,14 @@ def _git_common_dir(path: Path) -> Optional[Path]:
     if not out:
         return None
     return Path(out).expanduser().resolve(strict=False)
+
+
+def _git_common_dir(path: Path) -> Optional[Path]:
+    return _git_rev_parse_path(path, "--git-common-dir")
 
 
 def _git_dir(path: Path) -> Optional[Path]:
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(path), "rev-parse", "--path-format=absolute", "--git-dir"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-    except Exception:
-        return None
-    if result.returncode != 0:
-        return None
-    out = (result.stdout or "").strip()
-    if not out:
-        return None
-    return Path(out).expanduser().resolve(strict=False)
+    return _git_rev_parse_path(path, "--git-dir")
 
 
 def _git_current_branch(path: Path) -> Optional[str]:
@@ -8130,6 +8120,18 @@ def build_worker_context(conn: sqlite3.Connection, task_id: str) -> str:
 # Stats + SLA helpers
 # ---------------------------------------------------------------------------
 
+def _counts_by_assignee_status(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
+    """Return per-assignee, per-status task counts (excluding archived)."""
+    counts: dict[str, dict[str, int]] = {}
+    for row in conn.execute(
+        "SELECT assignee, status, COUNT(*) AS n FROM tasks "
+        "WHERE status != 'archived' AND assignee IS NOT NULL "
+        "GROUP BY assignee, status"
+    ):
+        counts.setdefault(row["assignee"], {})[row["status"]] = int(row["n"])
+    return counts
+
+
 def board_stats(conn: sqlite3.Connection) -> dict:
     """Per-status + per-assignee counts, plus the oldest ``ready`` age in
     seconds (the clearest staleness signal for a router or HUD).
@@ -8141,13 +8143,7 @@ def board_stats(conn: sqlite3.Connection) -> dict:
     ):
         by_status[row["status"]] = int(row["n"])
 
-    by_assignee: dict[str, dict[str, int]] = {}
-    for row in conn.execute(
-        "SELECT assignee, status, COUNT(*) AS n FROM tasks "
-        "WHERE status != 'archived' AND assignee IS NOT NULL "
-        "GROUP BY assignee, status"
-    ):
-        by_assignee.setdefault(row["assignee"], {})[row["status"]] = int(row["n"])
+    by_assignee = _counts_by_assignee_status(conn)
 
     oldest_row = conn.execute(
         "SELECT MIN(created_at) AS ts FROM tasks WHERE status = 'ready'"
@@ -8573,13 +8569,7 @@ def known_assignees(conn: sqlite3.Connection) -> list[dict]:
     on_disk = set(list_profiles_on_disk())
 
     # Count tasks per (assignee, status), excluding archived.
-    counts: dict[str, dict[str, int]] = {}
-    for row in conn.execute(
-        "SELECT assignee, status, COUNT(*) AS n FROM tasks "
-        "WHERE status != 'archived' AND assignee IS NOT NULL "
-        "GROUP BY assignee, status"
-    ):
-        counts.setdefault(row["assignee"], {})[row["status"]] = int(row["n"])
+    counts = _counts_by_assignee_status(conn)
 
     names = sorted(on_disk | set(counts.keys()))
     return [

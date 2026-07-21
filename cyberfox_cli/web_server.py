@@ -759,9 +759,7 @@ def _infer_type(value: Any) -> str:
     """Infer a UI field type from a Python value."""
     if isinstance(value, bool):
         return "boolean"
-    if isinstance(value, int):
-        return "number"
-    if isinstance(value, float):
+    if isinstance(value, (int, float)):
         return "number"
     if isinstance(value, list):
         return "list"
@@ -12291,23 +12289,7 @@ def _ws_client_is_allowed(ws: "WebSocket") -> bool:
     Host/Origin guard in :func:`_ws_host_origin_is_allowed` is what
     blocks DNS-rebinding here, not the peer IP.
     """
-    if getattr(app.state, "auth_required", False):
-        return True
-    # Any explicit non-loopback bind (0.0.0.0, ::, or a specific LAN /
-    # Tailscale address) means the operator opted into non-loopback
-    # access via --insecure.  The loopback-only peer gate only applies to
-    # an actual loopback bind; otherwise the WS handshake is rejected even
-    # though same-bind HTTP requests pass _is_accepted_host.
-    bound_host = (getattr(app.state, "bound_host", "") or "").strip().lower()
-    if bound_host and bound_host not in _LOOPBACK_HOSTS:
-        return True
-    client_host = ws.client.host if ws.client else ""
-    if not client_host:
-        # Fail-closed: see _ws_client_reason for rationale. An empty
-        # client_host on a loopback-bound dashboard with auth disabled
-        # must be rejected, not accepted as a default-allow.
-        return False
-    return client_host in _LOOPBACK_HOSTS
+    return _ws_client_reason(ws) is None
 
 
 def _ws_host_origin_reason(ws: "WebSocket") -> Optional[str]:
