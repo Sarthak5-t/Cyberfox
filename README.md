@@ -2,21 +2,53 @@
 
 <p align="center">
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-4.0.0-blue?style=for-the-badge" alt="Version"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-65-red?style=for-the-badge" alt="Tools"></a>
+  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-4.2.0-blue?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-74-red?style=for-the-badge" alt="Tools"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Platform-Kali%20Linux-purple?style=for-the-badge" alt="Platform"></a>
 </p>
 
 <p align="center">
-  <b>Elite cybersecurity operations agent</b> with 65 tools, knowledge graph, autonomous orchestration, and stealth browsing.
+  <b>Elite cybersecurity operations agent</b> with 74 tools, bug bounty pipeline, agentic AI, knowledge graph, and stealth browsing.
 </p>
 
 ---
 
-## What's New (v4.1.0)
+## What's New (v4.2.0)
 
-- **Tool Governance** — 5-tier permission system (NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS) for all 51 tools
+### Bug Bounty Integration Layer (NEW)
+- **9 Bug Bounty Modules** — Rate limiter, scope enforcer, OPSEC, WAF advisor, proxy manager, auth handler, vuln validator, orchestrator, HackerOne API
+- **Full Kill-Chain Pipeline** — 9-stage automated pipeline: recon → probe → port → WAF detect → vuln scan → crawl → inject → validate → report
+- **Rate Limiting** — Token bucket with per-target tracking, ban detection, exponential backoff
+- **Scope Enforcement** — Hard boundary with wildcard, CIDR, URL, and exclusion support
+- **WAF Detection** — 13 WAF signatures with automatic scan strategy adjustment
+- **Proxy Rotation** — Round-robin with health tracking, Tor support, and automatic failover
+- **Auth Management** — Form/basic/bearer/API key login with CSRF capture and session persistence
+- **Vuln Validation** — Replay + false positive filtering + retest with alternate payloads
+- **HackerOne API** — Authenticated report submission, scope lookup, attachments
+
+### Agentic AI System (NEW)
+- **Agent Lifecycle** — Creation, execution, monitoring, and termination
+- **Inter-Agent Communication** — Message bus with publish/subscribe
+- **Task Routing** — Automatic classification and specialist assignment
+- **Checkpoint System** — Save/restore agent state for long-running operations
+- **Working Memory** — Short-term LRU cache for active context
+- **Episodic Memory** — Event recording and retrieval
+- **Semantic Memory** — Knowledge store with vector similarity search
+- **Procedural Memory** — Procedure storage and replay
+- **Long-Term Memory** — Persistent learning across sessions
+- **Skill Hub** — Dynamic skill registration, scoring, and versioning
+- **Adaptive Thinking** — Strategy selection based on complexity estimation
+- **Reasoning Chains** — Multi-step logical reasoning
+- **Context-Aware Planning** — Dynamic plan generation and adaptation
+- **Decision Framework** — Evidence-based decision making with confidence tracking
+- **Process Management** — Process spawning, monitoring, and cleanup
+- **Enhanced Shell** — Command execution with history and aliasing
+- **Security Sandbox** — Filesystem/network confinement for tool execution
+- **System Monitor** — CPU, memory, disk, and network monitoring
+
+### Previous Features
+- **Tool Governance** — 5-tier permission system (NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS) for all 74 tools
 - **TokenJuice Compressor** — Content-aware output compression (JSON 80%, HTML 96%, Logs 81% smaller)
 - **Sandbox** — Landlock/Docker/chroot jail confinement for tool subprocesses
 - **Model Router** — Auto-selects best AI model per task type (scan, exploit, report, code, chat)
@@ -25,7 +57,7 @@
 - **Memory Tree** — Hierarchical summary tree for large tool outputs
 - **Agent Intelligence Layer** — Structured plan, act, reflect, adapt loop
 - **Knowledge Graph** — SQLite-backed entities + relationships
-- **65 Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
+- **74 Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
 
 ---
 
@@ -101,6 +133,8 @@ Credential (admin:pass) -- authenticated_with --> Service (Apache)
 | **Active Directory** | 6 tools | BloodHound, Certipy, CrackMapExec, Kerbrute, Impacket |
 | **Browsing** | 1 tool | Stealth web browsing with anti-bot-detection |
 | **Orchestration** | 13 tools | Engagement, planning, knowledge graph, decisions |
+| **Bug Bounty** | 9 modules | Rate limiter, scope enforcer, OPSEC, WAF advisor, proxy, auth, validator, orchestrator, HackerOne |
+| **Agentic AI** | 16 modules | Agents, memory, skills, reasoning, OS interaction |
 | **Utility** | 9 tools | Findings, journal, reporting, delegation |
 
 ### Tool Governance
@@ -203,6 +237,24 @@ The `browse_autonomously` tool opens a real Chromium browser with:
 | **AD Attacks** | Escalate to Domain Admin | BloodHound, Kerberoast, Certipy |
 | **Reporting** | Deliver actionable findings | Findings DB, CVSS scoring, Reports |
 
+### Bug Bounty Pipeline
+
+```
+PASSIVE_RECON -> LIVE_PROBE -> PORT_SCAN -> WAF_DETECT -> VULN_SCAN -> CRAWL -> INJECT -> VALIDATE -> REPORT
+```
+
+| Stage | What Runs | Safety Layer |
+|-------|-----------|--------------|
+| **Passive Recon** | subfinder, dig, curl probe | Scope check, rate limit |
+| **Live Probe** | nmap service scan | Rate limit, jitter |
+| **Port Scan** | nmap full port scan | Rate limit, jitter |
+| **WAF Detect** | wafw00f / heuristic | Adjusts all downstream params |
+| **Vuln Scan** | nuclei templates | Rate limit, proxy, tamper |
+| **Crawl** | feroxbuster dirs | Rate limit, proxy |
+| **Inject** | sqlmap, XSS/CMDi probes | Scope check, rate limit, auth |
+| **Validate** | Replay + FP filter | False positive removal |
+| **Report** | Markdown + JSON | Findings database |
+
 ---
 
 ## Installation
@@ -254,6 +306,68 @@ cyberfox update             # Update to latest version
 cyberfox doctor             # Diagnose issues
 ```
 
+### Bug Bounty Pipeline
+
+```python
+from plugins.ares.bugbounty import get_orchestrator, get_scope_enforcer
+
+# Configure scope
+scope = get_scope_enforcer()
+scope.set_scope(["*.example.com", "10.0.0.0/8"], ["staging.example.com"])
+
+# Run full pipeline
+orch = get_orchestrator()
+result = orch.run(
+    target="app.example.com",
+    max_rps=10.0,  # Respect program rules
+)
+
+# Results
+print(f"Findings: {result['findings_count']}")
+print(f"Stages: {result['stages_completed']}")
+for finding in result["findings"]:
+    print(f"  [{finding['severity']}] {finding['title']}")
+```
+
+### Individual Modules
+
+```python
+# Rate limiting
+from plugins.ares.bugbounty import get_rate_limiter
+rl = get_rate_limiter()
+rl.configure_for_program(max_rps=5.0)  # HackerOne program limit
+rl.wait_if_needed("target.com")
+rl.report_response("target.com", 429)  # Auto-backoff
+
+# WAF detection + strategy
+from plugins.ares.bugbounty import get_waf_advisor
+waf = get_waf_advisor()
+result = waf.detect("https://target.com")
+strategy = waf.get_strategy(result)
+# strategy.rate_limit = 3.0, strategy.use_proxy = True, etc.
+
+# Auth management
+from plugins.ares.bugbounty import get_auth_handler
+auth = get_auth_handler()
+auth.login_form("target.com", "https://target.com/login",
+                "admin", "password123")
+headers = auth.get_auth_headers("target.com")
+
+# Vuln validation
+from plugins.ares.bugbounty import get_vuln_validator, Finding
+validator = get_vuln_validator()
+finding = Finding(title="SQL Injection", severity="critical",
+                  target="target.com", url="http://target.com?id=1' OR 1=1--")
+result = validator.validate(finding)
+# result.confirmed = True, result.confidence = 0.85
+
+# HackerOne submission
+from plugins.ares.bugbounty import get_hackerone
+h1 = get_hackerone()
+h1.authenticate()
+h1.create_report("program-handle", report)
+```
+
 ### Autonomous Engagement
 
 ```bash
@@ -291,12 +405,28 @@ cyberfox/
 ├── agent/                  # Core agent logic
 ├── cyberfox_cli/           # CLI interface
 ├── plugins/
-│   └── ares/               # Cybersecurity plugin (v4.1.0)
+│   └── ares/               # Cybersecurity plugin (v4.2.0)
 │       ├── state/          # Engagement state + knowledge graph
 │       │   ├── models.py       # Entity, Relationship, PlanTask dataclasses
 │       │   └── engagement_store.py  # SQLite CRUD
 │       ├── hooks/          # Auto-reflection + event bus
 │       │   └── reflection.py   # Post-tool entity extraction
+│       ├── agentic.py      # Unified API for all agentic + bug bounty capabilities
+│       ├── agents/         # Agent lifecycle, communication, routing, checkpointing
+│       ├── memory/         # Working, episodic, semantic, procedural, longterm memory
+│       ├── skills/         # Skill hub, scoring, learning, versioning
+│       ├── reasoning/      # Adaptive thinking, chains, planning, decisions
+│       ├── os_interaction/ # Process management, shell, sandbox, monitoring
+│       ├── bugbounty/      # Bug bounty integration layer
+│       │   ├── rate_limiter.py     # Token bucket + ban detection
+│       │   ├── scope_enforcer.py   # Hard boundary enforcement
+│       │   ├── opsec.py            # UA rotation, headers, jitter
+│       │   ├── waf_advisor.py      # WAF detection + strategy
+│       │   ├── proxy_manager.py    # Tor + proxy rotation
+│       │   ├── auth_handler.py     # Session management
+│       │   ├── vuln_validator.py   # Finding confirmation
+│       │   ├── orchestrator.py     # 9-stage pipeline engine
+│       │   └── platform_api.py     # HackerOne integration
 │       ├── tools/
 │       │   ├── permission.py   # 5-tier permission system + tool governance
 │       │   ├── tokenjuice.py   # Content-aware token compressor
@@ -360,7 +490,7 @@ cyberfox/
 ## Safety Features
 
 - **Permission Levels** — 5-tier tool governance (NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS)
-- **Scope Validation** — Only targets within authorized scope
+- **Scope Validation** — Only targets within authorized scope (wildcard/CIDR/URL/exclusions)
 - **Approval Gates** — Dangerous tools require explicit user confirmation
 - **Sandbox Confinement** — Landlock/Docker/chroot jail for tool subprocesses
 - **Encrypted Secrets** — Fernet-encrypted API keys with PBKDF2 derivation
@@ -368,6 +498,10 @@ cyberfox/
 - **Doom Loop Detection** — Prevents infinite retry loops
 - **Token Compression** — Reduces API costs while preserving signal
 - **OPSEC Guidelines** — Phase-appropriate noise levels
+- **Rate Limiting** — Token bucket with per-target tracking and ban detection
+- **WAF Awareness** — Auto-adjusts scan speed and evasion when WAF detected
+- **Proxy Rotation** — IP rotation with health tracking and Tor support
+- **Vulnerability Validation** — False positive filtering before report submission
 
 ---
 
