@@ -1,5 +1,30 @@
 from __future__ import annotations
 
+from plugins.ares.agents.lifecycle import (
+    AgentLifecycleManager,
+    AgentState,
+    AgentContext,
+    get_lifecycle_manager,
+)
+from plugins.ares.agents.communication import (
+    AgentCommunicationBus,
+    CoordinationManager,
+    MessageType,
+    MessagePriority,
+    get_communication_bus,
+    get_coordination_manager,
+)
+from plugins.ares.agents.router import (
+    TaskSpecializationRouter,
+    TaskType,
+    TaskPriority,
+    get_router,
+)
+from plugins.ares.agents.checkpoint import (
+    AgentCheckpointManager,
+    get_checkpoint_manager,
+)
+
 AGENT_DEFINITIONS = {
     "pentester": {
         "name": "Pentester",
