@@ -226,6 +226,13 @@ ARES_TOOL_PERMISSIONS: dict[str, tuple[PermissionLevel, bool, ToolCategory, int 
     "journal_write":      (PermissionLevel.WRITE, False, ToolCategory.UTILITY, 30),
     "journal_read":       (PermissionLevel.READ_ONLY, False, ToolCategory.UTILITY, 30),
     "ares_delegate":      (PermissionLevel.DANGEROUS, True, ToolCategory.UTILITY, 600),
+
+    # Swarm — dangerous, external effect
+    "swarm_dispatch":     (PermissionLevel.DANGEROUS, True, ToolCategory.UTILITY, 1800),
+
+    # CVE Enrichment — read-only, no external effect
+    "cve_enrich":         (PermissionLevel.READ_ONLY, False, ToolCategory.UTILITY, 30),
+    "enrichment_stats":   (PermissionLevel.READ_ONLY, False, ToolCategory.UTILITY, 30),
 }
 
 

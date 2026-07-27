@@ -55,11 +55,28 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
+def _run_migrations(conn):
+    current = conn.execute("PRAGMA user_version").fetchone()[0]
+    if current < 2:
+        try:
+            conn.execute("ALTER TABLE findings ADD COLUMN cwe TEXT DEFAULT ''")
+            conn.execute("ALTER TABLE findings ADD COLUMN epss REAL")
+            conn.execute("ALTER TABLE findings ADD COLUMN kev INTEGER DEFAULT 0")
+            conn.execute("ALTER TABLE findings ADD COLUMN attack_techniques TEXT DEFAULT '[]'")
+            conn.execute("ALTER TABLE findings ADD COLUMN priority_score REAL")
+            conn.execute("ALTER TABLE findings ADD COLUMN priority_tier TEXT DEFAULT ''")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_findings_cve ON findings(cve)")
+        except sqlite3.OperationalError:
+            pass
+        conn.execute("PRAGMA user_version = 2")
+
+
 def init_db() -> None:
     with _LOCK:
         conn = _connect()
         try:
             conn.executescript(_SCHEMA_SQL)
+            _run_migrations(conn)
             conn.commit()
         finally:
             conn.close()
@@ -78,6 +95,12 @@ def add_finding(
     tool: Optional[str] = None,
     cve: Optional[str] = None,
     cvss: Optional[float] = None,
+    cwe: Optional[list[str]] = None,
+    epss: Optional[float] = None,
+    kev: bool = False,
+    attack_techniques: Optional[list[str]] = None,
+    priority_score: Optional[float] = None,
+    priority_tier: Optional[str] = None,
     tags: Optional[list[str]] = None,
 ) -> int:
     severity = severity.lower().strip()
@@ -92,11 +115,15 @@ def add_finding(
                 """INSERT INTO findings
                    (title, severity, category, target, port, protocol,
                     description, evidence, remediation, tool, cve, cvss,
+                    cwe, epss, kev, attack_techniques, priority_score, priority_tier,
                     tags, created_at, updated_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     title, severity, category, target, port, protocol,
                     description, evidence, remediation, tool, cve, cvss,
+                    json.dumps(cwe or []), epss, int(kev),
+                    json.dumps(attack_techniques or []),
+                    priority_score, priority_tier or "",
                     json.dumps(tags or []), now, now,
                 ),
             )
@@ -111,6 +138,7 @@ def query_findings(
     status: Optional[str] = None,
     category: Optional[str] = None,
     target: Optional[str] = None,
+    cve: Optional[str] = None,
     limit: int = 50,
 ) -> list[dict]:
     clauses = []
@@ -130,6 +158,9 @@ def query_findings(
     if target:
         clauses.append("target LIKE ?")
         params.append(f"%{target}%")
+    if cve:
+        clauses.append("cve = ?")
+        params.append(cve)
 
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
 

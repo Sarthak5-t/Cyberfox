@@ -111,6 +111,47 @@ Use `ares_delegate` to parallelize work:
 - Use `/bg <prompt>` for long-running background tasks
 - Delegated tasks inherit scope validation
 
+## Swarm Mode
+
+For comprehensive assessments, use the swarm for parallel execution:
+
+```
+skill_view("ares/swarm")
+```
+
+**When to use swarm vs sequential:**
+- Single target, simple scope → sequential (lead skill)
+- Multiple services, time-critical → swarm (swarm skill)
+- Large network, broad coverage → swarm with `parallel_full`
+- Sensitive environment → swarm with `stealth`
+
+## CVE Enrichment (Automatic)
+
+When nuclei or searchsploit discovers CVEs, they are automatically enriched with:
+
+- **NVD data**: CVSS score, CWE, CPE, description
+- **EPSS score**: Exploitation probability in the wild (0-1)
+- **CISA KEV status**: Actively exploited? Ransomware campaign?
+- **MITRE ATT&CK**: Technique mapping from CWE
+- **Priority score**: Argus-agent formula (0-100, lower = more urgent)
+
+Enriched data is available in:
+- Entity store (engagement.db) — vulnerability entities with enriched data
+- findings.db — auto-populated with enrichment columns
+- Enrichment cache — `~/.cyberfox/ares/enrichment_cache.db` (24h TTL)
+
+### Manual Enrichment
+Use `cve_enrich` tool to manually enrich a specific CVE:
+```
+cve_enrich(cve_id="CVE-2024-1234")
+```
+
+### Enrichment Statistics
+Use `enrichment_stats` to see cache stats and top-priority CVEs:
+```
+enrichment_stats(top_n=10)
+```
+
 ## Risk Assessment Framework
 
 For each finding, assess:

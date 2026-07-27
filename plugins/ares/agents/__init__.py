@@ -69,8 +69,38 @@ AGENT_DEFINITIONS = {
     },
     "malware_analyst": {
         "name": "Malware Analyst",
-        "description": "Malware reverse engineering specialist. Analyzes malware samples, extracts IOCs, and provides threat intelligence.",
+        "description": "Reverse engineer malware samples, identify IOCs, and develop detection signatures.",
         "allowed_toolsets": ["ares_recon", "ares_scanning", "ares_utility"],
+        "allowed_targets": None,
+    },
+    "swarm_recon": {
+        "name": "Swarm Recon Agent",
+        "description": "Port scanning, DNS enumeration, subdomain discovery, and service fingerprinting for swarm operations.",
+        "allowed_toolsets": ["ares_recon"],
+        "allowed_targets": None,
+    },
+    "swarm_web": {
+        "name": "Swarm Web Agent",
+        "description": "Web vulnerability scanning, directory enumeration, WAF detection, and CMS scanning for swarm operations.",
+        "allowed_toolsets": ["ares_scanning"],
+        "allowed_targets": None,
+    },
+    "swarm_network": {
+        "name": "Swarm Network Agent",
+        "description": "Network-level scanning including SMB enumeration, SNMP, and protocol analysis for swarm operations.",
+        "allowed_toolsets": ["ares_scanning"],
+        "allowed_targets": None,
+    },
+    "swarm_ad": {
+        "name": "Swarm AD Agent",
+        "description": "Active Directory enumeration, Kerberoasting, BloodHound, and certificate abuse for swarm operations.",
+        "allowed_toolsets": ["ares_scanning", "ares_ad"],
+        "allowed_targets": None,
+    },
+    "swarm_exploit": {
+        "name": "Swarm Exploit Agent",
+        "description": "Exploitation and credential attacks for swarm operations.",
+        "allowed_toolsets": ["ares_exploit", "ares_scanning"],
         "allowed_targets": None,
     },
 }

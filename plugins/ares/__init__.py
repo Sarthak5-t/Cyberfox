@@ -71,6 +71,9 @@ def _register_tools(ctx) -> None:
     from plugins.ares.tools.orchestration import plan_tool
     from plugins.ares.tools.orchestration import entity_tool
     from plugins.ares.tools.orchestration import decide_tool
+    from plugins.ares.tools.orchestration import swarm
+    from plugins.ares.enrichment import tool_wrapper as cve_enrich_tool
+    from plugins.ares.enrichment import stats_tool as enrichment_stats_tool
 
     _TOOL_MODULES = [
         nmap_tool, dnsrecon_tool, subfinder_tool, masscan_tool, amass_tool,
@@ -85,6 +88,7 @@ def _register_tools(ctx) -> None:
         bloodhound_tool, certipy_tool, crackmapexec_tool, kerbrute_tool,
         report_tool, findings_tool, journal_tool, browse_autonomously, orchestrator,
         engage_tool, plan_tool, entity_tool, decide_tool,
+        swarm, cve_enrich_tool, enrichment_stats_tool,
     ]
 
     for mod in _TOOL_MODULES:

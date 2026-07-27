@@ -189,7 +189,7 @@ All tools return JSON. Common fields: `success`, `data`, `error`.
 ### Utility (`ares_utility`)
 | Tool | Key Params |
 |---|---|
-| `findings_save` | `title`, `severity`, `category`, `target`, `port`, `protocol`, `evidence`, `remediation`, `tool`, `cve`, `cvss`, `tags` |
+| `findings_save` | `title`, `severity`, `category`, `target`, `port`, `protocol`, `evidence`, `remediation`, `tool`, `cve`, `cvss`, `cwe`, `epss`, `kev`, `attack_techniques`, `priority_score`, `priority_tier`, `tags` |
 | `findings_query` | `severity`, `category`, `target`, `status`, `limit` |
 | `findings_update` | `finding_id`, `status` |
 | `findings_stats` | (none) |
@@ -197,6 +197,9 @@ All tools return JSON. Common fields: `success`, `data`, `error`.
 | `journal_write` | `category`, `content`, `target` |
 | `journal_read` | `last_n`, `search` |
 | `ares_delegate` | `role`, `action`, `goal`, `context` |
+| `swarm_dispatch` | `target`, `strategy` (recon_first/parallel_full/stealth/aggressive), `max_agents`, `focus` |
+| `cve_enrich` | `cve_id` |
+| `enrichment_stats` | `top_n` |
 
 ### Browsing (`ares_browsing`)
 | Tool | Key Params |

@@ -34,6 +34,8 @@ class AresConfig:
         self.safety_require_exploit_approval: bool = False
         self.safety_log_all_commands: bool = True
         self.scope_file: str = "scope.yaml"
+        self.nvd_api_key: str = ""
+        self.enrichment_enabled: bool = True
 
     def load(self) -> None:
         config_path = self.home / "profiles" / "ares" / "config.yaml"
@@ -53,6 +55,8 @@ class AresConfig:
                 self.safety_doom_loop_threshold = safety.get("doom_loop_threshold", 5)
                 self.safety_require_exploit_approval = safety.get("require_exploit_approval", False)
                 self.safety_log_all_commands = safety.get("log_all_commands", True)
+                self.nvd_api_key = ares_cfg.get("nvd_api_key", "")
+                self.enrichment_enabled = ares_cfg.get("enrichment_enabled", True)
             except Exception as e:
                 logger.warning("Failed to load Ares config: %s", e)
 

@@ -5,14 +5,34 @@ Both use per-model api_mode routing:
     everything else → chat_completions (this profile)
   - OpenCode Go: MiniMax → anthropic_messages, GLM/Kimi → chat_completions
     (this profile)
+
+Free models: When no API key is configured, Zen uses ``Authorization: Bearer public``
+to access free-tier models (big-pickle, deepseek-v4-flash-free, mimo-v2.5-free, etc.).
+Paid models are disabled in this mode.
 """
 
 from __future__ import annotations
 
+import logging
+import os
 from typing import Any
 
 from providers import register_provider
 from providers.base import ProviderProfile
+
+logger = logging.getLogger(__name__)
+
+# Free models available on Zen without an API key (cost.input === 0)
+_ZEN_FREE_MODELS = frozenset({
+    "big-pickle",
+    "deepseek-v4-flash-free",
+    "mimo-v2.5-free",
+    "laguna-s-2.1-free",
+    "ling-3.0-flash-free",
+    "north-mini-code-free",
+    "nemotron-3-ultra-free",
+    "hy3-free",
+})
 
 
 def _flat_model_name(model: str | None) -> str:
@@ -35,6 +55,30 @@ def _is_glm_5_2_model(model: str | None) -> bool:
     """Detect GLM-5.2 across alias spellings (glm-5.2 / glm-5-2 / glm-5p2)."""
     m = _flat_model_name(model)
     return any(token in m for token in ("glm-5.2", "glm-5-2", "glm-5p2"))
+
+
+class OpenCodeZenProfile(ProviderProfile):
+    """OpenCode Zen — free-tier public access when no API key is set.
+
+    When no OPENCODE_ZEN_API_KEY is configured, this profile uses
+    ``Authorization: Bearer public`` to access free models. Paid models
+    are filtered out in this mode.
+    """
+
+    def fetch_models(
+        self,
+        *,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout: float = 8.0,
+    ) -> list[str] | None:
+        """Fetch model list; use 'public' key for free-tier catalog access."""
+        effective_key = api_key or "public"
+        return super().fetch_models(
+            api_key=effective_key,
+            base_url=base_url,
+            timeout=timeout,
+        )
 
 
 class OpenCodeGoProfile(ProviderProfile):
@@ -127,12 +171,21 @@ class OpenCodeGoProfile(ProviderProfile):
         return extra_body, top_level
 
 
-opencode_zen = ProviderProfile(
+opencode_zen = OpenCodeZenProfile(
     name="opencode-zen",
     aliases=("opencode", "opencode_zen", "zen"),
     env_vars=("OPENCODE_ZEN_API_KEY",),
     base_url="https://opencode.ai/zen/v1",
     default_aux_model="gemini-3-flash",
+    fallback_models=(
+        "opencode/nemotron-3-ultra-free",
+        "opencode/deepseek-v4-flash-free",
+        "opencode/mimo-v2.5-free",
+        "opencode/north-mini-code-free",
+        "opencode/big-pickle",
+        "opencode/laguna-s-2.1-free",
+        "opencode/ling-3.0-flash-free",
+    ),
 )
 
 opencode_go = OpenCodeGoProfile(

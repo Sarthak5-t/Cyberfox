@@ -29,6 +29,12 @@ def _handle_save(args: dict, **kw) -> str:
         tool=args.get("tool"),
         cve=args.get("cve"),
         cvss=args.get("cvss"),
+        cwe=args.get("cwe"),
+        epss=args.get("epss"),
+        kev=args.get("kev", False),
+        attack_techniques=args.get("attack_techniques"),
+        priority_score=args.get("priority_score"),
+        priority_tier=args.get("priority_tier"),
         tags=args.get("tags"),
     )
     return json_result(True, data={"finding_id": fid})
@@ -84,6 +90,20 @@ _SAVE_SCHEMA = {
             "tool": {"type": "string", "description": "Tool that discovered this finding"},
             "cve": {"type": "string", "description": "CVE identifier if applicable"},
             "cvss": {"type": "number", "description": "CVSS 3.1 score"},
+            "cwe": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "CWE weakness identifiers (e.g. ['CWE-89'])",
+            },
+            "epss": {"type": "number", "description": "EPSS exploitation probability (0-1)"},
+            "kev": {"type": "boolean", "description": "Whether in CISA KEV catalog"},
+            "attack_techniques": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "MITRE ATT&CK technique IDs (e.g. ['T1190'])",
+            },
+            "priority_score": {"type": "number", "description": "Priority score (0-100, lower=more urgent)"},
+            "priority_tier": {"type": "string", "description": "Priority tier: CRITICAL, HIGH, MEDIUM, LOW"},
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},

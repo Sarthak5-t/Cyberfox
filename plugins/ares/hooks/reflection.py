@@ -47,6 +47,9 @@ WAF_DETECTED = "waf_detected"
 WORDPRESS_DETECTED = "wordpress_detected"
 TECHNOLOGY_DETECTED = "technology_detected"
 SUBDOMAIN_FOUND = "subdomain_found"
+SWARM_AGENT_STARTED = "swarm_agent_started"
+SWARM_AGENT_COMPLETED = "swarm_agent_completed"
+SWARM_PHASE_READY = "swarm_phase_ready"
 
 
 def _on_http_detected(data: dict) -> None:
@@ -234,6 +237,8 @@ def _extract_nuclei(result: str, args: dict) -> list[dict]:
             if not name.startswith("CVE-"):
                 entities.append({"type": "finding", "name": name,
                                  "data": {"severity": severity, "url": url, "source": "nuclei"}})
+    if entities:
+        _enrich_entities(entities)
     return entities
 
 
@@ -253,6 +258,8 @@ def _extract_searchsploit(result: str, args: dict) -> list[dict]:
     for m in re.finditer(r"(CVE-[\d-]+)", raw):
         entities.append({"type": "vulnerability", "name": m.group(1),
                          "data": {"source": "searchsploit", "query": args.get("query", "")}})
+    if entities:
+        _enrich_entities(entities)
     return entities
 
 
@@ -322,6 +329,50 @@ _EXTRACTORS: dict[str, Callable] = {
     "hydra_brute": _extract_hydra,
     "sqlmap_scan": _extract_sqlmap,
 }
+
+
+def _enrich_entities(entities: list[dict]) -> None:
+    from plugins.ares.config import get_config
+    cfg = get_config()
+    if not cfg.enrichment_enabled or not cfg.nvd_api_key:
+        return
+    try:
+        from plugins.ares.enrichment.pipeline import enrich_cve, init_cache_db
+        from plugins.ares.enrichment.nvd_client import NVDClient
+        from plugins.ares.enrichment.epss_client import EPSSClient
+        from plugins.ares.enrichment.kev_client import KEVClient
+        init_cache_db()
+        nvd = NVDClient(cfg.nvd_api_key)
+        epss = EPSSClient()
+        kev = KEVClient()
+    except Exception as e:
+        logger.warning("Enrichment init failed: %s", e)
+        return
+    for entity in entities:
+        if entity["type"] != "vulnerability":
+            continue
+        cve_id = entity["name"]
+        if not cve_id.startswith("CVE-"):
+            continue
+        try:
+            enriched = enrich_cve(cve_id, nvd, epss, kev)
+            entity["data"].update({
+                "cvss": enriched.get("nvd_data", {}).get("cvss_score"),
+                "cvss_vector": enriched.get("nvd_data", {}).get("cvss_vector"),
+                "cwe": enriched.get("nvd_data", {}).get("cwe", []),
+                "cpe": enriched.get("nvd_data", {}).get("cpe", []),
+                "description": enriched.get("nvd_data", {}).get("description", ""),
+                "epss": enriched.get("epss_score"),
+                "epss_percentile": enriched.get("epss_percentile"),
+                "kev": enriched.get("kev", False),
+                "kev_ransomware": enriched.get("kev_data", {}).get("kev_ransomware", False),
+                "attack_techniques": [t["technique"] for t in enriched.get("attack_mapping", [])],
+                "priority_score": enriched.get("priority_score"),
+                "priority_tier": enriched.get("priority_tier"),
+                "enriched": True,
+            })
+        except Exception as e:
+            logger.warning("Enrichment failed for %s: %s", cve_id, e)
 
 
 def _emit_events_for_entities(entities: list[dict]) -> None:

@@ -4504,6 +4504,13 @@ def resolve_api_key_provider_credentials(provider_id: str) -> Dict[str, Any]:
         api_key = LMSTUDIO_NOAUTH_PLACEHOLDER
         key_source = key_source or "default"
 
+    # OpenCode Zen free-tier: use "public" bearer token when no key is set.
+    # This mirrors OpenCode's own behavior — free models (cost.input === 0)
+    # accept Authorization: Bearer public, paid models are disabled.
+    if not api_key and provider_id == "opencode-zen":
+        api_key = "public"
+        key_source = key_source or "zen-free-tier"
+
     env_url = ""
     if pconfig.base_url_env_var:
         env_url = os.getenv(pconfig.base_url_env_var, "").strip()
