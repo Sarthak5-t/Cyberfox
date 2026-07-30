@@ -55,6 +55,28 @@ get_command_link_display_dir() {
     fi
 }
 
+is_macos() {
+    [[ "$(uname -s)" == "Darwin" ]]
+}
+
+is_wsl() {
+    [[ "$(uname -r)" == *"microsoft-standard-WSL2"* ]] || [[ "$(uname -r)" == *"Microsoft"* ]]
+}
+
+is_linux() {
+    [[ "$(uname -s)" == "Linux" ]] && ! is_termux && ! is_wsl
+}
+
+detect_os() {
+    if is_termux; then echo "termux"
+    elif is_macos; then echo "macos"
+    elif is_wsl; then echo "wsl"
+    else echo "linux"
+    fi
+}
+
+OS="$(detect_os)"
+
 echo ""
 echo -e "${CYAN}⚕ Cyberfox Agent Setup${NC}"
 echo ""
@@ -282,41 +304,70 @@ else
     if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
         INSTALLED=false
 
-        if is_termux; then
-            pkg install -y ripgrep && INSTALLED=true
-        else
-            # Check if sudo is available
-            if command -v sudo &> /dev/null && sudo -n true 2>/dev/null; then
-                if command -v apt &> /dev/null; then
-                    sudo apt install -y ripgrep && INSTALLED=true
-                elif command -v dnf &> /dev/null; then
-                    sudo dnf install -y ripgrep && INSTALLED=true
+        case "$OS" in
+            termux)
+                pkg install -y ripgrep && INSTALLED=true
+                ;;
+            macos)
+                if command -v brew &> /dev/null; then
+                    brew install ripgrep && INSTALLED=true
                 fi
-            fi
-
-            # Try brew (no sudo needed)
-            if [ "$INSTALLED" = false ] && command -v brew &> /dev/null; then
-                brew install ripgrep && INSTALLED=true
-            fi
-
-            # Try cargo (no sudo needed)
-            if [ "$INSTALLED" = false ] && command -v cargo &> /dev/null; then
-                echo -e "${CYAN}→${NC} Trying cargo install (no sudo required)..."
-                cargo install ripgrep && INSTALLED=true
-            fi
-        fi
+                if [ "$INSTALLED" = false ] && command -v port &> /dev/null; then
+                    sudo port install ripgrep && INSTALLED=true
+                fi
+                ;;
+            *)
+                if command -v sudo &> /dev/null && sudo -n true 2>/dev/null; then
+                    if command -v apt &> /dev/null; then
+                        sudo apt install -y ripgrep && INSTALLED=true
+                    elif command -v dnf &> /dev/null; then
+                        sudo dnf install -y ripgrep && INSTALLED=true
+                    elif command -v pacman &> /dev/null; then
+                        sudo pacman -S --noconfirm ripgrep && INSTALLED=true
+                    elif command -v zypper &> /dev/null; then
+                        sudo zypper install -y ripgrep && INSTALLED=true
+                    elif command -v apk &> /dev/null; then
+                        apk add ripgrep && INSTALLED=true
+                    elif command -v nix-env &> /dev/null; then
+                        nix-env -i ripgrep && INSTALLED=true
+                    elif command -v xbps-install &> /dev/null; then
+                        sudo xbps-install -y ripgrep && INSTALLED=true
+                    elif command -v pkg &> /dev/null; then
+                        sudo pkg install -y ripgrep && INSTALLED=true
+                    elif command -v emerge &> /dev/null; then
+                        sudo emerge -q ripgrep && INSTALLED=true
+                    fi
+                fi
+                if [ "$INSTALLED" = false ] && command -v brew &> /dev/null; then
+                    brew install ripgrep && INSTALLED=true
+                fi
+                if [ "$INSTALLED" = false ] && command -v cargo &> /dev/null; then
+                    echo -e "${CYAN}→${NC} Trying cargo install (no sudo required)..."
+                    cargo install ripgrep && INSTALLED=true
+                fi
+                ;;
+        esac
 
         if [ "$INSTALLED" = true ]; then
             echo -e "${GREEN}✓${NC} ripgrep installed"
         else
             echo -e "${YELLOW}⚠${NC} Auto-install failed. Install options:"
-            if is_termux; then
-                echo "    pkg install ripgrep          # Termux / Android"
-            else
-                echo "    sudo apt install ripgrep     # Debian/Ubuntu"
-                echo "    brew install ripgrep         # macOS"
-                echo "    cargo install ripgrep        # With Rust (no sudo)"
-            fi
+            case "$OS" in
+                termux)
+                    echo "    pkg install ripgrep              # Termux / Android"
+                    ;;
+                macos)
+                    echo "    brew install ripgrep             # macOS"
+                    echo "    sudo port install ripgrep        # MacPorts"
+                    ;;
+                *)
+                    echo "    apt install ripgrep             # Debian/Ubuntu"
+                    echo "    pacman -S ripgrep                # Arch"
+                    echo "    dnf install ripgrep              # Fedora"
+                    echo "    brew install ripgrep             # macOS / Linux"
+                    echo "    cargo install ripgrep            # With Rust (no sudo)"
+                    ;;
+            esac
             echo "    https://github.com/BurntSushi/ripgrep#installation"
         fi
     fi
@@ -338,7 +389,13 @@ else
     # Tighten an existing .env's perms in case it was created elsewhere
     # under a permissive umask.
     chmod 600 .env 2>/dev/null || true
-    echo -e "${GREEN}✓${NC} .env exists"
+
+    if grep -qE '=.+' .env 2>/dev/null; then
+        echo -e "${YELLOW}⚠${NC} .env contains pre-filled values (may be from another machine)."
+        echo -e "${YELLOW}⚠${NC} Edit .env to review or replace with fresh keys before running cyberfox."
+    else
+        echo -e "${GREEN}✓${NC} .env exists (empty template)"
+    fi
 fi
 
 # ============================================================================
@@ -354,6 +411,17 @@ mkdir -p "$COMMAND_LINK_DIR"
 ln -sf "$CYBERFOX_BIN" "$COMMAND_LINK_DIR/cyberfox"
 echo -e "${GREEN}✓${NC} Symlinked cyberfox → $COMMAND_LINK_DISPLAY_DIR/cyberfox"
 
+# Fix the development launcher shebang to point to the venv Python (portable
+# across machines — no hardcoded /home/solo paths from the old setup).
+if [ -f "$SCRIPT_DIR/cyberfox" ]; then
+    {
+        echo "#!$SETUP_PYTHON"
+        tail -n +2 "$SCRIPT_DIR/cyberfox"
+    } > "$SCRIPT_DIR/cyberfox.tmp" && mv "$SCRIPT_DIR/cyberfox.tmp" "$SCRIPT_DIR/cyberfox"
+    chmod +x "$SCRIPT_DIR/cyberfox"
+    echo -e "${GREEN}✓${NC} Fixed dev launcher shebang → $SETUP_PYTHON"
+fi
+
 if is_termux; then
     export PATH="$COMMAND_LINK_DIR:$PATH"
     echo -e "${GREEN}✓${NC} $COMMAND_LINK_DISPLAY_DIR is already on PATH in Termux"
@@ -361,18 +429,23 @@ else
     # Determine the appropriate shell config file
     SHELL_CONFIG=""
     if [[ "$SHELL" == *"zsh"* ]]; then
-        SHELL_CONFIG="$HOME/.zshrc"
+        if is_macos && [ ! -f "$HOME/.zshrc" ]; then
+            SHELL_CONFIG="$HOME/.zprofile"
+        else
+            SHELL_CONFIG="$HOME/.zshrc"
+        fi
     elif [[ "$SHELL" == *"bash"* ]]; then
         SHELL_CONFIG="$HOME/.bashrc"
         [ ! -f "$SHELL_CONFIG" ] && SHELL_CONFIG="$HOME/.bash_profile"
     else
-        # Fallback to checking existing files
         if [ -f "$HOME/.zshrc" ]; then
             SHELL_CONFIG="$HOME/.zshrc"
         elif [ -f "$HOME/.bashrc" ]; then
             SHELL_CONFIG="$HOME/.bashrc"
         elif [ -f "$HOME/.bash_profile" ]; then
             SHELL_CONFIG="$HOME/.bash_profile"
+        elif is_macos && [ -f "$HOME/.zprofile" ]; then
+            SHELL_CONFIG="$HOME/.zprofile"
         fi
     fi
 

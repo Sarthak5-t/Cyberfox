@@ -206,6 +206,21 @@ CYBERFOX_OVERLAYS: Dict[str, CyberfoxOverlay] = {
         transport="bedrock_converse",
         auth_type="aws_sdk",
     ),
+    "deepinfra": CyberfoxOverlay(
+        transport="openai_chat",
+        extra_env_vars=("DEEPINFRA_API_KEY",),
+        base_url_env_var="DEEPINFRA_BASE_URL",
+    ),
+    "cloudflare-workers-ai": CyberfoxOverlay(
+        transport="openai_chat",
+        extra_env_vars=("CLOUDFLARE_API_KEY", "CLOUDFLARE_ACCOUNT_ID"),
+        base_url_env_var="CLOUDFLARE_WORKERS_AI_BASE_URL",
+    ),
+    "github-models": CyberfoxOverlay(
+        transport="openai_chat",
+        extra_env_vars=("GITHUB_TOKEN",),
+        base_url_env_var="GITHUB_MODELS_BASE_URL",
+    ),
 }
 
 
@@ -343,6 +358,12 @@ ALIASES: Dict[str, str] = {
     "lm-studio": "lmstudio",
     "lm_studio": "lmstudio",
     "ollama": "custom",  # bare "ollama" = local; use "ollama-cloud" for cloud
+    "cf": "cloudflare-workers-ai",
+    "cloudflare": "cloudflare-workers-ai",
+    "workers-ai": "cloudflare-workers-ai",
+    "deep-infra": "deepinfra",
+    "gh-models": "github-models",
+    "github-models": "github-models",
     "vllm": "local",
     "llamacpp": "local",
     "llama.cpp": "local",

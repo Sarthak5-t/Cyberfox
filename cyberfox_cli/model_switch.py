@@ -47,7 +47,7 @@ from agent.models_dev import (
 # Providers whose picker model list should NOT be capped by max_models.
 # OpenCode Zen / Go are aggregators whose full catalogs (70+ models each) must
 # be visible so users can pick any model they have access to.
-_UNCAPPED_PICKER_PROVIDERS: frozenset[str] = frozenset({"opencode-zen", "opencode-go"})
+_UNCAPPED_PICKER_PROVIDERS: frozenset[str] = frozenset({"opencode-zen", "opencode-go", "opencode"})
 
 logger = logging.getLogger(__name__)
 
@@ -1777,6 +1777,23 @@ def list_authenticated_providers(
                     has_creds = True
             except Exception as exc:
                 logger.debug("Credential pool check failed for %s: %s", cyberfox_slug, exc)
+        # Aggregators are gateway-like proxies designed for model discovery.
+        # Show them in the picker even without credentials so users can discover
+        # and select them (e.g., opencode/big-pickle is free & anonymous).
+        # Only bypass the check if the aggregator has NO env vars at all —
+        # env vars mean authentication is required (e.g., huggingface needs HF_TOKEN).
+        # We check the overlay key (pid) only — the resolved cyberfox_slug may
+        # be a different provider ID that has its own env vars, but the overlay
+        # entry itself is what controls discoverability.
+        if not has_creds and overlay.is_aggregator:
+            _has_env = bool(overlay.extra_env_vars)
+            if not _has_env:
+                _pcfg = _auth_registry.get(pid)
+                if _pcfg and _pcfg.api_key_env_vars:
+                    _has_env = True
+            if not _has_env:
+                has_creds = True
+
         # Fallback: check external credential files directly.
         # The credential pool gates anthropic behind
         # is_provider_explicitly_configured() to prevent auxiliary tasks

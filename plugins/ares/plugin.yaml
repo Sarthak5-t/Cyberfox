@@ -12,7 +12,17 @@ provides_tools:
   - whois_scan
   - theharvester_scan
   - whatweb_scan
+  - sherlock_search
+  - reconng_scan
+  - dnsenum_scan
+  - fierce_scan
+  - dnsmap_scan
+  - dmitry_scan
+  - holehe_check
   - nuclei_scan
+  - commix_scan
+  - xsstrike_scan
+  - zap_scan
   - gobuster_scan
   - feroxbuster_scan
   - ffuf_scan
@@ -32,6 +42,22 @@ provides_tools:
   - exploit_search
   - sqlmap_scan
   - hydra_brute
+  - hashcat_crack
+  - john_crack
+  - cewl_generate
+  - crunch_generate
+  - medusa_brute
+  - patator_brute
+  - beef_hook
+  - bettercap_run
+  - kali_exec
+  - rsmangler_mutate
+  - chisel_tunnel
+  - cmsmap_scan
+  - wapiti_scan
+  - uniscan_scan
+  - aircrack_scan
+  - volatility_memdump
   - msf_exec
   - msf_console
   - msf_search
@@ -46,6 +72,9 @@ provides_tools:
   - certipy_tool
   - crackmapexec
   - kerbrute_enum
+  - mesh_join
+  - mesh_status
+  - mesh_leave
   - report_save
   - findings_save
   - findings_query
@@ -70,6 +99,11 @@ provides_tools:
   - entity_link
   - entity_count
   - decide
+  - cve_kb_update
+  - cve_kb_search
+  - cve_kb_lookup
+  - cve_kb_stats
+  - medium_read
 hooks:
   - pre_tool_call
   - post_tool_call

@@ -953,10 +953,11 @@ class ContextCompressor(ContextEngine):
 
         The base value is ``effective_input_budget * threshold_percent``, floored
         at ``MINIMUM_CONTEXT_LENGTH`` so large-context models don't compress
-        prematurely at 50%. BUT that floor degenerates at small windows: for a
-        model whose ``context_length`` is at/below the minimum (e.g. a 64K
-        local model), ``max(0.5*64000, 64000) == 64000`` makes the threshold
-        equal the ENTIRE window — auto-compression can never fire because the
+        prematurely. With the default 85% threshold, for a 200K model this
+        fires at ~170K. BUT the floor degenerates at small windows: for a model
+        whose ``context_length`` is at/below the minimum (e.g. a 64K local
+        model), ``max(0.85*64000, 64000) == 64000`` makes the threshold equal
+        the ENTIRE window — auto-compression can never fire because the
         provider rejects the request before usage reaches 100% (#14690).
 
         When the floor would meet or exceed the context window, trigger at
@@ -990,7 +991,7 @@ class ContextCompressor(ContextEngine):
     def __init__(
         self,
         model: str,
-        threshold_percent: float = 0.50,
+        threshold_percent: float = 0.85,
         protect_first_n: int = 3,
         protect_last_n: int = 20,
         summary_target_ratio: float = 0.20,

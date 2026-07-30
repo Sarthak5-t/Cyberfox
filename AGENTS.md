@@ -365,6 +365,22 @@ Do NOT skip steps 1-4. Real pentesters check existing exploits before writing ne
 - Save findings to the database as you go — never batch at the end
 - Include evidence (command output, screenshots) in every finding
 
+## Free AI Models
+
+Ares can use **no-cost** AI models through these Cyberfox providers:
+
+| Provider | Key Models | Config |
+|---|---|---|
+| `deepinfra` | Gemma-4, GLM-5.2, Llama, Nemotron | `DEEPINFRA_API_KEY` env var |
+| `cloudflare-workers-ai` | Gemma, Qwen, Nemotron, GLM | `CLOUDFLARE_API_KEY` + `CLOUDFLARE_ACCOUNT_ID` |
+| `github-models` | Phi-4, Phi-4-reasoning, Phi-3.5 | `GITHUB_TOKEN` env var |
+| `groq` | Llama-3.3-70B, Qwen3-32B, Mixtral | `GROQ_API_KEY` env var (free tier) |
+| `openrouter` | Many open-source models | `OPENROUTER_API_KEY` (free models available) |
+| `lmstudio` / `ollama` | Any local model | Local inference, zero cost |
+| `huggingface` | 100k+ open models | `HF_TOKEN` env var (free inference) |
+
+Use `cyberfox model --provider <name>` to switch. Free tier providers have rate limits — check their docs.
+
 ## Safety Rules
 
 1. **Never run exploits without explicit user approval**

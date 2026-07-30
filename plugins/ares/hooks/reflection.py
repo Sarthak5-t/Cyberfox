@@ -369,6 +369,8 @@ def _enrich_entities(entities: list[dict]) -> None:
                 "attack_techniques": [t["technique"] for t in enriched.get("attack_mapping", [])],
                 "priority_score": enriched.get("priority_score"),
                 "priority_tier": enriched.get("priority_tier"),
+                "kb_pocs": enriched.get("kb_pocs", []),
+                "kb_poc_count": enriched.get("kb_poc_count", 0),
                 "enriched": True,
             })
         except Exception as e:

@@ -16,10 +16,34 @@ def _handle(args: dict, **kw) -> str:
     action = args.get("action", "assign")
     goal = args.get("goal", "")
     context = args.get("context", "")
+    remote = args.get("remote", False)
+    remote_timeout = args.get("remote_timeout", 120)
+
     if role not in AGENT_DEFINITIONS:
         return json_result(False, error=f"Unknown role: {role}. Available: {list(AGENT_DEFINITIONS.keys())}")
     agent_def = AGENT_DEFINITIONS[role]
 
+    # Remote delegation via ACP mesh
+    if remote:
+        try:
+            from plugins.ares.mesh.client import get_mesh_client
+            client = get_mesh_client()
+            if not client.is_connected:
+                return json_result(False, error="Mesh not connected. Use mesh_join first.")
+            result = client.delegate_remote(
+                role=role,
+                goal=goal,
+                context=context,
+                timeout=remote_timeout,
+            )
+            return json_result(result.get("success", False), data=result)
+        except ImportError:
+            return json_result(False, error="ACP mesh module not available")
+        except Exception as e:
+            logger.error(f"Remote delegation failed: {e}")
+            return json_result(False, error=f"Remote delegation failed: {e}")
+
+    # Local delegation
     parent_agent = kw.get("parent_agent")
     if parent_agent:
         try:
@@ -75,6 +99,16 @@ SCHEMA = {
             },
             "goal": {"type": "string", "description": "Clear description of what needs to be done"},
             "context": {"type": "string", "description": "Context, findings, or data the specialist needs to work with"},
+            "remote": {
+                "type": "boolean",
+                "default": False,
+                "description": "Delegate to a remote mesh agent instead of local sub-agent",
+            },
+            "remote_timeout": {
+                "type": "integer",
+                "default": 120,
+                "description": "Timeout in seconds for remote delegation",
+            },
         },
         "required": ["role", "goal"],
     },

@@ -191,6 +191,16 @@ def enrich_cve(
     enriched["priority_score"] = priority["priority_score"]
     enriched["priority_tier"] = priority["priority_tier"]
 
+    try:
+        from plugins.ares.cve_kb import db as cve_kb_db
+        cve_kb_db.init_db()
+        kb_pocs = cve_kb_db.get_pocs_for_cve(cve_id)
+        enriched["kb_pocs"] = kb_pocs
+        enriched["kb_poc_count"] = len(kb_pocs)
+    except Exception:
+        enriched["kb_pocs"] = []
+        enriched["kb_poc_count"] = 0
+
     _save_cache(cve_id, enriched)
     return enriched
 

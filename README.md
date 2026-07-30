@@ -2,17 +2,53 @@
 
 <p align="center">
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-4.2.0-blue?style=for-the-badge" alt="Version"></a>
-  <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-74-red?style=for-the-badge" alt="Tools"></a>
+   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-4.3.0-blue?style=for-the-badge" alt="Version"></a>
+   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-100-red?style=for-the-badge" alt="Tools"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Platform-Kali%20Linux-purple?style=for-the-badge" alt="Platform"></a>
 </p>
 
 <p align="center">
-  <b>Elite cybersecurity operations agent</b> with 74 tools, bug bounty pipeline, agentic AI, knowledge graph, and stealth browsing.
+  <b>Elite cybersecurity operations agent</b> with 100 tools, bug bounty pipeline, agentic AI, knowledge graph, and stealth browsing.
 </p>
 
 ---
+
+## What's New (v4.3.0)
+
+### Free AI Model Providers (NEW)
+- **DeepInfra, Groq, Cloudflare Workers AI, GitHub Models** — 4 new no-cost providers added to the model picker
+- **OpenCode Zen** — `big-pickle` model, 200K context, $0, anonymous, no API key needed
+- All new providers show in TUI `/model` without env vars via aggregator discovery bypass
+
+### Context Compaction (IMPROVED)
+- Default compaction threshold raised from **50% → 85%** — 200K models now fire at ~170K instead of ~100K
+- Matches OpenCode's approach: maximize usable context before summarization triggers
+
+### Medium Article Reader (NEW)
+- `medium_read` tool with **freedium cache bypass** — no paywall, no Cloudflare, no browser needed
+- 3-tier fallback: freedium → RSS → Playwright browser
+- Extracts title, author, date, and full article body from member-only content in ~1s
+
+### CVE Knowledge Base (NEW)
+- Local SQLite CVE database with PoC storage, search, and lookup
+- Integrated with `searchsploit_tool` — results merged from both searchsploit and CVE KB
+- CVE enrichment pipeline pulls PoCs from KB; reflection hook captures them as entity metadata
+
+### ACP Mesh Agent Networking (NEW)
+- `mesh_join`, `mesh_status`, `mesh_leave` — agent mesh for distributed operations
+- `ares_delegate(remote=True)` — delegate tasks to remote mesh agents
+- Enables multi-host penetration testing coordination
+
+### 34 New Security Tools
+| Category | Tools |
+|----------|-------|
+| **Recon** | sherlock, recon-ng, dnsenum, fierce, dnsmap, dmitry, holehe |
+| **Scanning** | commix, xsstrike, zap, cmsmap, wapiti, uniscan |
+| **Exploitation** | hashcat, john, cewl, crunch, medusa, patator, beef, bettercap, rsmangler, chisel, kali_exec |
+| **Wireless** | aircrack-ng |
+| **Forensics** | volatility |
+| **Infrastructure** | Mesh join/status/leave, CVE KB (4 tools), medium_read |
 
 ## What's New (v4.2.0)
 
@@ -48,7 +84,7 @@
 - **System Monitor** — CPU, memory, disk, and network monitoring
 
 ### Previous Features
-- **Tool Governance** — 5-tier permission system (NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS) for all 74 tools
+- **Tool Governance** — 5-tier permission system (NONE → READ_ONLY → WRITE → EXECUTE → DANGEROUS) for all 100 tools
 - **TokenJuice Compressor** — Content-aware output compression (JSON 80%, HTML 96%, Logs 81% smaller)
 - **Sandbox** — Landlock/Docker/chroot jail confinement for tool subprocesses
 - **Model Router** — Auto-selects best AI model per task type (scan, exploit, report, code, chat)
@@ -57,7 +93,7 @@
 - **Memory Tree** — Hierarchical summary tree for large tool outputs
 - **Agent Intelligence Layer** — Structured plan, act, reflect, adapt loop
 - **Knowledge Graph** — SQLite-backed entities + relationships
-- **74 Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
+- **100 Security Tools** — Nmap, Nuclei, Metasploit, Burp Suite, BloodHound, Certipy, and more
 
 ---
 
@@ -127,15 +163,19 @@ Credential (admin:pass) -- authenticated_with --> Service (Apache)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
-| **Reconnaissance** | 8 tools | Nmap, DNSRecon, Subfinder, Masscan, Amass, Whois, TheHarvester, WhatWeb |
-| **Scanning** | 17 tools | Nuclei, Gobuster, Feroxbuster, FFUF, Nikto, WPScan, Burp Suite, and more |
-| **Exploitation** | 13 tools | SQLMap, Hydra, Metasploit, Responder, Impacket, custom exploit chains |
+| **Reconnaissance** | 15 tools | Nmap, DNSRecon, Subfinder, Masscan, Amass, Whois, TheHarvester, WhatWeb, Sherlock, Recon-ng, DNSEnum, Fierce, DNSMap, Dmitry, Holehe |
+| **Scanning** | 20 tools | Nuclei, Gobuster, Feroxbuster, FFUF, Nikto, WPScan, Burp Suite, Commix, XSStrike, ZAP, CMSMap, Wapiti, UniScan, and more |
+| **Exploitation** | 24 tools | SQLMap, Hydra, Metasploit, Responder, Impacket, Hashcat, John, Cewl, Crunch, Medusa, Patator, BeEF, Bettercap, Chisel, custom exploit chains |
 | **Active Directory** | 6 tools | BloodHound, Certipy, CrackMapExec, Kerbrute, Impacket |
+| **Wireless** | 1 tool | Aircrack-ng |
+| **Forensics** | 1 tool | Volatility |
 | **Browsing** | 1 tool | Stealth web browsing with anti-bot-detection |
+| **Mesh Networking** | 3 tools | Mesh join/status/leave for distributed agent coordination |
+| **CVE Knowledge Base** | 4 tools | CVE search, lookup, stats, PoC database |
 | **Orchestration** | 13 tools | Engagement, planning, knowledge graph, decisions |
 | **Bug Bounty** | 9 modules | Rate limiter, scope enforcer, OPSEC, WAF advisor, proxy, auth, validator, orchestrator, HackerOne |
 | **Agentic AI** | 16 modules | Agents, memory, skills, reasoning, OS interaction |
-| **Utility** | 9 tools | Findings, journal, reporting, delegation |
+| **Utility** | 11 tools | Findings, journal, reporting, delegation, medium_read, mesh |
 
 ### Tool Governance
 
@@ -427,6 +467,9 @@ cyberfox/
 │       │   ├── vuln_validator.py   # Finding confirmation
 │       │   ├── orchestrator.py     # 9-stage pipeline engine
 │       │   └── platform_api.py     # HackerOne integration
+│       ├── cve_kb/          # CVE knowledge base + PoC storage
+│       ├── mesh/            # ACP agent mesh networking
+│       ├── mcp/             # Model Context Protocol servers
 │       ├── tools/
 │       │   ├── permission.py   # 5-tier permission system + tool governance
 │       │   ├── tokenjuice.py   # Content-aware token compressor
@@ -436,10 +479,14 @@ cyberfox/
 │       │   ├── council.py      # Multi-model deliberation
 │       │   ├── memory_tree.py  # Hierarchical output summaries
 │       │   ├── orchestration/  # 13 orchestration tools
-│       │   ├── recon/          # 8 recon tools
-│       │   ├── scanning/       # 17 scanning tools
-│       │   ├── exploitation/   # 13 exploit tools
+│       │   ├── recon/          # 15 recon tools
+│       │   ├── scanning/       # 20 scanning tools
+│       │   ├── exploitation/   # 24 exploit tools
 │       │   ├── ad/             # 6 AD tools
+│       │   ├── wireless/       # Aircrack-ng
+│       │   ├── forensics/      # Volatility
+│       │   ├── kali/           # Kali integration
+│       │   ├── mesh/           # Mesh tools (join/status/leave)
 │       │   ├── browsing/       # Stealth browsing
 │       │   └── utility/        # Findings, journal, reports
 │       ├── agents/         # 12 specialist roles

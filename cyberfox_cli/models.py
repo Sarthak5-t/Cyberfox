@@ -548,6 +548,10 @@ CANONICAL_PROVIDERS: list[ProviderEntry] = [
     ProviderEntry("bedrock",        "AWS Bedrock",              "AWS Bedrock (Claude, Nova, Llama, DeepSeek; IAM or API key)"),
     ProviderEntry("azure-foundry",  "Azure Foundry",            "Azure Foundry (OpenAI-style or Anthropic-style endpoint, your Azure AI deployment)"),
     ProviderEntry("qwen-oauth",     "Qwen OAuth (Portal)",      "Qwen OAuth (Reuses local Qwen CLI login)"),
+    ProviderEntry("deepinfra",      "DeepInfra",                "DeepInfra (Free/open-source models; DEEPINFRA_API_KEY)"),
+    ProviderEntry("groq",           "Groq",                     "Groq (Fast inference, free tier; GROQ_API_KEY)"),
+    ProviderEntry("cloudflare-workers-ai", "Cloudflare Workers AI", "Cloudflare Workers AI (Free tier, 10k req/day; CLOUDFLARE_API_KEY)"),
+    ProviderEntry("github-models",  "GitHub Models",            "GitHub Models (Free models for all GitHub users; GITHUB_TOKEN)"),
 ]
 
 # Auto-extend CANONICAL_PROVIDERS with any provider registered in providers/
@@ -684,8 +688,8 @@ _PROVIDER_ALIASES = {
     "zhipu": "zai",
     "github": "copilot",
     "github-copilot": "copilot",
-    "github-models": "copilot",
-    "github-model": "copilot",
+    "github-model": "github-models",
+    "gh-models": "github-models",
     "github-copilot-acp": "copilot-acp",
     "copilot-acp-agent": "copilot-acp",
     "google": "gemini",
@@ -737,6 +741,10 @@ _PROVIDER_ALIASES = {
     "tencent-cloud": "tencent-tokenhub",
     "tencentmaas": "tencent-tokenhub",
     "aws": "bedrock",
+    "deep-infra": "deepinfra",
+    "cf": "cloudflare-workers-ai",
+    "cloudflare": "cloudflare-workers-ai",
+    "workers-ai": "cloudflare-workers-ai",
     "aws-bedrock": "bedrock",
     "amazon-bedrock": "bedrock",
     "amazon": "bedrock",
@@ -1628,6 +1636,7 @@ def _resolve_copilot_catalog_api_key() -> str:
 _MODELS_DEV_PREFERRED: frozenset[str] = frozenset({
     "opencode-go",
     "opencode-zen",
+    "opencode",
     "deepseek",
     "kilocode",
     "fireworks",
@@ -1641,6 +1650,9 @@ _MODELS_DEV_PREFERRED: frozenset[str] = frozenset({
     "zai",
     "gemini",
     "google",
+    "deepinfra",
+    "cloudflare-workers-ai",
+    "github-models",
 })
 
 

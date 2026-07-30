@@ -28,7 +28,17 @@ def _register_tools(ctx) -> None:
     from plugins.ares.tools.recon import whois_tool
     from plugins.ares.tools.recon import theharvester_tool
     from plugins.ares.tools.recon import whatweb_tool
+    from plugins.ares.tools.recon import sherlock_tool
+    from plugins.ares.tools.recon import reconng_tool
+    from plugins.ares.tools.recon import dnsenum_tool
+    from plugins.ares.tools.recon import fierce_tool
+    from plugins.ares.tools.recon import dnsmap_tool
+    from plugins.ares.tools.recon import dmitry_tool
+    from plugins.ares.tools.recon import holehe_tool
     from plugins.ares.tools.scanning import nuclei_tool
+    from plugins.ares.tools.scanning import commix_tool
+    from plugins.ares.tools.scanning import xsstrike_tool
+    from plugins.ares.tools.scanning import zap_tool
     from plugins.ares.tools.scanning import gobuster_tool
     from plugins.ares.tools.scanning import ffuf_tool
     from plugins.ares.tools.scanning import nikto_tool
@@ -48,6 +58,22 @@ def _register_tools(ctx) -> None:
     from plugins.ares.tools.exploitation import searchsploit_tool
     from plugins.ares.tools.exploitation import sqlmap_tool
     from plugins.ares.tools.exploitation import hydra_tool
+    from plugins.ares.tools.exploitation import hashcat_tool
+    from plugins.ares.tools.exploitation import john_tool
+    from plugins.ares.tools.exploitation import cewl_tool
+    from plugins.ares.tools.exploitation import crunch_tool
+    from plugins.ares.tools.exploitation import medusa_tool
+    from plugins.ares.tools.exploitation import patator_tool
+    from plugins.ares.tools.exploitation import beef_tool
+    from plugins.ares.tools.exploitation import bettercap_tool
+    from plugins.ares.tools.exploitation import rsmangler_tool
+    from plugins.ares.tools.exploitation import chisel_tool
+    from plugins.ares.tools.scanning import cmsmap_tool
+    from plugins.ares.tools.scanning import wapiti_tool
+    from plugins.ares.tools.scanning import uniscan_tool
+    from plugins.ares.tools.wireless import aircrack_tool
+    from plugins.ares.tools.forensics import volatility_tool
+    from plugins.ares.tools.kali import kali_exec
     from plugins.ares.tools.exploitation import metasploit_tool
     from plugins.ares.tools.exploitation import responder_tool
     from plugins.ares.tools.exploitation import impacket_tool
@@ -58,6 +84,8 @@ def _register_tools(ctx) -> None:
     from plugins.ares.tools.exploitation.custom import exploit_chain
     from plugins.ares.tools.exploitation.custom import payload_gen
     from plugins.ares.tools.exploitation.custom import exploit_dev
+    from plugins.ares.tools.exploitation import cve_kb_tools
+    from plugins.ares.tools.exploitation import medium_tool
     from plugins.ares.tools.ad import bloodhound_tool
     from plugins.ares.tools.ad import certipy_tool
     from plugins.ares.tools.ad import crackmapexec_tool
@@ -65,6 +93,9 @@ def _register_tools(ctx) -> None:
     from plugins.ares.tools.utility import report_tool
     from plugins.ares.tools import findings_tool
     from plugins.ares.tools import journal_tool
+    from plugins.ares.tools.mesh import mesh_join_tool
+    from plugins.ares.tools.mesh import mesh_status_tool
+    from plugins.ares.tools.mesh import mesh_leave_tool
     from plugins.ares.tools.browsing import browse_autonomously
     from plugins.ares.agents import orchestrator
     from plugins.ares.tools.orchestration import engage_tool
@@ -77,18 +108,29 @@ def _register_tools(ctx) -> None:
 
     _TOOL_MODULES = [
         nmap_tool, dnsrecon_tool, subfinder_tool, masscan_tool, amass_tool,
-        whois_tool, theharvester_tool, whatweb_tool,
-        nuclei_tool, gobuster_tool, ffuf_tool, nikto_tool, enum4linux_tool,
+        whois_tool, theharvester_tool, whatweb_tool, sherlock_tool, reconng_tool, dnsenum_tool,
+        fierce_tool, dnsmap_tool, dmitry_tool, holehe_tool,
+        nuclei_tool, commix_tool, xsstrike_tool, zap_tool,
+        gobuster_tool, ffuf_tool, nikto_tool, enum4linux_tool,
         wafw00f_tool, wpscan_tool, wfuzz_tool, feroxbuster_tool, smbclient_tool,
         snmpwalk_tool, curl_tool, burp_scan, burp_spider, burp_repeater,
         nuclei_templates, subjack,
-        searchsploit_tool, sqlmap_tool, hydra_tool, metasploit_tool,
+        searchsploit_tool, sqlmap_tool, hydra_tool, hashcat_tool, john_tool,
+        cewl_tool, crunch_tool, medusa_tool, patator_tool, beef_tool, bettercap_tool,
+        rsmangler_tool, chisel_tool,
+        cmsmap_tool, wapiti_tool, uniscan_tool,
+        aircrack_tool, volatility_tool,
+        kali_exec, metasploit_tool,
         responder_tool, impacket_tool, msf_console, msf_search, msf_payload,
         msf_post, exploit_chain, payload_gen, exploit_dev,
         bloodhound_tool, certipy_tool, crackmapexec_tool, kerbrute_tool,
-        report_tool, findings_tool, journal_tool, browse_autonomously, orchestrator,
+        report_tool, findings_tool, journal_tool,
+        mesh_join_tool, mesh_status_tool, mesh_leave_tool,
+        browse_autonomously, orchestrator,
         engage_tool, plan_tool, entity_tool, decide_tool,
         swarm, cve_enrich_tool, enrichment_stats_tool,
+        cve_kb_tools,
+        medium_tool,
     ]
 
     for mod in _TOOL_MODULES:
