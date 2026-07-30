@@ -96,6 +96,9 @@ def _register_tools(ctx) -> None:
     from plugins.ares.tools.mesh import mesh_join_tool
     from plugins.ares.tools.mesh import mesh_status_tool
     from plugins.ares.tools.mesh import mesh_leave_tool
+    from plugins.ares.tools.mcp import mcp_connect_tool
+    from plugins.ares.tools.mcp import mcp_call_tool
+    from plugins.ares.tools.mcp import mcp_disconnect_tool
     from plugins.ares.tools.browsing import browse_autonomously
     from plugins.ares.agents import orchestrator
     from plugins.ares.tools.orchestration import engage_tool
@@ -131,6 +134,7 @@ def _register_tools(ctx) -> None:
         swarm, cve_enrich_tool, enrichment_stats_tool,
         cve_kb_tools,
         medium_tool,
+        mcp_connect_tool, mcp_call_tool, mcp_disconnect_tool,
     ]
 
     for mod in _TOOL_MODULES:

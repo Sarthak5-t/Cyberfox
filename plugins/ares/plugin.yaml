@@ -1,6 +1,6 @@
 name: ares
 version: 4.0.0
-description: "Elite cybersecurity agent — VAPT, SOC, red teaming with 60+ security tools, engagement orchestration, and knowledge graph."
+description: "Elite cybersecurity agent — VAPT, SOC, red teaming with 100+ security tools, engagement orchestration, knowledge graph, and dynamic MCP servers."
 author: Cyberfox
 kind: standalone
 provides_tools:
@@ -104,6 +104,9 @@ provides_tools:
   - cve_kb_lookup
   - cve_kb_stats
   - medium_read
+  - mcp_server_connect
+  - mcp_server_call
+  - mcp_server_disconnect
 hooks:
   - pre_tool_call
   - post_tool_call

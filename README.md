@@ -3,13 +3,13 @@
 <p align="center">
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
    <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Version-4.3.0-blue?style=for-the-badge" alt="Version"></a>
-   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-100-red?style=for-the-badge" alt="Tools"></a>
+    <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Tools-103-red?style=for-the-badge" alt="Tools"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://github.com/Sarthak5-t/Cyberfox"><img src="https://img.shields.io/badge/Platform-Kali%20Linux-purple?style=for-the-badge" alt="Platform"></a>
 </p>
 
 <p align="center">
-  <b>Elite cybersecurity operations agent</b> with 100 tools, bug bounty pipeline, agentic AI, knowledge graph, and stealth browsing.
+  <b>Elite cybersecurity operations agent</b> with 103 tools, bug bounty pipeline, agentic AI, knowledge graph, dynamic MCP servers, and stealth browsing.
 </p>
 
 ---
@@ -39,6 +39,10 @@
 - `mesh_join`, `mesh_status`, `mesh_leave` — agent mesh for distributed operations
 - `ares_delegate(remote=True)` — delegate tasks to remote mesh agents
 - Enables multi-host penetration testing coordination
+
+### Dynamic MCP Servers (NEW)
+- `mcp_server_connect`, `mcp_server_call`, `mcp_server_disconnect` — attach any external MCP server (Burp Suite, custom harnesses, tool mocks) mid-engagement, call its tools by name, then disconnect
+- Transports: stdio, Server-Sent Events (SSE), WebSocket — with per-server persistent async sessions on a shared event loop
 
 ### 34 New Security Tools
 | Category | Tools |
@@ -172,10 +176,11 @@ Credential (admin:pass) -- authenticated_with --> Service (Apache)
 | **Browsing** | 1 tool | Stealth web browsing with anti-bot-detection |
 | **Mesh Networking** | 3 tools | Mesh join/status/leave for distributed agent coordination |
 | **CVE Knowledge Base** | 4 tools | CVE search, lookup, stats, PoC database |
+| **MCP Integration** | 3 tools | Dynamic MCP server connect/call/disconnect (stdio, SSE, WS) |
 | **Orchestration** | 13 tools | Engagement, planning, knowledge graph, decisions |
 | **Bug Bounty** | 9 modules | Rate limiter, scope enforcer, OPSEC, WAF advisor, proxy, auth, validator, orchestrator, HackerOne |
 | **Agentic AI** | 16 modules | Agents, memory, skills, reasoning, OS interaction |
-| **Utility** | 11 tools | Findings, journal, reporting, delegation, medium_read, mesh |
+| **Utility** | 14 tools | Findings, journal, reporting, delegation, medium_read, mesh, MCP tools |
 
 ### Tool Governance
 
@@ -470,6 +475,7 @@ cyberfox/
 │       ├── cve_kb/          # CVE knowledge base + PoC storage
 │       ├── mesh/            # ACP agent mesh networking
 │       ├── mcp/             # Model Context Protocol servers
+│       ├── mcp/             # MCP server connection manager
 │       ├── tools/
 │       │   ├── permission.py   # 5-tier permission system + tool governance
 │       │   ├── tokenjuice.py   # Content-aware token compressor

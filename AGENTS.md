@@ -200,6 +200,9 @@ All tools return JSON. Common fields: `success`, `data`, `error`.
 | `swarm_dispatch` | `target`, `strategy` (recon_first/parallel_full/stealth/aggressive), `max_agents`, `focus` |
 | `cve_enrich` | `cve_id` |
 | `enrichment_stats` | `top_n` |
+| `mcp_server_connect` | `name`, `url`, `transport` (sse/stdio/ws), `args` |
+| `mcp_server_call` | `server`, `tool`, `arguments` |
+| `mcp_server_disconnect` | `server` or `all` |
 
 ### Browsing (`ares_browsing`)
 | Tool | Key Params |
