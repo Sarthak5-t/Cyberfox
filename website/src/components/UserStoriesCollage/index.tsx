@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 import stories from '@site/src/data/userStories.json';
 import styles from './styles.module.css';
 
@@ -17,10 +18,7 @@ interface Story {
 const allStories = stories as Story[];
 
 // Category → pretty label + accent colors (solid + soft fill + gradient top-strip)
-const CATEGORIES: Record<
-  string,
-  { label: string; solid: string; soft: string; strip: string }
-> = {
+const CATEGORIES: Record<string, { label: string; solid: string; soft: string; strip: string }> = {
   'dev-workflow': {
     label: 'Dev Workflow',
     solid: '#60a5fa',
@@ -130,18 +128,30 @@ const SOURCE_LABELS: Record<string, string> = {
 
 function sourceColor(source: string): string {
   switch (source) {
-    case 'x': return '#1d9bf0';
-    case 'hn': return '#ff6600';
-    case 'reddit': return '#ff4500';
-    case 'github': return '#8b949e';
-    case 'youtube': return '#ff0033';
-    case 'blog': return '#a78bfa';
-    case 'podcast': return '#8b5cf6';
-    case 'linkedin': return '#0a66c2';
-    case 'gist': return '#8b949e';
-    case 'producthunt': return '#da552f';
-    case 'discord': return '#5865f2';
-    default: return '#64748b';
+    case 'x':
+      return '#1d9bf0';
+    case 'hn':
+      return '#ff6600';
+    case 'reddit':
+      return '#ff4500';
+    case 'github':
+      return '#8b949e';
+    case 'youtube':
+      return '#ff0033';
+    case 'blog':
+      return '#a78bfa';
+    case 'podcast':
+      return '#8b5cf6';
+    case 'linkedin':
+      return '#0a66c2';
+    case 'gist':
+      return '#8b949e';
+    case 'producthunt':
+      return '#da552f';
+    case 'discord':
+      return '#5865f2';
+    default:
+      return '#64748b';
   }
 }
 
@@ -172,17 +182,40 @@ export default function UserStoriesCollage(): JSX.Element {
   return (
     <div className={styles.wrap}>
       <div className={styles.hero}>
+        <BrowserOnly>
+          {() => {
+            const NeuralNetworkHero = React.lazy(
+              () => import('@site/src/components/3d/NeuralNetworkHero'),
+            );
+            return (
+              <React.Suspense
+                fallback={
+                  <div
+                    style={{ height: 400, borderRadius: 16, background: 'rgba(255,215,0,0.02)' }}
+                  />
+                }
+              >
+                <NeuralNetworkHero />
+              </React.Suspense>
+            );
+          }}
+        </BrowserOnly>
         <h1>User Stories &amp; Use Cases</h1>
         <p>
-          What the Cyberfox Agent community is actually building. Every tile
-          below links to a real post, issue, video, or gist where someone
-          describes how they use Cyberfox &mdash; scraped from X, GitHub, Reddit,
-          Hacker News, YouTube, blogs, and podcasts.
+          What the Cyberfox Agent community is actually building. Every tile below links to a real
+          post, issue, video, or gist where someone describes how they use Cyberfox &mdash; scraped
+          from X, GitHub, Reddit, Hacker News, YouTube, blogs, and podcasts.
         </p>
         <div className={styles.meta}>
-          <span><strong>{allStories.length}</strong> stories</span>
-          <span><strong>{Object.keys(categoryCounts).length}</strong> categories</span>
-          <span><strong>{Object.keys(sourceCounts).length}</strong> sources</span>
+          <span>
+            <strong>{allStories.length}</strong> stories
+          </span>
+          <span>
+            <strong>{Object.keys(categoryCounts).length}</strong> categories
+          </span>
+          <span>
+            <strong>{Object.keys(sourceCounts).length}</strong> sources
+          </span>
         </div>
       </div>
 
@@ -285,7 +318,9 @@ export default function UserStoriesCollage(): JSX.Element {
                   {s.author}
                   {s.date ? <> &middot; {s.date}</> : null}
                 </span>
-                <span className={styles.external} aria-hidden="true">↗</span>
+                <span className={styles.external} aria-hidden="true">
+                  ↗
+                </span>
               </a>
             );
           })}
@@ -302,7 +337,11 @@ export default function UserStoriesCollage(): JSX.Element {
           Add your story to this page
         </a>{' '}
         by editing <code>userStories.json</code>, or post it in the{' '}
-        <a href="https://github.com/Sarthak5-t/Cyberfox/discussions" target="_blank" rel="noopener noreferrer">
+        <a
+          href="https://github.com/Sarthak5-t/Cyberfox/discussions"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Cyberfox community
         </a>{' '}
         and we&apos;ll pick it up.

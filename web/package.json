@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "auth-server": "node api/auth-server.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -15,7 +16,9 @@
     "@cyberfox/shared": "file:../apps/shared",
     "@nous-research/ui": "0.18.2",
     "@observablehq/plot": "^0.6.17",
+    "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.0",
+    "@simplewebauthn/browser": "^13.3.0",
     "@tailwindcss/vite": "^4.2.1",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-unicode11": "^0.9.0",

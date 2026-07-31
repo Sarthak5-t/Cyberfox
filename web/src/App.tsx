@@ -89,6 +89,9 @@ import ChannelsPage from "@/pages/ChannelsPage";
 import WebhooksPage from "@/pages/WebhooksPage";
 import SystemPage from "@/pages/SystemPage";
 import ChatPage from "@/pages/ChatPage";
+import { LoginPage } from "@/pages/LoginPage";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import { ParticleBackdrop } from "@/components/3d/ParticleBackdrop";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useI18n } from "@/i18n";
@@ -370,6 +373,7 @@ export default function App() {
   const tooltipWarmRef = useRef(0);
   const sidebarStatus = useSidebarStatus();
   const isDocsRoute = pathname === "/docs" || pathname === "/docs/";
+  const isLoginRoute = pathname === "/login";
   const normalizedPath = pathname.replace(/\/$/, "") || "/";
   const isChatRoute = normalizedPath === "/chat";
   const embeddedChat = isDashboardEmbeddedChatEnabled();
@@ -433,9 +437,6 @@ export default function App() {
   }, [embeddedChat, showTokenAnalytics]);
 
   const sidebarNav = useMemo(() => {
-    const allCoreItems = builtinNav.groups.flatMap((g) => g.items);
-    if (builtinNav.chatItem) allCoreItems.unshift(builtinNav.chatItem);
-    const builtinPaths = new Set(allCoreItems.map((i) => i.path));
     const pluginItems: NavItem[] = [];
     for (const manifest of manifests) {
       if (manifest.tab.override || manifest.tab.hidden) continue;
@@ -487,8 +488,13 @@ export default function App() {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
+  if (isLoginRoute) {
+    return <LoginPage />;
+  }
+
   return (
     <ProfileProvider>
+    <AuthGuard>
     <div
       data-layout-variant={layoutVariant}
       className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-background-base text-text-primary antialiased"
@@ -500,6 +506,7 @@ export default function App() {
         className="pointer-events-none fixed inset-0 z-0"
       >
         <PluginSlot name="backdrop" />
+        <ParticleBackdrop />
       </div>
 
       <header
@@ -527,7 +534,7 @@ export default function App() {
           <Menu />
         </Button>
 
-        <Typography className="font-bold text-[0.95rem] leading-[0.95] tracking-[0.05em] text-midground">
+        <Typography className="font-bold text-sm tracking-tight text-midground">
           {t.app.brand}
         </Typography>
       </header>
@@ -582,10 +589,8 @@ export default function App() {
               >
                 <PluginSlot name="header-left" />
 
-                <Typography className="font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase">
-                  Cyberfox
-                  <br />
-                  Agent
+                <Typography className="font-bold text-lg tracking-tight text-midground">
+                  Cyberfox Agent
                 </Typography>
               </div>
 
@@ -642,7 +647,7 @@ export default function App() {
                       className={cn(
                         "flex w-full items-center gap-1 cursor-pointer",
                         "px-5 pt-2.5 pb-1",
-                        "font-sans text-display text-xs tracking-[0.12em] text-text-tertiary",
+                        "font-sans text-xs font-semibold text-text-tertiary",
                         "hover:text-midground transition-colors",
                         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-midground",
                         isDesktopCollapsed && "lg:hidden",
@@ -685,7 +690,7 @@ export default function App() {
                   <span
                     className={cn(
                       "px-5 pt-2.5 pb-1",
-                      "font-sans text-display text-xs tracking-[0.12em] text-text-tertiary",
+                      "font-sans text-xs font-semibold text-text-tertiary",
                       isDesktopCollapsed && "lg:hidden",
                     )}
                     id="cyberfox-sidebar-plugin-nav-heading"
@@ -834,6 +839,7 @@ export default function App() {
 
       <PluginSlot name="overlay" />
     </div>
+    </AuthGuard>
     </ProfileProvider>
   );
 }
@@ -892,7 +898,7 @@ function SidebarNavLink({
           cn(
             "group/nav relative flex items-center gap-3",
             "px-5 py-2.5",
-            "font-sans text-display uppercase text-sm tracking-[0.12em]",
+            "font-sans text-sm font-medium",
             "whitespace-nowrap transition-colors cursor-pointer",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-midground",
             isActive
@@ -1052,7 +1058,7 @@ function SidebarSystemActions({
       <span
         className={cn(
           "px-5 pt-0.5 pb-0.5",
-          "font-sans text-display text-xs tracking-[0.12em] text-text-tertiary",
+          "font-sans text-xs font-semibold text-text-tertiary",
           collapsed && "lg:hidden",
         )}
       >
@@ -1152,7 +1158,7 @@ function SystemActionButton({
         className={cn(
           "group/action relative flex w-full items-center gap-3",
           "px-5 py-2.5",
-          "font-sans text-display text-xs tracking-[0.1em]",
+          "font-sans text-xs font-medium",
           "whitespace-nowrap transition-colors cursor-pointer",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-midground",
           busy
@@ -1326,7 +1332,7 @@ function SidebarTooltip({ anchor, label, warmRef }: SidebarTooltipProps) {
         "fixed z-[100] pointer-events-none",
         "px-2 py-1",
         "bg-background-base border border-current/20 shadow-lg",
-        "font-sans text-display text-xs tracking-[0.1em] text-midground uppercase",
+        "font-sans text-xs font-medium text-midground",
       )}
       style={{
         top: rect.top + rect.height / 2,

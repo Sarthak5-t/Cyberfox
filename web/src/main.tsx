@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import { SystemActionsProvider } from "./contexts/SystemActions";
+import { AuthProvider } from "./contexts/AuthContext";
 import { I18nProvider } from "./i18n";
 import { exposePluginSDK } from "./plugins";
 import { ThemeProvider } from "./themes";
@@ -16,9 +17,11 @@ createRoot(document.getElementById("root")!).render(
   <BrowserRouter basename={CYBERFOX_BASE_PATH || undefined}>
     <I18nProvider>
       <ThemeProvider>
+        <AuthProvider>
         <SystemActionsProvider>
           <App />
         </SystemActionsProvider>
+        </AuthProvider>
       </ThemeProvider>
     </I18nProvider>
   </BrowserRouter>,

@@ -111,6 +111,13 @@ def add_finding(
         conn = _connect()
         try:
             now = datetime.now(timezone.utc).isoformat()
+            # ponytail: dedup on title+target+severity; NULL target never matches
+            row = conn.execute(
+                "SELECT id FROM findings WHERE title=? AND target=? AND severity=? LIMIT 1",
+                (title, target, severity),
+            ).fetchone()
+            if row:
+                return row[0]
             cur = conn.execute(
                 """INSERT INTO findings
                    (title, severity, category, target, port, protocol,
@@ -222,3 +229,18 @@ def get_stats() -> dict:
         key = f"{r['severity']}_{r['status']}"
         stats[key] = r["count"]
     return stats
+
+
+if __name__ == "__main__":
+    import os
+    import tempfile
+
+    os.environ["CYBERFOX_HOME"] = tempfile.mkdtemp()
+    init_db()
+    a = add_finding("Dup test", "high", target="10.0.0.1")
+    b = add_finding("Dup test", "high", target="10.0.0.1")
+    c = add_finding("Dup test", "high", target="10.0.0.2")
+    assert a == b, "duplicate insert returned different ids"
+    assert c != a, "distinct target wrongly deduped"
+    assert get_stats().get("high_open", 0) == 2, "row count wrong"
+    print("findings dedup OK")

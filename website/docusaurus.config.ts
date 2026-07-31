@@ -7,8 +7,8 @@ const config: Config = {
   tagline: 'The self-improving AI agent',
   favicon: 'img/favicon.ico',
 
-  url: 'https://github.com/Sarthak5-t/Cyberfox',
-  baseUrl: '/docs/',
+  url: 'http://localhost:3000',
+  baseUrl: '/',
 
   organizationName: 'Sarthak5-t',
   projectName: 'cyberfox-agent',
@@ -38,66 +38,13 @@ const config: Config = {
 
   themes: [
     '@docusaurus/theme-mermaid',
-    [
-      require.resolve('@easyops-cn/docusaurus-search-local'),
-      /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
-      ({
-        hashed: true,
-        language: ['en', 'zh'],
-        indexBlog: false,
-        docsRouteBasePath: '/',
-        // Disabled: appends ?_highlight=... to URLs (before the #anchor),
-        // which makes copy/pasted doc links ugly. Ctrl+F on the page is fine.
-        highlightSearchTermsOnTargetPage: false,
-        // Exclude the auto-generated per-skill catalog pages from search.
-        // There are hundreds of them and they dominate results for generic
-        // terms, drowning out the real user-guide / reference docs.
-        // The two human-written catalog indexes (reference/skills-catalog,
-        // reference/optional-skills-catalog) remain indexed.
-        //
-        // Note: ignoreFiles matches `route` (baseUrl stripped, no leading
-        // slash). With baseUrl '/docs/', `/docs/user-guide/skills/bundled/x`
-        // becomes 'user-guide/skills/bundled/x'.
-        ignoreFiles: [
-          /^user-guide\/skills\/bundled\//,
-          /^user-guide\/skills\/optional\//,
-        ],
-      }),
-    ],
-  ],
-
-  plugins: [
-    [
-      '@docusaurus/plugin-client-redirects',
-      {
-        // Static-host redirects for renamed doc pages (GitHub Pages can't
-        // do server-side redirects). Paths are relative to baseUrl (/docs/).
-        redirects: [
-          {
-            // Renamed in #44470 (Automation Blueprints terminology rebrand)
-            from: '/guides/automation-templates',
-            to: '/guides/automation-blueprints',
-          },
-          {
-            // Moved when the Plugins subcategory was created under
-            // Developer Guide > Extending (docs restructure, July 2026)
-            from: '/guides/build-a-cyberfox-plugin',
-            to: '/developer-guide/plugins',
-          },
-        ],
-      },
-    ],
   ],
 
   presets: [
     [
       'classic',
       {
-        docs: {
-          routeBasePath: '/',  // Docs at the root of /docs/
-          sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/Sarthak5-t/Cyberfox/edit/main/website/',
-        },
+        docs: false,
         blog: false,
         theme: {
           customCss: './src/css/custom.css',
@@ -125,12 +72,6 @@ const config: Config = {
         src: 'img/logo.png',
       },
       items: [
-        {
-          type: 'docSidebar',
-          sidebarId: 'docs',
-          position: 'left',
-          label: 'Docs',
-        },
         {
           to: '/skills',
           label: 'Skills',
@@ -160,15 +101,6 @@ const config: Config = {
     footer: {
       style: 'dark',
       links: [
-        {
-          title: 'Docs',
-          items: [
-            { label: 'Getting Started', to: '/getting-started/quickstart' },
-            { label: 'User Guide', to: '/user-guide/cli' },
-            { label: 'Developer Guide', to: '/developer-guide/architecture' },
-            { label: 'Reference', to: '/reference/cli-commands' },
-          ],
-        },
         {
           title: 'Community',
           items: [

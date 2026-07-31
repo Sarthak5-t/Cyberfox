@@ -77,6 +77,7 @@ export default defineConfig({
       "react",
       "react-dom",
       "@react-three/fiber",
+      "@react-three/drei",
       "@observablehq/plot",
       "three",
       "leva",
@@ -89,13 +90,16 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      // Dev auth server handles auth endpoints (passkey, csrf, login)
+      "/api/auth": {
+        target: "http://localhost:4001",
+        changeOrigin: true,
+      },
+      // Main backend handles everything else
       "/api": {
         target: BACKEND,
         ws: true,
       },
-      // Same host as `cyberfox dashboard` must serve these; Vite has no
-      // dashboard-plugins/* files, so without this, plugin scripts 404
-      // or receive index.html in dev.
       "/dashboard-plugins": BACKEND,
     },
   },

@@ -37,35 +37,85 @@ const DEFAULT_LAYOUT: ThemeLayout = {
 };
 
 // ---------------------------------------------------------------------------
+// Shared Horizon typography / layout
+// ---------------------------------------------------------------------------
+
+const HORIZON_TYPOGRAPHY: ThemeTypography = {
+  fontSans: `"Inter", ${SYSTEM_SANS}`,
+  fontMono: `"JetBrains Mono", ${SYSTEM_MONO}`,
+  fontUrl:
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap",
+  baseSize: "15px",
+  lineHeight: "1.6",
+  letterSpacing: "-0.01em",
+};
+
+const HORIZON_LAYOUT: ThemeLayout = {
+  radius: "0.75rem",
+  density: "comfortable",
+};
+
+// ---------------------------------------------------------------------------
 // Themes
 // ---------------------------------------------------------------------------
 
-export const defaultTheme: DashboardTheme = {
-  name: "default",
-  label: "Cyberpunk",
-  description: "Cyan neon on deep black — hacker terminal aesthetic",
+export const horizonTheme: DashboardTheme = {
+  name: "horizon",
+  label: "Horizon",
+  description: "Warm light theme — clean and approachable",
   palette: {
-    background: { hex: "#0a0a0f", alpha: 1 },
-    midground: { hex: "#00ffcc", alpha: 1 },
-    foreground: { hex: "#ffffff", alpha: 0 },
-    warmGlow: "rgba(0, 255, 204, 0.15)",
-    noiseOpacity: 0.8,
+    background: { hex: "#f8f6f3", alpha: 1 },
+    midground: { hex: "#1e293b", alpha: 1 },
+    foreground: { hex: "#2563eb", alpha: 0 },
+    warmGlow: "rgba(37, 99, 235, 0.08)",
+    noiseOpacity: 0,
   },
-  typography: DEFAULT_TYPOGRAPHY,
-  layout: DEFAULT_LAYOUT,
-  terminalBackground: "#0a0a0f",
-  terminalForeground: "#00ffcc",
+  typography: HORIZON_TYPOGRAPHY,
+  layout: HORIZON_LAYOUT,
+  terminalBackground: "#f8f6f3",
+  terminalForeground: "#1e293b",
   seriesColors: {
-    inputTokenAccent: "#00ffcc",
-    outputTokenAccent: "#ff6b6b",
+    inputTokenAccent: "#2563eb",
+    outputTokenAccent: "#7c3aed",
   },
   colorOverrides: {
-    success: "#00ff88",
-    warning: "#ffd700",
-    destructive: "#ff3366",
+    destructive: "#dc2626",
+    destructiveForeground: "#ffffff",
+    success: "#16a34a",
+    warning: "#d97706",
   },
-  swatchColors: ["#0a0a0f", "#00ffcc", "#1a1a2e"],
+  swatchColors: ["#f8f6f3", "#1e293b", "#2563eb"],
 };
+
+export const horizonDarkTheme: DashboardTheme = {
+  name: "horizon-dark",
+  label: "Horizon Dark",
+  description: "Warm dark theme — soft on the eyes",
+  palette: {
+    background: { hex: "#18181b", alpha: 1 },
+    midground: { hex: "#e4e4e7", alpha: 1 },
+    foreground: { hex: "#60a5fa", alpha: 0 },
+    warmGlow: "rgba(96, 165, 250, 0.15)",
+    noiseOpacity: 0,
+  },
+  typography: HORIZON_TYPOGRAPHY,
+  layout: HORIZON_LAYOUT,
+  terminalBackground: "#18181b",
+  terminalForeground: "#e4e4e7",
+  seriesColors: {
+    inputTokenAccent: "#60a5fa",
+    outputTokenAccent: "#a78bfa",
+  },
+  colorOverrides: {
+    destructive: "#ef4444",
+    destructiveForeground: "#ffffff",
+    success: "#22c55e",
+    warning: "#f59e0b",
+  },
+  swatchColors: ["#18181b", "#e4e4e7", "#60a5fa"],
+};
+
+export const defaultTheme: DashboardTheme = horizonTheme;
 
 export const midnightTheme: DashboardTheme = {
   name: "midnight",
@@ -244,6 +294,8 @@ export const defaultLargeTheme: DashboardTheme = {
 export const BUILTIN_THEMES: Record<string, DashboardTheme> = {
   default: defaultTheme,
   "default-large": defaultLargeTheme,
+  horizon: horizonTheme,
+  "horizon-dark": horizonDarkTheme,
   "nous-blue": nousBlueTheme,
   midnight: midnightTheme,
   ember: emberTheme,

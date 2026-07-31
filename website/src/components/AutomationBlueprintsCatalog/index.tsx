@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import styles from "./styles.module.css";
+import React, { useEffect, useState } from 'react';
+import styles from './styles.module.css';
 
 interface BlueprintField {
   name: string;
@@ -23,7 +23,7 @@ interface Blueprint {
   appUrl: string;
 }
 
-const INDEX_URL = "/docs/api/automation-blueprints-index.json";
+const INDEX_URL = '/api/automation-blueprints-index.json';
 
 function CopyButton({ text }: { text: string }): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -39,7 +39,7 @@ function CopyButton({ text }: { text: string }): JSX.Element {
       }}
       aria-label="Copy command"
     >
-      {copied ? "Copied" : "Copy"}
+      {copied ? 'Copied' : 'Copy'}
     </button>
   );
 }
