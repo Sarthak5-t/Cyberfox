@@ -16,9 +16,9 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { Badge } from "@nous-research/ui/ui/components/badge";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { Card, CardContent } from "@nous-research/ui/ui/components/card";
+import { Badge } from "@cyberfox/ui/ui/components/badge";
+import { Button } from "@cyberfox/ui/ui/components/button";
+import { Card, CardContent } from "@cyberfox/ui/ui/components/card";
 import {
   Dialog,
   DialogContent,
@@ -26,11 +26,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@nous-research/ui/ui/components/dialog";
-import { Input } from "@nous-research/ui/ui/components/input";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
-import { Toast } from "@nous-research/ui/ui/components/toast";
-import { useToast } from "@nous-research/ui/hooks/use-toast";
+} from "@cyberfox/ui/ui/components/dialog";
+import { Input } from "@cyberfox/ui/ui/components/input";
+import { Spinner } from "@cyberfox/ui/ui/components/spinner";
+import { Toast } from "@cyberfox/ui/ui/components/toast";
+import { useToast } from "@cyberfox/ui/hooks/use-toast";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { usePageHeader } from "@/contexts/usePageHeader";
 import { api } from "@/lib/api";

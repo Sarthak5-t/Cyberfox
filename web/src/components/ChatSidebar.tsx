@@ -23,9 +23,9 @@
  * terminal pane keeps working unimpaired.
  */
 
-import { Button } from "@nous-research/ui/ui/components/button";
-import { Badge } from "@nous-research/ui/ui/components/badge";
-import { Card } from "@nous-research/ui/ui/components/card";
+import { Button } from "@cyberfox/ui/ui/components/button";
+import { Badge } from "@cyberfox/ui/ui/components/badge";
+import { Card } from "@cyberfox/ui/ui/components/card";
 
 import { ModelPickerDialog } from "@/components/ModelPickerDialog";
 import { ModelReloadConfirm } from "@/components/ModelReloadConfirm";
@@ -163,13 +163,13 @@ export function ChatSidebar({
     });
     const offState = gw.onState(setState);
 
-    const offSessionInfo = gw.on<SessionInfo>("session.info", (ev) => {
+    const offSessionInfo = gw.on<{ payload?: SessionInfo }>("session.info", (ev) => {
       if (ev.payload) {
         setInfo((prev) => ({ ...prev, ...ev.payload }));
       }
     });
 
-    const offError = gw.on<{ message?: string }>("error", (ev) => {
+    const offError = gw.on<{ payload?: { message?: string } }>("error", (ev) => {
       const message = ev.payload?.message;
 
       if (message) {

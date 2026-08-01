@@ -1,25 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Shield, Lock, Sparkles } from 'lucide-react'
-import { Button } from '@nous-research/ui/ui/components/button'
-import { Typography } from '@nous-research/ui/ui/components/typography/index'
+import { Sparkles } from 'lucide-react'
+import { Typography } from '@cyberfox/ui/ui/components/typography/index'
 import { useAuth } from '@/contexts/AuthContext'
-import { PasskeyLogin } from '@/components/auth/PasskeyLogin'
 import { PasswordLogin } from '@/components/auth/PasswordLogin'
 import { NeuralNetworkHero } from '@/components/3d/NeuralNetworkHero'
-import { cn } from '@/lib/utils'
-
-type AuthMode = 'passkey' | 'password'
-
-const AUTH_REQUIRED =
-  typeof window !== 'undefined' &&
-  window.__CYBERFOX_AUTH_REQUIRED__ === true
 
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, isCheckingSession } = useAuth()
-  const [authMode, setAuthMode] = useState<AuthMode>('passkey')
 
   useEffect(() => {
     if (isAuthenticated && !isCheckingSession) {
@@ -90,61 +80,11 @@ export function LoginPage() {
               borderColor: 'color-mix(in srgb, var(--midground-base) 10%, transparent)',
             }}
           >
-            {/* Mode tabs */}
-            <div className="flex border-b border-current/10">
-              <button
-                onClick={() => setAuthMode('passkey')}
-                className={cn(
-                  'flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all',
-                  authMode === 'passkey'
-                    ? ''
-                    : 'text-text-tertiary hover:text-text-secondary',
-                )}
-                style={authMode === 'passkey' ? {
-                  color: 'var(--midground)',
-                  boxShadow: 'inset 0 -2px 0 var(--midground)',
-                } : undefined}
-              >
-                <Shield className="h-4 w-4" />
-                Passkey
-              </button>
-              <button
-                onClick={() => setAuthMode('password')}
-                className={cn(
-                  'flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all',
-                  authMode === 'password'
-                    ? ''
-                    : 'text-text-tertiary hover:text-text-secondary',
-                )}
-                style={authMode === 'password' ? {
-                  color: 'var(--midground)',
-                  boxShadow: 'inset 0 -2px 0 var(--midground)',
-                } : undefined}
-              >
-                <Lock className="h-4 w-4" />
-                Password
-              </button>
-            </div>
-
             {/* Auth form */}
             <div className="p-5">
-              {authMode === 'passkey' ? <PasskeyLogin /> : <PasswordLogin />}
+              <PasswordLogin />
             </div>
           </div>
-
-          {/* Debug notice for loopback mode */}
-          {!AUTH_REQUIRED && (
-            <div
-              className="mt-4 rounded-lg border px-3 py-2 text-xs"
-              style={{
-                borderColor: 'color-mix(in srgb, var(--color-warning) 30%, transparent)',
-                background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)',
-                color: 'var(--color-warning)',
-              }}
-            >
-              <span className="font-medium">[LOOPBACK]</span> Auth gate is not engaged. API calls bypass authentication.
-            </div>
-          )}
         </div>
 
         {/* Footer */}

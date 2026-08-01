@@ -128,6 +128,14 @@ export async function fetchJSON<T>(
       (body.error === "unauthenticated" || body.error === "session_expired") &&
       body.login_url
     ) {
+      // Already standing on the login page → the app shell's own 401s
+      // would otherwise full-page-reload back to /login forever. Skip the
+      // redirect and never resolve; the shell's pollers already no-op on
+      // rejection/timeout.
+      const loginPath = new URL(body.login_url, window.location.origin).pathname;
+      if (window.location.pathname === loginPath) {
+        return new Promise<T>(() => {});
+      }
       // Preserve where the user was so /auth/callback can land them back
       // after re-auth. The gate's login_url already carries a ``next=``
       // built from the request path, but the SPA may be deep inside a
@@ -1648,7 +1656,7 @@ export interface StatusResponse {
    * (public bind, no ``--insecure``). Read alongside ``auth_providers``
    * to render a "gated / loopback" badge. */
   auth_required?: boolean;
-  /** Phase 7: registered ``DashboardAuthProvider`` names (e.g. ``["nous"]``).
+  /** Phase 7: registered ``DashboardAuthProvider`` names (e.g. ``["basic"]``).
    * Empty in loopback mode; empty + ``auth_required=true`` is a
    * fail-closed state (the dashboard will refuse to bind). */
   auth_providers?: string[];
@@ -2054,7 +2062,7 @@ export interface ToolsetProvider {
   tag: string;
   env_vars: ToolsetProviderEnvVar[];
   post_setup: string | null;
-  requires_nous_auth: boolean;
+  requires_external_auth: boolean;
   is_active: boolean;
 }
 

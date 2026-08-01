@@ -1386,8 +1386,6 @@ HOSTED_CONFIG_BLOCKED_NAMES = {
     "inference_url",
     "inference.url",
     "inference.base_url",
-    "nous.portal_url",
-    "nous.inference_url",
     "openrouter_api_key",
     "openai_api_key",
     "anthropic_api_key",

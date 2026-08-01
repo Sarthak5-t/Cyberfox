@@ -18,23 +18,23 @@ import {
 import { api } from "@/lib/api";
 import type { EnvVarInfo } from "@/lib/api";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { Toast } from "@nous-research/ui/ui/components/toast";
-import { useConfirmDelete } from "@nous-research/ui/hooks/use-confirm-delete";
-import { useToast } from "@nous-research/ui/hooks/use-toast";
+import { Toast } from "@cyberfox/ui/ui/components/toast";
+import { useConfirmDelete } from "@cyberfox/ui/hooks/use-confirm-delete";
+import { useToast } from "@cyberfox/ui/hooks/use-toast";
 import { OAuthProvidersCard } from "@/components/OAuthProvidersCard";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { ListItem } from "@nous-research/ui/ui/components/list-item";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Button } from "@cyberfox/ui/ui/components/button";
+import { ListItem } from "@cyberfox/ui/ui/components/list-item";
+import { Spinner } from "@cyberfox/ui/ui/components/spinner";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@nous-research/ui/ui/components/card";
-import { Badge } from "@nous-research/ui/ui/components/badge";
-import { Input } from "@nous-research/ui/ui/components/input";
-import { Label } from "@nous-research/ui/ui/components/label";
+} from "@cyberfox/ui/ui/components/card";
+import { Badge } from "@cyberfox/ui/ui/components/badge";
+import { Input } from "@cyberfox/ui/ui/components/input";
+import { Label } from "@cyberfox/ui/ui/components/label";
 import { useI18n } from "@/i18n";
 import { usePageHeader } from "@/contexts/usePageHeader";
 import { PluginSlot } from "@/plugins";
@@ -46,7 +46,7 @@ import { PluginSlot } from "@/plugins";
 /** Map env-var key prefixes to a human-friendly provider name + ordering. */
 const PROVIDER_GROUPS: { prefix: string; name: string; priority: number }[] = [
   // Cyberfox first
-  { prefix: "NOUS_", name: "Cyberfox", priority: 0 },
+  { prefix: "CYBERFOX_", name: "Cyberfox", priority: 0 },
   // Then alphabetical by display name
   { prefix: "ANTHROPIC_", name: "Anthropic", priority: 1 },
   { prefix: "DASHSCOPE_", name: "DashScope (Qwen)", priority: 2 },

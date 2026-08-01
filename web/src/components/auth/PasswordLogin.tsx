@@ -1,20 +1,20 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { Eye, EyeOff, AlertCircle, KeyRound, Loader2, Clock } from 'lucide-react'
-import { Button } from '@nous-research/ui/ui/components/button'
+import { Button } from '@cyberfox/ui/ui/components/button'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function PasswordLogin() {
   const { loginWithPassword, authError, clearError, rateLimitRemaining, cooldownUntil } = useAuth()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [clientCooldown, setClientCooldown] = useState(0)
   const lastAttemptRef = useRef(0)
-  const emailInputRef = useRef<HTMLInputElement | null>(null)
+  const usernameInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    emailInputRef.current?.focus()
+    usernameInputRef.current?.focus()
   }, [])
 
   const cooldownSeconds = cooldownUntil ? Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000)) : 0
@@ -38,7 +38,7 @@ export function PasswordLogin() {
       return
     }
 
-    if (!email.trim() || !password.trim()) {
+    if (!username.trim() || !password.trim()) {
       return
     }
 
@@ -46,7 +46,7 @@ export function PasswordLogin() {
     setLoading(true)
     clearError()
     try {
-      await loginWithPassword(email.trim(), password)
+      await loginWithPassword(username.trim(), password)
     } catch {
       // Error is set in context
     } finally {
@@ -58,20 +58,20 @@ export function PasswordLogin() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label
-          htmlFor="login-email"
+          htmlFor="login-username"
           className="text-xs font-medium"
           style={{ color: 'var(--color-text-secondary)' }}
         >
-          Email
+          Username
         </label>
         <input
-          ref={emailInputRef}
-          id="login-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@cyberfox.dev"
-          autoComplete="email"
+          ref={usernameInputRef}
+          id="login-username"
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Enter your username"
+          autoComplete="username"
           required
           disabled={loading}
           className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition-all placeholder:text-text-tertiary disabled:opacity-50"
@@ -179,8 +179,7 @@ export function PasswordLogin() {
 
       <Button
         type="submit"
-        disabled={loading || cooldownSeconds > 0 || clientCooldown > 0 || !email.trim() || !password.trim()}
-        variant="primary"
+        disabled={loading || cooldownSeconds > 0 || clientCooldown > 0 || !username.trim() || !password.trim()}
         className="w-full"
       >
         {loading ? (

@@ -190,8 +190,8 @@ class TestTencentTokenhubCanonicalProvider:
 # =============================================================================
 
 
-class TestTencentInOpenRouterAndNous:
-    """tencent/hy3-preview:free and tencent/hy3-preview should appear in OpenRouter and Nous curated lists."""
+class TestTencentInOpenRouterAndProviderModels:
+    """tencent/hy3-preview:free and tencent/hy3-preview should appear in OpenRouter and provider curated lists."""
 
     def test_in_openrouter_fallback(self):
         from cyberfox_cli.models import OPENROUTER_MODELS
@@ -204,9 +204,9 @@ class TestTencentInOpenRouterAndNous:
         ids = [mid for mid, _ in OPENROUTER_MODELS]
         assert "tencent/hy3-preview" in ids
 
-    def test_in_legacy_provider_models(self):
+    def test_in_provider_models(self):
         from cyberfox_cli.models import _PROVIDER_MODELS
-        assert "tencent/hy3-preview" in _PROVIDER_MODELS["nous"]
+        assert "hy3-preview" in _PROVIDER_MODELS["tencent-tokenhub"]
 
 
 # =============================================================================

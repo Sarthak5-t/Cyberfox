@@ -97,7 +97,7 @@ def test_setup_syncs_openrouter_from_disk(tmp_path, monkeypatch):
 
 
 def test_setup_syncs_legacy_from_disk(tmp_path, monkeypatch):
-    """Nous OAuth writes config to disk; wizard config dict must pick it up."""
+    """OAuth setup writes config to disk; wizard config dict must pick it up."""
     monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path))
     _clear_provider_env(monkeypatch)
     _stub_tts(monkeypatch)
@@ -105,7 +105,7 @@ def test_setup_syncs_legacy_from_disk(tmp_path, monkeypatch):
     config = load_config()
 
     def fake_select():
-        _write_model_config(tmp_path, "nous", "https://inference.example.com/v1", "gemini-3-flash")
+        _write_model_config(tmp_path, "openai-codex", "https://api.openai.com/v1", "gpt-4o")
 
     monkeypatch.setattr("cyberfox_cli.main.select_provider_and_model", fake_select)
 
@@ -114,8 +114,8 @@ def test_setup_syncs_legacy_from_disk(tmp_path, monkeypatch):
 
     reloaded = load_config()
     assert isinstance(reloaded["model"], dict)
-    assert reloaded["model"]["provider"] == "nous"
-    assert reloaded["model"]["base_url"] == "https://inference.example.com/v1"
+    assert reloaded["model"]["provider"] == "openai-codex"
+    assert reloaded["model"]["base_url"] == "https://api.openai.com/v1"
 
 
 def test_setup_custom_providers_synced(tmp_path, monkeypatch):
@@ -406,89 +406,6 @@ def test_codex_setup_uses_runtime_access_token_for_live_model_list(tmp_path, mon
     reloaded = load_config()
     assert isinstance(reloaded["model"], dict)
     assert reloaded["model"]["provider"] == "openai-codex"
-
-
-def test_modal_setup_can_use_legacy_subscription_without_modal_creds(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr("cyberfox_cli.setup.managed_nous_tools_enabled", lambda: True)
-    monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path))
-    config = load_config()
-
-    def fake_prompt_choice(question, choices, default=0):
-        if question == "Select terminal backend:":
-            return 2
-        if question == "Select how Modal execution should be billed:":
-            return 0
-        raise AssertionError(f"Unexpected prompt_choice call: {question}")
-
-    def fake_prompt(message, *args, **kwargs):
-        assert "Modal Token" not in message
-        raise AssertionError(f"Unexpected prompt call: {message}")
-
-    monkeypatch.setattr("cyberfox_cli.setup.prompt_choice", fake_prompt_choice)
-    monkeypatch.setattr("cyberfox_cli.setup.prompt", fake_prompt)
-    monkeypatch.setattr("cyberfox_cli.setup._prompt_container_resources", lambda config: None)
-    monkeypatch.setattr(
-        "cyberfox_cli.setup.get_nous_subscription_features",
-        lambda config: type("Features", (), {"nous_auth_present": True})(),
-    )
-    monkeypatch.setitem(
-        sys.modules,
-        "tools.managed_tool_gateway",
-        types.SimpleNamespace(
-            is_managed_tool_gateway_ready=lambda vendor: vendor == "modal",
-            resolve_managed_tool_gateway=lambda vendor: None,
-        ),
-    )
-
-    from cyberfox_cli.setup import setup_terminal_backend
-
-    setup_terminal_backend(config)
-
-    out = capsys.readouterr().out
-    assert config["terminal"]["backend"] == "modal"
-    assert config["terminal"]["modal_mode"] == "managed"
-    assert "bill to your subscription" in out
-
-
-def test_modal_setup_persists_direct_mode_when_user_chooses_their_own_account(tmp_path, monkeypatch):
-    monkeypatch.setattr("cyberfox_cli.setup.managed_nous_tools_enabled", lambda: True)
-    monkeypatch.setenv("CYBERFOX_HOME", str(tmp_path))
-    monkeypatch.delenv("MODAL_TOKEN_ID", raising=False)
-    monkeypatch.delenv("MODAL_TOKEN_SECRET", raising=False)
-    config = load_config()
-
-    def fake_prompt_choice(question, choices, default=0):
-        if question == "Select terminal backend:":
-            return 2
-        if question == "Select how Modal execution should be billed:":
-            return 1
-        raise AssertionError(f"Unexpected prompt_choice call: {question}")
-
-    prompt_values = iter(["token-id", "token-secret", ""])
-
-    monkeypatch.setattr("cyberfox_cli.setup.prompt_choice", fake_prompt_choice)
-    monkeypatch.setattr("cyberfox_cli.setup.prompt", lambda *args, **kwargs: next(prompt_values))
-    monkeypatch.setattr("cyberfox_cli.setup._prompt_container_resources", lambda config: None)
-    monkeypatch.setattr(
-        "cyberfox_cli.setup.get_nous_subscription_features",
-        lambda config: type("Features", (), {"nous_auth_present": True})(),
-    )
-    monkeypatch.setitem(
-        sys.modules,
-        "tools.managed_tool_gateway",
-        types.SimpleNamespace(
-            is_managed_tool_gateway_ready=lambda vendor: vendor == "modal",
-            resolve_managed_tool_gateway=lambda vendor: None,
-        ),
-    )
-    monkeypatch.setitem(sys.modules, "swe_rex", object())
-
-    from cyberfox_cli.setup import setup_terminal_backend
-
-    setup_terminal_backend(config)
-
-    assert config["terminal"]["backend"] == "modal"
-    assert config["terminal"]["modal_mode"] == "direct"
 
 
 # test_setup_slack_* moved to tests/gateway/test_slack_plugin_setup.py — the

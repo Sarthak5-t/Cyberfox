@@ -115,7 +115,7 @@ export const horizonDarkTheme: DashboardTheme = {
   swatchColors: ["#18181b", "#e4e4e7", "#60a5fa"],
 };
 
-export const defaultTheme: DashboardTheme = horizonTheme;
+export const defaultTheme: DashboardTheme = horizonDarkTheme;
 
 export const midnightTheme: DashboardTheme = {
   name: "midnight",
@@ -247,11 +247,11 @@ export const roseTheme: DashboardTheme = {
   },
 };
 
-/** Light mode — vivid Nous-blue accents on a cream canvas. */
-export const nousBlueTheme: DashboardTheme = {
-  name: "nous-blue",
-  label: "Nous Blue",
-  description: "Light mode — vivid Nous-blue accents on cream canvas",
+/** Light mode — vivid Cyberfox-blue accents on a cream canvas. */
+export const cyberfoxBlueTheme: DashboardTheme = {
+  name: "cyberfox-blue",
+  label: "Cyberfox Blue",
+  description: "Light mode — vivid Cyberfox-blue accents on cream canvas",
   palette: {
     background: { hex: "#E8F2FD", alpha: 1 },
     midground: { hex: "#0053FD", alpha: 1 },
@@ -296,7 +296,7 @@ export const BUILTIN_THEMES: Record<string, DashboardTheme> = {
   "default-large": defaultLargeTheme,
   horizon: horizonTheme,
   "horizon-dark": horizonDarkTheme,
-  "nous-blue": nousBlueTheme,
+  "cyberfox-blue": cyberfoxBlueTheme,
   midnight: midnightTheme,
   ember: emberTheme,
   mono: monoTheme,

@@ -1,16 +1,16 @@
 @import 'tailwindcss';
-/* `fonts.css` must come BEFORE `globals.css`: as of @nous-research/ui 0.14.x,
+/* `fonts.css` must come BEFORE `globals.css`: as of @cyberfox/ui 0.14.x,
    `globals.css` only declares the `--font-*` CSS variables (Collapse, Rules
    Compressed/Expanded, Mondwest). The `@font-face` registrations live in
    `fonts.css`, so without this import the DS variables resolve to font
    families the browser never loads and components fall back to a system
    stack (Tabs, Segmented, Typography, Buttons, etc. all look unstyled). */
-@import '@nous-research/ui/styles/fonts.css';
-@import '@nous-research/ui/styles/globals.css';
+@import '@cyberfox/ui/styles/fonts.css';
+@import '@cyberfox/ui/styles/globals.css';
 
 /* Scan the published design-system bundle so its utility classes survive
    Tailwind's JIT purge. */
-@source '../node_modules/@nous-research/ui/dist';
+@source '../node_modules/@cyberfox/ui/dist';
 
 /* ------------------------------------------------------------------ */
 /* JetBrains Mono — bundled for the embedded TUI (/chat tab).          */
@@ -43,19 +43,19 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Horizon (default) — warm light, clean and approachable              */
+/* Horizon Dark (default) — dark canvas, light text                    */
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* Horizon palette — warm off-white canvas, slate text */
-  --foreground: color-mix(in srgb, #2563eb 0%, transparent);
-  --foreground-base: #2563eb;
+  /* Horizon Dark palette — dark zinc canvas, light text */
+  --foreground: color-mix(in srgb, #60a5fa 0%, transparent);
+  --foreground-base: #60a5fa;
   --foreground-alpha: 0;
-  --midground: color-mix(in srgb, #1e293b 100%, transparent);
-  --midground-base: #1e293b;
+  --midground: color-mix(in srgb, #e4e4e7 100%, transparent);
+  --midground-base: #e4e4e7;
   --midground-alpha: 1;
-  --background: color-mix(in srgb, #f8f6f3 100%, transparent);
-  --background-base: #f8f6f3;
+  --background: color-mix(in srgb, #18181b 100%, transparent);
+  --background-base: #18181b;
   --background-alpha: 1;
 
   /* Typography tokens — Inter sans for body, JetBrains Mono for code */
@@ -73,8 +73,8 @@
   --theme-density: comfortable;
 
   /* Data-series accents — blue input, purple output */
-  --series-input-token: #2563eb;
-  --series-output-token: #7c3aed;
+  --series-input-token: #60a5fa;
+  --series-output-token: #a78bfa;
 }
 
 /* Theme tokens cascade into the document root so every descendant inherits
@@ -130,7 +130,7 @@ code, kbd, pre, samp, .font-mono, .font-mono-ui {
   }
 }
 
-/* Nousnet's cyberfox-agent layout bumps `small` and `code` to readable
+/* Cyberfox's dashboard layout bumps `small` and `code` to readable
    dashboard sizes. Keep in sync. */
 small { font-size: 1.0625rem; }
 code { font-size: 0.875rem; }

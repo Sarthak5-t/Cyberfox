@@ -6,67 +6,40 @@ import path from "path";
 const BACKEND = process.env.CYBERFOX_DASHBOARD_URL ?? "http://127.0.0.1:9119";
 
 /**
- * In production the Python `cyberfox dashboard` server injects a one-shot
- * session token into `index.html` (see `cyberfox_cli/web_server.py`). The
- * Vite dev server serves its own `index.html`, so unless we forward that
- * token, every protected `/api/*` call 401s.
- *
- * This plugin fetches the running dashboard's `index.html` on each dev page
- * load, scrapes the `window.__CYBERFOX_SESSION_TOKEN__` assignment, and
- * re-injects it into the dev HTML. No-op in production builds.
+ * The dev frontends force the auth gate on the backend
+ * (`CYBERFOX_DASHBOARD_FORCE_AUTH=1` in `dev.mjs`), so the Vite dev HTML
+ * must present the same gated flag the production `index.html` does — no
+ * token scraping: auth calls route to the backend through the proxy below.
+ * No-op in production builds.
  */
-function cyberfoxDevToken(): Plugin {
-  const TOKEN_RE = /window\.__CYBERFOX_SESSION_TOKEN__\s*=\s*"([^"]+)"/;
-  const EMBEDDED_RE =
-    /window\.__CYBERFOX_DASHBOARD_EMBEDDED_CHAT__\s*=\s*(true|false)/;
-
+function cyberfoxDevAuthFlag(): Plugin {
   return {
-    name: "cyberfox:dev-session-token",
+    name: "cyberfox:dev-auth-gated",
     apply: "serve",
-    async transformIndexHtml() {
-      try {
-        const res = await fetch(BACKEND, { headers: { accept: "text/html" } });
-        const html = await res.text();
-        const match = html.match(TOKEN_RE);
-        if (!match) {
-          console.warn(
-            `[cyberfox] Could not find session token in ${BACKEND} — ` +
-              `is \`cyberfox dashboard\` running? /api calls will 401.`,
-          );
-          return;
-        }
-        const embeddedMatch = html.match(EMBEDDED_RE);
-        const embeddedJs = embeddedMatch ? embeddedMatch[1] : "true";
-        return [
-          {
-            tag: "script",
-            injectTo: "head",
-            children:
-              `window.__CYBERFOX_SESSION_TOKEN__="${match[1]}";` +
-              `window.__CYBERFOX_DASHBOARD_EMBEDDED_CHAT__=${embeddedJs};`,
-          },
-        ];
-      } catch (err) {
-        console.warn(
-          `[cyberfox] Dashboard at ${BACKEND} unreachable — ` +
-            `start it with \`cyberfox dashboard\` or set CYBERFOX_DASHBOARD_URL. ` +
-            `(${(err as Error).message})`,
-        );
-      }
+    transformIndexHtml() {
+      return [
+        {
+          tag: "script",
+          injectTo: "head",
+          children:
+            "window.__CYBERFOX_AUTH_REQUIRED__=true;" +
+            "window.__CYBERFOX_DASHBOARD_EMBEDDED_CHAT__=true;",
+        },
+      ];
     },
   };
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), cyberfoxDevToken()],
+  plugins: [react(), tailwindcss(), cyberfoxDevAuthFlag()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@cyberfox/shared": path.resolve(__dirname, "../apps/shared/src"),
     },
-    // When @nous-research/ui is symlinked via `file:../../design-language`,
+    // When @cyberfox/ui is symlinked via `file:./vendor/@cyberfox/ui`,
     // Node's module resolution would pick up shared deps from
-    // design-language/node_modules/*, giving us two copies + breaking
+    // vendor/@cyberfox/ui/node_modules/*, giving us two copies + breaking
     // hooks (useRef-of-null), webgl contexts, etc. Force everything that
     // exists in BOTH places to use the dashboard's copy.
     //
@@ -90,9 +63,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Dev auth server handles auth endpoints (passkey, csrf, login)
+      // Auth routes (password-login, session, logout, ws-ticket) hit the
+      // real backend, not a dev auth server.
       "/api/auth": {
-        target: "http://localhost:4001",
+        target: BACKEND,
+        changeOrigin: true,
+      },
+      "/auth": {
+        target: BACKEND,
         changeOrigin: true,
       },
       // Main backend handles everything else

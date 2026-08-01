@@ -178,7 +178,7 @@ MODEL_STRATEGIES = {
             ),
         },
     },
-    # Nous/Cyberfox models — already uncensored, just needs clean prompt
+    # Cyberfox models — already uncensored, just needs clean prompt
     "cyberfox": {
         "order": ["prefill_only"],
         "system_templates": {},
@@ -305,7 +305,7 @@ def _detect_model_family(model: str) -> str:
         return "gemini"
     if "grok" in model_lower or "x-ai" in model_lower:
         return "grok"
-    if "cyberfox" in model_lower or "nous" in model_lower:
+    if "cyberfox" in model_lower:
         return "cyberfox"
     if "deepseek" in model_lower:
         return "deepseek"
