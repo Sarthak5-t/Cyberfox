@@ -161,6 +161,13 @@ export const uk: Translations = {
     newChat: "Новий чат",
     previousPage: "Попередня сторінка",
     nextPage: "Наступна сторінка",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "Користувач",
       assistant: "Асистент",

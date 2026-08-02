@@ -38,10 +38,10 @@
   --ifm-color-primary-lighter: #ffe14d;
   --ifm-color-primary-lightest: #ffeb80;
 
-  --ifm-background-color: #07070d;
-  --ifm-background-surface-color: #0f0f18;
-  --ifm-navbar-background-color: #07070dee;
-  --ifm-footer-background-color: #050509;
+  --ifm-background-color: #000000;
+  --ifm-background-surface-color: #0a0a12;
+  --ifm-navbar-background-color: #000000ee;
+  --ifm-footer-background-color: #000000;
   --ifm-color-emphasis-100: #14142a;
   --ifm-color-emphasis-200: #1a1a30;
 

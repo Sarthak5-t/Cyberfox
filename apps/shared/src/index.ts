@@ -254,7 +254,7 @@ export class JsonRpcGatewayClient {
   }
 
   private rejectAllPending(msg: string): void {
-    for (const [id, p] of this.pending) {
+    for (const [, p] of this.pending) {
       clearTimeout(p.timer);
       p.reject(new Error(msg));
     }

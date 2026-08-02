@@ -161,6 +161,13 @@ export const it: Translations = {
     newChat: "Nuova chat",
     previousPage: "Pagina precedente",
     nextPage: "Pagina successiva",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "Utente",
       assistant: "Assistente",

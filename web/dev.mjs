@@ -11,29 +11,26 @@ function log(tag, msg) {
   console.log(`[${ts}] [${tag}] ${msg}`)
 }
 
-// Start auth server
-const auth = spawn('node', ['api/auth-server.mjs'], {
-  cwd: __dirname,
-  stdio: ['ignore', 'pipe', 'pipe'],
-})
-auth.stdout.on('data', (d) => process.stdout.write(`[auth] ${d}`))
-auth.stderr.on('data', (d) => process.stderr.write(`[auth] ${d}`))
-auth.on('exit', (code) => log('auth', `exited with code ${code}`))
-
-// Wait 2s, then start Python backend
+// Start Python backend with the auth gate forced on, so the loopback bind
+// (and the Vite dev port proxying to it) requires login.
 const backend = spawn(
   'python', ['-m', 'cyberfox_cli.main', 'dashboard', '--no-open'],
   {
     cwd: ROOT,
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, VIRTUAL_ENV: resolve(ROOT, 'venv'), PATH: `${resolve(ROOT, 'venv/bin')}:${process.env.PATH}` },
+    env: {
+      ...process.env,
+      VIRTUAL_ENV: resolve(ROOT, 'venv'),
+      PATH: `${resolve(ROOT, 'venv/bin')}:${process.env.PATH}`,
+      CYBERFOX_DASHBOARD_FORCE_AUTH: '1',
+    },
   },
 )
 backend.stdout.on('data', (d) => process.stdout.write(`[backend] ${d}`))
 backend.stderr.on('data', (d) => process.stderr.write(`[backend] ${d}`))
 backend.on('exit', (code) => log('backend', `exited with code ${code}`))
 
-// Wait for auth + backend, then start Vite
+// Wait for the backend to come up, then start Vite
 setTimeout(() => {
   const vite = spawn('npx', ['vite'], {
     cwd: __dirname,
@@ -44,15 +41,14 @@ setTimeout(() => {
   vite.stderr.on('data', (d) => process.stderr.write(`[vite] ${d}`))
   vite.on('exit', (code) => log('vite', `exited with code ${code}`))
 
-  process.on('SIGINT', () => { vite.kill(); backend.kill(); auth.kill(); process.exit() })
-  process.on('SIGTERM', () => { vite.kill(); backend.kill(); auth.kill(); process.exit() })
+  process.on('SIGINT', () => { vite.kill(); backend.kill(); process.exit() })
+  process.on('SIGTERM', () => { vite.kill(); backend.kill(); process.exit() })
 }, 8000)
 
 log('dev', 'Starting Cyberfox dev environment...')
-log('dev', '  Auth:    http://localhost:4001')
-log('dev', '  Backend: http://localhost:9119')
+log('dev', '  Backend: http://localhost:9119 (auth gate forced on)')
 log('dev', '  Vite:    http://localhost:5173')
 log('dev', '  Press Ctrl+C to stop all services')
 
-process.on('SIGINT', () => { backend.kill(); auth.kill(); process.exit() })
-process.on('SIGTERM', () => { backend.kill(); auth.kill(); process.exit() })
+process.on('SIGINT', () => { backend.kill(); process.exit() })
+process.on('SIGTERM', () => { backend.kill(); process.exit() })

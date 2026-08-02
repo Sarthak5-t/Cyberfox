@@ -14926,7 +14926,11 @@ def start_server(
     # injection / WS-auth paths can branch on it consistently.  Phase 3.5
     # uses this to decide whether to refuse the bind, log the gate-on
     # banner, and enable uvicorn proxy_headers.
-    app.state.auth_required = should_require_auth(host)
+    # ``CYBERFOX_DASHBOARD_FORCE_AUTH=1`` raises the gate even on loopback
+    # binds (where it would otherwise be trusted-open) — the dev frontends
+    # set it so the dev ports require login too.
+    _forced = os.environ.get("CYBERFOX_DASHBOARD_FORCE_AUTH", "") == "1"
+    app.state.auth_required = should_require_auth(host) or _forced
 
     # ``--insecure`` no longer disables the auth gate (June 2026 hardening:
     # the cyberfox-0day MCP-persistence campaign abused unauthenticated public
@@ -14947,14 +14951,6 @@ def start_server(
         # escape hatch that serves the dashboard without authentication.
         from cyberfox_cli.dashboard_auth import list_providers
         if not list_providers():
-            # Surface the *specific* reason any bundled provider declined
-            # to register (e.g. missing CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID).
-            # Each provider plugin that ships with Cyberfox Agent exposes a
-            # module-level ``LAST_SKIP_REASON`` string for this purpose;
-            # without it the operator would only see "no providers" which
-            # is misleading when the provider IS installed but unconfigured.
-            skip_reasons: list[str] = []
-
             _fix_hint = (
                 "Configure an auth provider before exposing the dashboard:\n"
                 "  • Password: set dashboard.basic_auth.username + "
@@ -14967,16 +14963,6 @@ def start_server(
                 "There is no unauthenticated public-bind option — to keep it "
                 "local, bind 127.0.0.1 and tunnel in (SSH / Tailscale)."
             )
-            if skip_reasons:
-                raise SystemExit(
-                    f"Refusing to bind dashboard to {host} — the auth gate "
-                    f"engages on non-loopback binds, but no auth providers "
-                    f"are registered.\n\n"
-                    f"Bundled providers reported these issues:\n"
-                    + "\n".join(skip_reasons)
-                    + "\n\n"
-                    + _fix_hint
-                )
             raise SystemExit(
                 f"Refusing to bind dashboard to {host} — the auth gate "
                 f"engages on non-loopback binds, but no auth providers are "

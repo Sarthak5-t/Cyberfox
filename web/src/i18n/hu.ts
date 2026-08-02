@@ -161,6 +161,13 @@ export const hu: Translations = {
     newChat: "Új csevegés",
     previousPage: "Előző oldal",
     nextPage: "Következő oldal",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "Felhasználó",
       assistant: "Asszisztens",

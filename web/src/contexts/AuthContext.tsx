@@ -19,8 +19,7 @@ interface AuthState {
 }
 
 interface AuthActions {
-  loginWithPasskey: () => Promise<void>
-  loginWithPassword: (email: string, password: string) => Promise<void>
+  loginWithPassword: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
   refreshSession: () => Promise<void>
   clearError: () => void
@@ -31,10 +30,6 @@ type AuthContextValue = AuthState & AuthActions
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 const API_BASE = ''
-
-const PASKEY_ENABLED =
-  typeof window !== 'undefined' &&
-  window.PublicKeyCredential !== undefined
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
@@ -95,69 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [cooldownUntil])
 
-  const loginWithPasskey = useCallback(async () => {
-    setAuthError(null)
-    try {
-      if (!PASKEY_ENABLED) {
-        throw new Error('WebAuthn is not supported in this browser')
-      }
-
-      const { startAuthentication } = await import('@simplewebauthn/browser')
-
-      const optsRes = await fetch(`${API_BASE}/api/auth/passkey/start`, {
-        credentials: 'include',
-      })
-      if (!optsRes.ok) {
-        if (optsRes.status === 501 || optsRes.status === 404) {
-          throw new Error('Passkey authentication is not configured on this server')
-        }
-        throw new Error('Failed to start passkey authentication')
-      }
-      const opts = await optsRes.json()
-
-      const authResp = await startAuthentication({ optionsJSON: opts.publicKey })
-
-      const verifyRes = await fetch(`${API_BASE}/api/auth/passkey/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(authResp),
-      })
-
-      if (!verifyRes.ok) {
-        handleRateLimitHeaders(verifyRes)
-        const err = await verifyRes.json().catch(() => ({}))
-        throw new Error(err.message || 'Passkey verification failed')
-      }
-
-      const data = await verifyRes.json()
-      setUser(data.user)
-      setRateLimitRemaining(-1)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Authentication failed'
-      setAuthError(message)
-      throw err
-    }
-  }, [handleRateLimitHeaders])
-
   const loginWithPassword = useCallback(
-    async (email: string, password: string) => {
+    async (username: string, password: string) => {
       setAuthError(null)
       try {
-        const csrfRes = await fetch(`${API_BASE}/api/auth/csrf`, {
-          credentials: 'include',
-        })
-        if (!csrfRes.ok) throw new Error('Could not fetch security token')
-        const { csrfToken } = await csrfRes.json()
-
-        const res = await fetch(`${API_BASE}/api/auth/login`, {
+        const res = await fetch(`${API_BASE}/auth/password-login`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken,
-          },
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ provider: 'basic', username, password }),
         })
 
         if (!res.ok) {
@@ -169,8 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(err.message || 'Invalid credentials')
         }
 
-        const data = await res.json()
-        setUser(data.user)
+        await refreshSession()
         setAuthError(null)
         setRateLimitRemaining(-1)
       } catch (err) {
@@ -179,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw err
       }
     },
-    [handleRateLimitHeaders],
+    [handleRateLimitHeaders, refreshSession],
   )
 
   const logout = useCallback(async () => {
@@ -204,7 +144,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authError,
     rateLimitRemaining,
     cooldownUntil,
-    loginWithPasskey,
     loginWithPassword,
     logout,
     refreshSession,
@@ -221,5 +160,3 @@ export function useAuth(): AuthContextValue {
   }
   return ctx
 }
-
-export { PASKEY_ENABLED }

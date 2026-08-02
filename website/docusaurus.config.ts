@@ -5,7 +5,10 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Cyberfox Agent',
   tagline: 'The self-improving AI agent',
-  favicon: 'img/favicon.ico',
+
+  headTags: [
+    {tagName: 'link', attributes: {rel: 'icon', href: 'data:,'}},
+  ],
 
   url: 'http://localhost:3000',
   baseUrl: '/',
@@ -57,7 +60,8 @@ const config: Config = {
     image: 'img/cyberfox-agent-banner.png',
     colorMode: {
       defaultMode: 'dark',
-      respectPrefersColorScheme: true,
+      respectPrefersColorScheme: false,
+      disableSwitch: true,
     },
     docs: {
       sidebar: {
@@ -67,10 +71,6 @@ const config: Config = {
     },
     navbar: {
       title: 'Cyberfox Agent',
-      logo: {
-        alt: 'Cyberfox Agent',
-        src: 'img/logo.png',
-      },
       items: [
         {
           to: '/skills',

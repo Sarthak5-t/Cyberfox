@@ -161,6 +161,13 @@ export const tr: Translations = {
     newChat: "Yeni sohbet",
     previousPage: "Önceki sayfa",
     nextPage: "Sonraki sayfa",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "Kullanıcı",
       assistant: "Asistan",

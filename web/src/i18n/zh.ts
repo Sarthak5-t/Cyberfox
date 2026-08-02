@@ -159,6 +159,13 @@ export const zh: Translations = {
     newChat: "新对话",
     previousPage: "上一页",
     nextPage: "下一页",
+    statsTotal: "总计",
+    statsActive: "活跃",
+    statsArchived: "已归档",
+    statsMessages: "消息",
+    resume: "恢复",
+    rename: "重命名",
+    exportSession: "导出",
     roles: {
       user: "用户",
       assistant: "助手",

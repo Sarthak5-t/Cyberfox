@@ -161,6 +161,13 @@ export const ga: Translations = {
     newChat: "Comhrá nua",
     previousPage: "Leathanach roimhe seo",
     nextPage: "An chéad leathanach eile",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "Úsáideoir",
       assistant: "Cúntóir",

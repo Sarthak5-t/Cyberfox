@@ -161,6 +161,13 @@ export const af: Translations = {
     newChat: "Nuwe klets",
     previousPage: "Vorige bladsy",
     nextPage: "Volgende bladsy",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "Gebruiker",
       assistant: "Assistent",

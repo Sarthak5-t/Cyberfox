@@ -161,6 +161,13 @@ export const ja: Translations = {
     newChat: "新しいチャット",
     previousPage: "前のページ",
     nextPage: "次のページ",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "ユーザー",
       assistant: "アシスタント",

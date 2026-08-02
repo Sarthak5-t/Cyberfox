@@ -181,6 +181,11 @@ def _auto_sso_response(request: Request) -> Response | None:
     if len(providers) != 1:
         # Zero → nothing to redirect to. Two+ → user must choose at /login.
         return None
+    if getattr(providers[0], "supports_password", False):
+        # Password-only provider: there is no OAuth /auth/login round trip to
+        # auto-initiate (start_login raises NotImplementedError), so bounce to
+        # the /login form instead of a 500.
+        return None
 
     from cyberfox_cli.dashboard_auth.prefix import prefix_from_request
 

@@ -246,9 +246,11 @@ class BasicAuthProvider(DashboardAuthProvider):
         # hash if the username matches, else a dummy hash) so an unknown
         # username and a wrong password take comparable time. Compare the
         # username with compare_digest too, to avoid a length/byte timing
-        # leak on the username itself.
+        # leak on the username itself. Usernames are emails → compare
+        # case-insensitively.
         username_ok = hmac.compare_digest(
-            username.encode("utf-8"), self._username.encode("utf-8")
+            username.casefold().encode("utf-8"),
+            self._username.casefold().encode("utf-8"),
         )
         target_hash = self._password_hash if username_ok else _DUMMY_HASH
         password_ok = _verify_password(password, target_hash)

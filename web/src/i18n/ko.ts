@@ -161,6 +161,13 @@ export const ko: Translations = {
     newChat: "새 채팅",
     previousPage: "이전 페이지",
     nextPage: "다음 페이지",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "사용자",
       assistant: "어시스턴트",

@@ -7,7 +7,6 @@
     "prestart": "node scripts/prebuild.mjs",
     "start": "docusaurus start",
     "dev": "node dev.mjs",
-    "auth-server": "node api/auth-server.mjs",
     "prebuild": "node scripts/prebuild.mjs",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",

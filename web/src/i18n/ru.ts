@@ -161,6 +161,13 @@ export const ru: Translations = {
     newChat: "Новый чат",
     previousPage: "Предыдущая страница",
     nextPage: "Следующая страница",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "Пользователь",
       assistant: "Ассистент",

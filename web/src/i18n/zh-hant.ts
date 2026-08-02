@@ -161,6 +161,13 @@ export const zhHant: Translations = {
     newChat: "新對話",
     previousPage: "上一頁",
     nextPage: "下一頁",
+    statsTotal: "Total",
+    statsActive: "Active",
+    statsArchived: "Archived",
+    statsMessages: "Messages",
+    resume: "Resume",
+    rename: "Rename",
+    exportSession: "Export",
     roles: {
       user: "使用者",
       assistant: "助理",
