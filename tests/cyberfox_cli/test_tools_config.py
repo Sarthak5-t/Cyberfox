@@ -662,12 +662,12 @@ def test_local_browser_provider_is_saved_explicitly(monkeypatch):
     assert config["browser"]["cloud_provider"] == "local"
 
 
-def test_fresh_install_browser_default_is_free_local_not_paid_nous():
+def test_fresh_install_browser_default_is_free_local_not_paid_cyberfox():
     """On a fresh install the browser picker must default to the free local
-    backend, never the paid Nous Subscription gateway.
+    backend, never the paid Cyberfox Subscription gateway.
 
-    Regression: the Nous row used to sort first, so the menu cursor defaulted
-    to index 0 (Nous) and pressing Enter walked users straight into a Nous
+    Regression: the Cyberfox row used to sort first, so the menu cursor defaulted
+    to index 0 (Cyberfox) and pressing Enter walked users straight into a Cyberfox
     Portal login for a paid offering (Javier's bug, June 2026).
     """
     from cyberfox_cli.tools_config import _detect_active_provider_index
@@ -679,7 +679,7 @@ def test_fresh_install_browser_default_is_free_local_not_paid_nous():
     assert _detect_active_provider_index(providers, {}) == 0
 
 
-def test_fresh_install_tts_default_is_free_edge_not_paid_nous():
+def test_fresh_install_tts_default_is_free_edge_not_paid_cyberfox():
     """TTS picker defaults to the free Edge backend on a fresh install."""
     from cyberfox_cli.tools_config import _detect_active_provider_index
 

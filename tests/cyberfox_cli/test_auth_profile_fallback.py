@@ -242,28 +242,28 @@ def test_provider_auth_state_falls_back_to_global_when_profile_has_none(profile_
     from cyberfox_cli.auth import get_provider_auth_state
 
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "nous-global", "refresh_token": "rt-global"},
+        "cyberfox": {"access_token": "cyberfox-global", "refresh_token": "rt-global"},
     }))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={}))
 
-    state = get_provider_auth_state("nous")
+    state = get_provider_auth_state("cyberfox")
     assert state is not None
-    assert state["access_token"] == "nous-global"
+    assert state["access_token"] == "cyberfox-global"
 
 
 def test_provider_auth_state_profile_wins_when_present(profile_env):
     from cyberfox_cli.auth import get_provider_auth_state
 
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "nous-global"},
+        "cyberfox": {"access_token": "cyberfox-global"},
     }))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "nous-profile"},
+        "cyberfox": {"access_token": "cyberfox-profile"},
     }))
 
-    state = get_provider_auth_state("nous")
+    state = get_provider_auth_state("cyberfox")
     assert state is not None
-    assert state["access_token"] == "nous-profile"
+    assert state["access_token"] == "cyberfox-profile"
 
 
 def test_provider_auth_state_returns_none_when_neither_has_it(profile_env):
@@ -272,18 +272,17 @@ def test_provider_auth_state_returns_none_when_neither_has_it(profile_env):
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={}))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={}))
 
-    assert get_provider_auth_state("nous") is None
+    assert get_provider_auth_state("cyberfox") is None
 
 
 # ---------------------------------------------------------------------------
 # _load_provider_state — internal global fallback (issue #18594 follow-up)
 #
-# Several runtime helpers (notably ``resolve_nous_runtime_credentials`` and
-# ``resolve_nous_access_token``) call ``_load_provider_state`` directly with
+# Several runtime helpers call ``_load_provider_state`` directly with
 # a profile-loaded auth store rather than going through
 # ``get_provider_auth_state``. Without the fallback wired into
 # ``_load_provider_state`` itself, those helpers raise ``"Cyberfox is not
-# logged into cyberfox portal"`` even though the user has a valid global Nous
+# logged into the cyberfox portal"`` even though the user has a valid global
 # login. These tests pin the per-provider shadowing into the helper.
 # ---------------------------------------------------------------------------
 
@@ -293,12 +292,12 @@ def test_load_provider_state_falls_back_to_global(profile_env):
     from cyberfox_cli.auth import _load_auth_store, _load_provider_state
 
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "global-test-token", "refresh_token": "rt"},
+        "cyberfox": {"access_token": "global-test-token", "refresh_token": "rt"},
     }))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={}))
 
     auth_store = _load_auth_store()
-    state = _load_provider_state(auth_store, "nous")
+    state = _load_provider_state(auth_store, "cyberfox")
     assert state is not None
     assert state["access_token"] == "global-test-token"
 
@@ -307,14 +306,14 @@ def test_load_provider_state_profile_wins_over_global(profile_env):
     from cyberfox_cli.auth import _load_auth_store, _load_provider_state
 
     _write(profile_env["global"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "global-token"},
+        "cyberfox": {"access_token": "global-token"},
     }))
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "profile-token"},
+        "cyberfox": {"access_token": "profile-token"},
     }))
 
     auth_store = _load_auth_store()
-    state = _load_provider_state(auth_store, "nous")
+    state = _load_provider_state(auth_store, "cyberfox")
     assert state is not None
     assert state["access_token"] == "profile-token"
 
@@ -326,7 +325,7 @@ def test_load_provider_state_returns_none_when_neither_has_it(profile_env):
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={}))
 
     auth_store = _load_auth_store()
-    assert _load_provider_state(auth_store, "nous") is None
+    assert _load_provider_state(auth_store, "cyberfox") is None
 
 
 def test_load_provider_state_classic_mode_no_fallback(tmp_path, monkeypatch):
@@ -339,13 +338,13 @@ def test_load_provider_state_classic_mode_no_fallback(tmp_path, monkeypatch):
     monkeypatch.setenv("CYBERFOX_HOME", str(cyberfox_home))
 
     _write(cyberfox_home / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "classic-token"},
+        "cyberfox": {"access_token": "classic-token"},
     }))
 
     from cyberfox_cli.auth import _load_auth_store, _load_provider_state
 
     auth_store = _load_auth_store()
-    state = _load_provider_state(auth_store, "nous")
+    state = _load_provider_state(auth_store, "cyberfox")
     assert state is not None
     assert state["access_token"] == "classic-token"
     # Absent providers still return None.
@@ -356,13 +355,13 @@ def test_load_provider_state_malformed_global_does_not_break_profile(profile_env
     """A corrupt global auth.json must not break profile reads."""
     (profile_env["global"] / "auth.json").write_text("{not valid json")
     _write(profile_env["profile"] / "auth.json", _make_auth_store(providers={
-        "nous": {"access_token": "profile-token"},
+        "cyberfox": {"access_token": "profile-token"},
     }))
 
     from cyberfox_cli.auth import _load_auth_store, _load_provider_state
 
     auth_store = _load_auth_store()
-    state = _load_provider_state(auth_store, "nous")
+    state = _load_provider_state(auth_store, "cyberfox")
     assert state is not None
     assert state["access_token"] == "profile-token"
 

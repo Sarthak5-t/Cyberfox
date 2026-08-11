@@ -83,7 +83,7 @@ _CREDENTIAL_NAMES = frozenset({
     "GITHUB_TOKEN",
     "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
-    "NOUS_API_KEY",
+    "CYBERFOX_API_KEY",
     "GEMINI_API_KEY",
     "GOOGLE_API_KEY",
     "GROQ_API_KEY",
@@ -215,11 +215,13 @@ _CYBERFOX_BEHAVIORAL_VARS = frozenset({
     "CYBERFOX_KANBAN_DISPATCH_IN_GATEWAY",
     "CYBERFOX_TENANT",
     # Dashboard OAuth auth gate (PR #30156). When set, the bundled
-    # dashboard-auth `nous` plugin auto-registers itself on plugin discovery,
-    # which is triggered by any `/api/status` call. That leaks a provider
-    # into the dashboard_auth registry across tests in the same worker and
-    # makes assertions like `auth_providers == []` flaky. CI never sets
-    # these, so production tests must not see them either.
+    # dashboard-auth `self_hosted` OIDC plugin auto-registers itself on plugin
+    # discovery, which is triggered by any `/api/status` call. That leaks a
+    # provider into the dashboard_auth registry across tests in the same
+    # worker and makes assertions like `auth_providers == []` flaky. CI never
+    # sets these, so production tests must not see them either.
+    "CYBERFOX_DASHBOARD_OIDC_ISSUER",
+    "CYBERFOX_DASHBOARD_OIDC_CLIENT_ID",
     "CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID",
     "CYBERFOX_DASHBOARD_PORTAL_URL",
     "TERMINAL_CWD",

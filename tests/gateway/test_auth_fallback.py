@@ -79,7 +79,7 @@ class TestResolveRuntimeAgentKwargsAuthFallback:
             "  - provider: openrouter\n"
             "    model: anthropic/claude-sonnet-4.6\n"
             "fallback_model:\n"
-            "  provider: nous\n"
+            "  provider: cyberfox\n"
             "  model: Cyberfox-4\n"
         )
 
@@ -93,9 +93,9 @@ class TestResolveRuntimeAgentKwargsAuthFallback:
             if requested == "openrouter":
                 raise RuntimeError("openrouter unavailable")
             return {
-                "api_key": "nous-key",
+                "api_key": "cyberfox-key",
                 "base_url": "https://github.com/Sarthak5-t/Cyberfox/v1",
-                "provider": "nous",
+                "provider": "cyberfox",
                 "api_mode": "chat_completions",
                 "command": None,
                 "args": None,
@@ -110,6 +110,6 @@ class TestResolveRuntimeAgentKwargsAuthFallback:
 
             result = _try_resolve_fallback_provider()
 
-        assert calls == ["openrouter", "nous"]
-        assert result["provider"] == "nous"
+        assert calls == ["openrouter", "cyberfox"]
+        assert result["provider"] == "cyberfox"
         assert result["model"] == "Cyberfox-4"

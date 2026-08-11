@@ -269,9 +269,9 @@ def test_dashboard_oauth_gate_engages_on_non_loopback_bind(
 ) -> None:
     """The s6 dashboard run script must NOT auto-add ``--insecure`` when the
     dashboard binds to ``0.0.0.0``. The OAuth auth gate engages on its own
-    when a ``DashboardAuthProvider`` is registered (the bundled nous
-    provider activates whenever ``CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID`` is
-    set).
+    when a ``DashboardAuthProvider`` is registered (the bundled self-hosted
+    OIDC provider activates whenever ``CYBERFOX_DASHBOARD_OIDC_ISSUER`` and
+    ``CYBERFOX_DASHBOARD_OIDC_CLIENT_ID`` are set).
 
     Regression guard for the wildcard-subdomain rollout where every
     portal-provisioned agent binds ``0.0.0.0`` and relies on the OAuth
@@ -284,8 +284,8 @@ def test_dashboard_oauth_gate_engages_on_non_loopback_bind(
     on:
 
     1. ``/api/auth/providers`` (publicly reachable through the gate so
-       the login page can bootstrap) returns 200 with ``nous`` in the
-       provider list — proves the bundled provider registered.
+       the login page can bootstrap) returns 200 with ``self-hosted`` in
+       the provider list — proves the bundled provider registered.
     2. ``/api/sessions`` (a gated route under both the legacy
        ``_SESSION_TOKEN`` middleware and the OAuth gate) returns 401
        to an unauthenticated caller — proves the OAuth gate is actively
@@ -299,7 +299,8 @@ def test_dashboard_oauth_gate_engages_on_non_loopback_bind(
         built_image, container_name,
         "CYBERFOX_DASHBOARD=1",
         "CYBERFOX_DASHBOARD_HOST=0.0.0.0",
-        "CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID=agent:test-instance",
+        "CYBERFOX_DASHBOARD_OIDC_ISSUER=https://issuer.example.com",
+        "CYBERFOX_DASHBOARD_OIDC_CLIENT_ID=agent:test-instance",
         cmd="sleep 120",
     )
 
@@ -311,9 +312,9 @@ def test_dashboard_oauth_gate_engages_on_non_loopback_bind(
     )
     payload = json.loads(body)
     provider_names = [p.get("name") for p in payload.get("providers", [])]
-    assert "nous" in provider_names, (
-        "Bundled dashboard_auth/nous provider should register when "
-        f"CYBERFOX_DASHBOARD_OAUTH_CLIENT_ID is set. Got: {payload!r}"
+    assert "self-hosted" in provider_names, (
+        "Bundled dashboard_auth/self_hosted provider should register when "
+        f"CYBERFOX_DASHBOARD_OIDC_* is set. Got: {payload!r}"
     )
 
     # (2) A gated route (``/api/sessions``) returns 401 to an

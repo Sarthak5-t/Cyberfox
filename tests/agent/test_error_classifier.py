@@ -309,7 +309,7 @@ class TestClassifyApiError:
                 ),
             },
         )
-        result = classify_api_error(e, provider="nous", model="gpt-5")
+        result = classify_api_error(e, provider="cyberfox", model="gpt-5")
         assert result.reason == FailoverReason.billing
         assert result.retryable is False
         assert result.should_fallback is True
@@ -1034,7 +1034,7 @@ class TestClassifyApiError:
                 }
             },
         )
-        result = classify_api_error(e, provider="nous", model="gpt-5")
+        result = classify_api_error(e, provider="cyberfox", model="gpt-5")
         assert result.reason == FailoverReason.billing
 
     # ── Message-only patterns (no status code) ──
@@ -1046,7 +1046,7 @@ class TestClassifyApiError:
 
     def test_message_free_tier_model_block_is_billing(self):
         e = Exception("Model 'gpt-5' is not available on the Free Tier.")
-        result = classify_api_error(e, provider="nous", model="gpt-5")
+        result = classify_api_error(e, provider="cyberfox", model="gpt-5")
         assert result.reason == FailoverReason.billing
 
     def test_message_rate_limit_pattern(self):

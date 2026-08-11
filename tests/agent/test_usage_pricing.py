@@ -192,7 +192,7 @@ def test_custom_endpoint_models_api_pricing_is_supported(monkeypatch):
     assert float(entry.output_cost_per_million) == 2.0
 
 
-def test_nous_portal_pricing_preserves_vendor_prefixed_model_ids(monkeypatch):
+def test_cyberfox_portal_pricing_preserves_vendor_prefixed_model_ids(monkeypatch):
     seen = {}
 
     def _fake_fetch_endpoint_model_metadata(base_url, api_key=None):
@@ -211,7 +211,7 @@ def test_nous_portal_pricing_preserves_vendor_prefixed_model_ids(monkeypatch):
         _fake_fetch_endpoint_model_metadata,
     )
 
-    entry = get_pricing_entry("openai/gpt-5.5-pro", provider="nous")
+    entry = get_pricing_entry("openai/gpt-5.5-pro", provider="cyberfox")
 
     assert seen["base_url"] == "https://api.openai.com/v1"
     assert float(entry.input_cost_per_million) == 25.0

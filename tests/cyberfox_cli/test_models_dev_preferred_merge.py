@@ -9,7 +9,7 @@ These guard the contract:
     path (``list_authenticated_providers``) merge fresh models.dev entries
     on top of the curated static list.
   * OpenRouter and cyberfox portal are NEVER merged — they keep their curated
-    (OpenRouter) or live-Portal (Nous) semantics.
+    (OpenRouter) or live-Portal (Cyberfox) semantics.
   * If models.dev is unreachable (offline / CI), the curated list is the
     fallback — no crash, no empty list.
 
@@ -139,14 +139,14 @@ class TestProviderModelIdsPreferred:
         assert captured["models"][0] == "kimi-k2.7-code"
 
 
-class TestOpenRouterAndNousUnchanged:
-    """Per Teknium: openrouter and nous are NEVER merged with models.dev."""
+class TestOpenRouterAndCyberfoxUnchanged:
+    """Per Teknium: openrouter and cyberfox are NEVER merged with models.dev."""
 
     def test_openrouter_not_in_preferred_set(self):
         assert "openrouter" not in _MODELS_DEV_PREFERRED
 
     def test_legacy_not_in_preferred_set(self):
-        assert "nous" not in _MODELS_DEV_PREFERRED
+        assert "cyberfox" not in _MODELS_DEV_PREFERRED
 
     def test_openrouter_does_not_call_merge(self):
         """openrouter takes its own live path — merge helper must NOT run."""

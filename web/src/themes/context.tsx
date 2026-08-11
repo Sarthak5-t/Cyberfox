@@ -49,8 +49,6 @@ const FONT_STORAGE_KEY = "cyberfox-dashboard-font";
 const THEME_NAME_ALIASES: Record<string, string> = {
   // Renamed during the LENS_5I port + Cyberfox-blue rebrand.
   "lens-5i": "cyberfox-blue",
-  // Legacy id from the pre-rebrand era; kept so saved configs resolve.
-  "nous-blue": "cyberfox-blue",
 };
 
 function migrateThemeName(name: string): string {

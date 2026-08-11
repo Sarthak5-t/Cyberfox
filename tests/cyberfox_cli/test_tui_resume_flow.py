@@ -907,14 +907,14 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
 
     with pytest.raises(SystemExit):
         main_mod._launch_tui(
-            model="nous/cyberfox-test", provider="nous", toolsets="web, terminal"
+            model="cyberfox/cyberfox-test", provider="cyberfox", toolsets="web, terminal"
         )
 
     env = captured["env"]
-    assert env["CYBERFOX_MODEL"] == "nous/cyberfox-test"
-    assert env["CYBERFOX_INFERENCE_MODEL"] == "nous/cyberfox-test"
-    assert env["CYBERFOX_TUI_PROVIDER"] == "nous"
-    assert env["CYBERFOX_INFERENCE_PROVIDER"] == "nous"
+    assert env["CYBERFOX_MODEL"] == "cyberfox/cyberfox-test"
+    assert env["CYBERFOX_INFERENCE_MODEL"] == "cyberfox/cyberfox-test"
+    assert env["CYBERFOX_TUI_PROVIDER"] == "cyberfox"
+    assert env["CYBERFOX_INFERENCE_PROVIDER"] == "cyberfox"
     assert env["CYBERFOX_TUI_TOOLSETS"] == "web,terminal"
     active_path = Path(env["CYBERFOX_TUI_ACTIVE_SESSION_FILE"])
     assert active_path.name.startswith("cyberfox-tui-active-session-")
